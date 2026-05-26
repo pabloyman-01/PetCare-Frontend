@@ -2,15 +2,21 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators, FormArray } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { CitaService } from '../../core/services/cita.service';
 import { VeterinarioService } from '../../core/services/veterinario.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
+import { CitaResponse } from '../../core/models/cita.model';
 import { VeterinarioResponse, VeterinarioRequest, HorarioVeterinarioRequest } from '../../core/models/veterinario.model';
 import { catchError, EMPTY } from 'rxjs';
 
 const DIAS_SEMANA = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO'] as const;
+const DAY_MAP: Record<string, string> = {
+  LUNES: 'MONDAY', MARTES: 'TUESDAY', MIERCOLES: 'WEDNESDAY',
+  JUEVES: 'THURSDAY', VIERNES: 'FRIDAY', SABADO: 'SATURDAY', DOMINGO: 'SUNDAY',
+};
 
 @Component({
   selector: 'app-veterinarios',
@@ -209,7 +215,7 @@ const DIAS_SEMANA = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABAD
                 </button>
               </div>
               <div formArrayName="horarios" class="space-y-3">
-                @for (h of horarios.controls; track idx; let idx = $index) {
+                @for (h of horarios.controls; track $index; let idx = $index) {
                   <div [formGroupName]="idx" class="grid grid-cols-12 gap-3 items-start p-3 rounded-xl bg-surface-container-low/50 border border-outline-variant/10">
                     <div class="col-span-12 sm:col-span-3 space-y-1">
                       <label class="text-label-xs text-on-surface-variant">D&iacute;a</label>
@@ -244,7 +250,10 @@ const DIAS_SEMANA = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABAD
               </div>
             </div>
 
-            <div class="flex justify-end gap-3 pt-4 border-t border-outline-variant/20">
+            <div class="flex justify-end gap-3 pt-4 border-t border-outline-variant/20 items-center">
+              @if (errorMsg()) {
+                <p class="text-body-sm text-error flex-1">{{ errorMsg() }}</p>
+              }
               <button type="button" (click)="closeForm()" class="btn btn-ghost">Cancelar</button>
               <button type="submit" [disabled]="saving()" class="btn btn-primary">
                 @if (saving()) {
@@ -343,6 +352,7 @@ const DIAS_SEMANA = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABAD
 })
 export class VeterinariosComponent implements OnInit {
   private veterinarioService = inject(VeterinarioService);
+  private citaService = inject(CitaService);
   protected auth = inject(AuthService);
   private fb = inject(FormBuilder);
 
@@ -356,8 +366,10 @@ export class VeterinariosComponent implements OnInit {
   viewingVeterinario = signal<VeterinarioResponse | null>(null);
   showDeleteConfirm = signal(false);
   deletingVeterinario = signal<VeterinarioResponse | null>(null);
+  citasHoy = signal<CitaResponse[]>([]);
   saving = signal(false);
   submitted = false;
+  errorMsg = signal('');
 
   veterinarioForm = this.fb.group({
     nombres: ['', Validators.required],
@@ -375,10 +387,10 @@ export class VeterinariosComponent implements OnInit {
 
   private createHorarioGroup() {
     return this.fb.group({
-      diaSemana: ['', Validators.required],
-      horaInicio: ['', Validators.required],
-      horaFin: ['', Validators.required],
-      duracionBloqueMinutos: [30, [Validators.required, Validators.min(15), Validators.max(240)]],
+      diaSemana: [''],
+      horaInicio: [''],
+      horaFin: [''],
+      duracionBloqueMinutos: [30],
     });
   }
 
@@ -401,11 +413,19 @@ export class VeterinariosComponent implements OnInit {
     return set.size;
   });
 
-  placeholderCitasHoy = computed(() => Math.floor(Math.random() * 20) + 5);
-  placeholderQuirofano = computed(() => Math.floor(Math.random() * 3));
+  placeholderCitasHoy = computed(() => this.citasHoy().length);
+  placeholderQuirofano = computed(() => this.citasHoy().filter(c => c.estado === 'ATENDIDA').length);
 
   ngOnInit(): void {
     this.loadVeterinarios();
+    this.loadCitasHoy();
+  }
+
+  private loadCitasHoy(): void {
+    const today = new Date().toISOString().split('T')[0];
+    this.citaService.findAll({ fecha: today }).pipe(catchError(() => EMPTY)).subscribe({
+      next: (data) => this.citasHoy.set(data),
+    });
   }
 
   private loadVeterinarios(): void {
@@ -431,9 +451,11 @@ export class VeterinariosComponent implements OnInit {
     return colors[id % colors.length];
   }
 
-  vetStatus(_id: number): 'available' | 'away' | 'surgery' {
-    const statuses: ('available' | 'away' | 'surgery')[] = ['available', 'away', 'surgery'];
-    return statuses[Math.floor(Math.random() * 10) % 3];
+  vetStatus(vetId: number): 'available' | 'away' | 'surgery' {
+    const count = this.citasHoy().filter(c => c.veterinarioId === vetId).length;
+    if (count >= 3) return 'surgery';
+    if (count > 0) return 'available';
+    return 'away';
   }
 
   statusLabel(status: string): string {
@@ -445,13 +467,17 @@ export class VeterinariosComponent implements OnInit {
     return map[status] || status;
   }
 
-  randomShift(_id: number): string {
-    const hours = ['08:00 - 16:00', '09:00 - 17:00', '10:00 - 18:00', '14:00 - 22:00', '07:00 - 15:00'];
-    return hours[Math.floor(Math.random() * hours.length)];
+  randomShift(vetId: number): string {
+    const todayIndex = new Date().getDay();
+    const daysEn = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+    const todayName = daysEn[todayIndex];
+    const vet = this.veterinarios().find(v => v.id === vetId);
+    const horario = vet?.horarios?.find(h => h.diaSemana === todayName);
+    return horario ? `${horario.horaInicio} - ${horario.horaFin}` : '—';
   }
 
-  randomAppointments(_id: number): number {
-    return Math.floor(Math.random() * 8) + 1;
+  randomAppointments(vetId: number): number {
+    return this.citasHoy().filter(c => c.veterinarioId === vetId).length;
   }
 
   addHorario(): void {
@@ -467,6 +493,7 @@ export class VeterinariosComponent implements OnInit {
     this.veterinarioForm.reset({ email: '', especialidad: '', numeroColegiatura: '', telefono: '' });
     while (this.horarios.length) this.horarios.removeAt(0);
     this.submitted = false;
+    this.errorMsg.set('');
     this.showForm.set(true);
   }
 
@@ -484,10 +511,10 @@ export class VeterinariosComponent implements OnInit {
     if (v.horarios?.length) {
       v.horarios.forEach(h => {
         this.horarios.push(this.fb.group({
-          diaSemana: [h.diaSemana, Validators.required],
-          horaInicio: [h.horaInicio, Validators.required],
-          horaFin: [h.horaFin, Validators.required],
-          duracionBloqueMinutos: [h.duracionBloqueMinutos, [Validators.required, Validators.min(15), Validators.max(240)]],
+          diaSemana: [h.diaSemana],
+          horaInicio: [h.horaInicio],
+          horaFin: [h.horaFin],
+          duracionBloqueMinutos: [h.duracionBloqueMinutos],
         }));
       });
     }
@@ -511,14 +538,15 @@ export class VeterinariosComponent implements OnInit {
 
   onSubmit(): void {
     this.submitted = true;
-    if (this.veterinarioForm.invalid) return;
+    this.errorMsg.set('');
+    if (this.veterinarioForm.invalid) { this.errorMsg.set('Complete todos los campos obligatorios.'); return; }
 
     this.saving.set(true);
     const formValue = this.veterinarioForm.value;
     const horarios: HorarioVeterinarioRequest[] = (formValue.horarios || [])
       .filter(h => h.diaSemana && h.horaInicio && h.horaFin)
       .map(h => ({
-        diaSemana: h.diaSemana!,
+        diaSemana: DAY_MAP[h.diaSemana!] || h.diaSemana!,
         horaInicio: h.horaInicio!,
         horaFin: h.horaFin!,
         duracionBloqueMinutos: h.duracionBloqueMinutos ?? 30,
@@ -534,6 +562,8 @@ export class VeterinariosComponent implements OnInit {
       horarios: horarios.length > 0 ? horarios : undefined,
     };
 
+    console.log('Veterinario request:', JSON.stringify(req));
+
     const obs = this.editingVeterinario()
       ? this.veterinarioService.update(this.editingVeterinario()!.id, req)
       : this.veterinarioService.create(req);
@@ -544,7 +574,11 @@ export class VeterinariosComponent implements OnInit {
         this.closeForm();
         this.loadVeterinarios();
       },
-      error: () => this.saving.set(false),
+      error: (err) => {
+        console.error('Error al guardar veterinario:', err);
+        this.saving.set(false);
+        this.errorMsg.set(err.error?.message || err.message || 'Error al guardar. Verifique los datos.');
+      },
     });
   }
 

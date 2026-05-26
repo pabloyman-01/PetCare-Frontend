@@ -130,7 +130,7 @@ export class MainLayoutComponent {
     { label: 'Mascotas', icon: 'pets', route: '/mascotas', roles: ['ROLE_ASISTENTE'] },
     { label: 'Alertas', icon: 'notifications_active', route: '/alertas', roles: ['ROLE_ADMIN', 'ROLE_ASISTENTE'] },
     { label: 'Citas', icon: 'calendar_month', route: '/citas', roles: ['ROLE_VETERINARIO', 'ROLE_ASISTENTE'] },
-    { label: 'Atención Clínica', icon: 'monitor_heart', route: '/atencion-clinica', roles: ['ROLE_VETERINARIO', 'ROLE_ASISTENTE'] },
+    { label: 'Atención Clínica', icon: 'monitor_heart', route: '/atencion-clinica', roles: ['ROLE_VETERINARIO'] },
     { label: 'Vacunas', icon: 'vaccines', route: '/vacunas', roles: ['ROLE_VETERINARIO'] },
     { label: 'Control Mensual', icon: 'query_stats', route: '/controles-mensuales', roles: ['ROLE_VETERINARIO'] },
     { label: 'Inasistencias', icon: 'event_busy', route: '/inasistencias', roles: [] },

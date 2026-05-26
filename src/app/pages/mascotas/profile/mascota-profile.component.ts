@@ -354,8 +354,8 @@ export class MascotaProfileComponent implements OnInit {
   loading = signal(true);
   activeTab = signal<TabType>('historial');
 
-  backRoute = computed(() => this.auth.isDuenioOnly() ? '/mascotas' : '/atencion-clinica');
-  backLabel = computed(() => this.auth.isDuenioOnly() ? 'Volver a mis mascotas' : 'Volver a atenci\u00f3n cl\u00ednica');
+  backRoute = computed(() => this.auth.isDuenioOnly() || this.auth.isAsistente() ? '/mascotas' : '/atencion-clinica');
+  backLabel = computed(() => this.auth.isDuenioOnly() || this.auth.isAsistente() ? 'Volver a mascotas' : 'Volver a atenci\u00f3n cl\u00ednica');
 
   historia = signal<HistoriaClinicaResponse | null>(null);
   historiaLoading = signal(false);

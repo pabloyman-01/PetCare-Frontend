@@ -282,7 +282,7 @@ type ViewMode = 'month' | 'week' | 'day';
                             </div>
                             <p class="text-label-md leading-tight mt-0.5">{{ cita.mascotaNombre }}</p>
                             <p class="text-[10px] opacity-80 truncate">Due&ntilde;o: {{ cita.duenioNombreCompleto }}</p>
-                            @if (cita.estado !== 'CANCELADA' && cita.estado !== 'NO_ASISTIO' && cita.estado !== 'ATENDIDA') {
+                            @if (!auth.isAsistente() && cita.estado !== 'CANCELADA' && cita.estado !== 'NO_ASISTIO' && cita.estado !== 'ATENDIDA') {
                               <button (click)="$event.stopPropagation(); router.navigate(['/atencion-clinica'], {queryParams: {citaId: cita.id}})"
                                       class="mt-2 w-full py-1 bg-on-secondary-container/10 border border-on-secondary-container/20 rounded text-[10px] font-bold flex items-center justify-center gap-1 hover:bg-on-secondary-container/20 transition-all"
                                        [ngClass]="{'text-on-primary-container': cita.estado === 'CONFIRMADA'}">
@@ -504,11 +504,13 @@ type ViewMode = 'month' | 'week' | 'day';
                 <span class="material-symbols-outlined text-[18px]">person_off</span>
                 Registrar Inasistencia
               </button>
-              <a [routerLink]="'/atencion-clinica'" [queryParams]="{citaId: cita.id}"
-                 class="btn btn-secondary">
-                <span class="material-symbols-outlined text-[18px]">medical_services</span>
-                Registrar Atención
-              </a>
+              @if (!auth.isAsistente()) {
+                <a [routerLink]="'/atencion-clinica'" [queryParams]="{citaId: cita.id}"
+                   class="btn btn-secondary">
+                  <span class="material-symbols-outlined text-[18px]">medical_services</span>
+                  Registrar Atención
+                </a>
+              }
             </div>
           }
         </div>

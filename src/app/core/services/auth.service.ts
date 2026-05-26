@@ -11,7 +11,7 @@ import {
   UserResponse
 } from '../models/auth.model';
 
-export const API_URL = 'http://localhost:8080/api';
+export const API_URL = 'http://localhost:8090/api';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

@@ -397,7 +397,10 @@ const TURNO_CONFIG: Record<TurnoAsistente, { dot: string; label: string }> = {
                           class="textarea textarea-bordered w-full resize-none"></textarea>
               </div>
             </div>
-            <div class="flex justify-end gap-3 pt-4 border-t border-outline-variant/20">
+            <div class="flex justify-end gap-3 pt-4 border-t border-outline-variant/20 items-center">
+              @if (errorMsg()) {
+                <p class="text-body-sm text-error flex-1">{{ errorMsg() }}</p>
+              }
               <button type="button" (click)="closeForm()" class="btn btn-ghost">Cancelar</button>
               <button type="submit" [disabled]="saving()" class="btn btn-primary">
                 @if (saving()) {
@@ -440,6 +443,7 @@ export class AsistentesComponent implements OnInit {
   deletingAsistente = signal<AsistenteResponse | null>(null);
   saving = signal(false);
   submitted = false;
+  errorMsg = signal('');
 
   todayDate: string;
 
@@ -451,6 +455,7 @@ export class AsistentesComponent implements OnInit {
     telefono: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     funciones: ['', Validators.required],
+    password: [''],
   });
 
   constructor() {
@@ -482,14 +487,11 @@ export class AsistentesComponent implements OnInit {
     return list;
   });
 
-  activeToday = computed(() => {
-    const active = this.asistentes().filter(a => a.active).length;
-    return Math.floor(active * (0.7 + Math.random() * 0.3));
-  });
+  activeToday = computed(() => this.asistentes().filter(a => a.active).length);
 
-  completedTasks = computed(() => Math.floor(Math.random() * 20) + 25);
-  completedTasksTotal = computed(() => Math.floor(Math.random() * 5) + 28);
-  responseTime = computed(() => (Math.random() * 2 + 2).toFixed(1));
+  completedTasks = computed(() => Math.max(0, this.asistentes().length * 7 + 10));
+  completedTasksTotal = computed(() => this.completedTasks() + Math.max(0, this.asistentes().length * 2));
+  responseTime = computed(() => (3 + this.asistentes().filter(a => !a.active).length * 0.5).toFixed(1));
 
   morningStaff = computed(() => this.asistentes().filter((_, i) => i % 3 === 0));
   afternoonStaff = computed(() => this.asistentes().filter((_, i) => i % 3 === 1));
@@ -552,22 +554,22 @@ export class AsistentesComponent implements OnInit {
   }
 
   taskDone(id: number): number {
-    const total = this.taskTotal(id);
-    return Math.round(total * (this.taskProgress(id) / 100));
+    return ((id * 3 + 7) % 15) + 3;
   }
 
   taskTotal(_id: number): number {
-    return Math.floor(Math.random() * 5) + 8;
+    return 15;
   }
 
   taskProgress(id: number): number {
-    return Math.floor(Math.random() * 51) + 50;
+    return Math.min(100, Math.round((this.taskDone(id) / this.taskTotal(id)) * 100));
   }
 
   openCreate(): void {
     this.editingAsistente.set(null);
     this.asistenteForm.reset({ tipoDocumento: '' });
     this.submitted = false;
+    this.errorMsg.set('');
     this.showForm.set(true);
   }
 
@@ -583,6 +585,7 @@ export class AsistentesComponent implements OnInit {
       funciones: a.funciones,
     });
     this.submitted = false;
+    this.errorMsg.set('');
     this.showForm.set(true);
   }
 
@@ -594,7 +597,8 @@ export class AsistentesComponent implements OnInit {
 
   onSubmit(): void {
     this.submitted = true;
-    if (this.asistenteForm.invalid) return;
+    this.errorMsg.set('');
+    if (this.asistenteForm.invalid) { this.errorMsg.set('Complete todos los campos obligatorios.'); return; }
 
     this.saving.set(true);
     const formValue = this.asistenteForm.value;
@@ -606,7 +610,10 @@ export class AsistentesComponent implements OnInit {
       telefono: formValue.telefono!,
       email: formValue.email!,
       funciones: formValue.funciones!,
+      password: this.editingAsistente() ? undefined : Math.random().toString(36).slice(2, 10),
     };
+
+    console.log('Asistente request:', JSON.stringify(req));
 
     const obs = this.editingAsistente()
       ? this.asistenteService.update(this.editingAsistente()!.id, req)
@@ -618,7 +625,11 @@ export class AsistentesComponent implements OnInit {
         this.closeForm();
         this.loadAsistentes();
       },
-      error: () => this.saving.set(false),
+      error: (err) => {
+        console.error('Error al guardar asistente:', err);
+        this.saving.set(false);
+        this.errorMsg.set(err.error?.message || err.message || 'Error al guardar. Verifique los datos.');
+      },
     });
   }
 

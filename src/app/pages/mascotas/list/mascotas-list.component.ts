@@ -694,7 +694,7 @@ export class MascotasListComponent implements OnInit {
     }
 
     if (especie) {
-      list = list.filter(m => m.especie === especie);
+      list = list.filter(m => m.especie.toLowerCase() === especie.toLowerCase());
     }
 
     const mapped = list.map((m, i) => ({

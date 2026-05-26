@@ -39,7 +39,7 @@ export const routes: Routes = [
       { path: 'citas/crear', loadComponent: () => import('./pages/citas/create/cita-create.component').then(m => m.CitaCreateComponent) },
       { path: 'citas/:id', loadComponent: () => import('./pages/citas/list/citas-list.component').then(m => m.CitasListComponent) },
       { path: 'alertas', loadComponent: () => import('./pages/alertas/alertas.component').then(m => m.AlertasComponent) },
-      { path: 'atencion-clinica', loadComponent: () => import('./pages/atencion-clinica/atencion-clinica.component').then(m => m.AtencionClinicaComponent), canActivate: [RoleGuard], data: { roles: ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_ASISTENTE'] } },
+      { path: 'atencion-clinica', loadComponent: () => import('./pages/atencion-clinica/atencion-clinica.component').then(m => m.AtencionClinicaComponent), canActivate: [RoleGuard], data: { roles: ['ROLE_ADMIN', 'ROLE_VETERINARIO'] } },
       { path: 'vacunas', loadComponent: () => import('./pages/vacunas/vacunas.component').then(m => m.VacunasComponent) },
       { path: 'controles-mensuales', loadComponent: () => import('./pages/controles-mensuales/controles-mensuales.component').then(m => m.ControlesMensualesComponent), canActivate: [RoleGuard], data: { roles: ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_ASISTENTE'] } },
       { path: 'inasistencias', loadComponent: () => import('./pages/inasistencias/inasistencias.component').then(m => m.InasistenciasComponent), canActivate: [RoleGuard], data: { roles: ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_ASISTENTE'] } },

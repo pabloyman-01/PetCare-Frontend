@@ -371,7 +371,7 @@ export class DueniosComponent implements OnInit {
         error: () => this.loading.set(false),
       });
     } else {
-      this.duenioService.findAll().subscribe({
+      this.duenioService.findAll(undefined, true).subscribe({
         next: (data) => {
           this.duenios.set(data);
           this.loading.set(false);
