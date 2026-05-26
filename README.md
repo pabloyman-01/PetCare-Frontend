@@ -77,5 +77,5 @@ npm install
 ng serve
 ```
 
-La aplicación se ejecuta en `http://localhost:4200` y se conecta al backend en `http://localhost:8080`.
+La aplicación se ejecuta en `http://localhost:4200` y se conecta al backend en `http://localhost:8090`.
 
