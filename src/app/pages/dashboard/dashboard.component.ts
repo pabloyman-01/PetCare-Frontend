@@ -10,7 +10,7 @@ import { VeterinarioService } from '../../core/services/veterinario.service';
 import { AsistenteService } from '../../core/services/asistente.service';
 import { PanelAlertasDiaResponse, AlertaCitaResponse } from '../../core/models/alerta.model';
 import { MascotaResponse } from '../../core/models/mascota.model';
-import { catchError, EMPTY, filter } from 'rxjs';
+import { finalize, filter, catchError, EMPTY } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -698,12 +698,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       ).subscribe(() => this.loadDuenioPets());
       return;
     }
-    this.alertaService.getDailyPanel().pipe(catchError(() => EMPTY)).subscribe({
-      next: (panel) => {
-        this.todayPanel.set(panel);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
+    this.alertaService.getDailyPanel().pipe(finalize(() => this.loading.set(false))).subscribe({
+      next: (panel) => this.todayPanel.set(panel),
     });
   }
 
@@ -712,7 +708,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDuenioPets(): void {
-    this.mascotaService.findAll(undefined, undefined, true).pipe(catchError(() => EMPTY)).subscribe({
+    this.mascotaService.findAll(undefined, undefined, true).subscribe({
       next: (data) => this.myPets.set(data),
     });
   }
