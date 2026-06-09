@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { AlertaService } from '../../core/services/alerta.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PanelAlertasDiaResponse, AlertaCitaResponse } from '../../core/models/alerta.model';
-import { catchError, EMPTY } from 'rxjs';
+import { finalize } from 'rxjs';
 
 type FilterType = 'todas' | 'criticas' | 'recordatorios' | 'seguimiento';
 type ItemType = 'critica' | 'recordatorio' | 'seguimiento';
@@ -272,12 +272,8 @@ export class AlertasComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.alertaService.getDailyPanel().pipe(catchError(() => EMPTY)).subscribe({
-      next: (data) => {
-        this.panel.set(data);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
+    this.alertaService.getDailyPanel().pipe(finalize(() => this.loading.set(false))).subscribe({
+      next: (data) => this.panel.set(data),
     });
   }
 
