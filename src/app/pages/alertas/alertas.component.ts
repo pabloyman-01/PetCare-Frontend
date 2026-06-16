@@ -6,6 +6,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { PanelAlertasDiaResponse, AlertaCitaResponse } from '../../core/models/alerta.model';
 import { finalize } from 'rxjs';
 import { CallModalComponent, CallResult } from '../../shared/components/call-modal/call-modal.component';
+import { CitaService } from '../../core/services/cita.service';
 
 type FilterType = 'todas' | 'criticas' | 'recordatorios' | 'seguimiento';
 type ItemType = 'critica' | 'recordatorio' | 'seguimiento';
@@ -143,7 +144,7 @@ type ItemType = 'critica' | 'recordatorio' | 'seguimiento';
                             class="flex items-center gap-2 px-4 py-2 rounded-lg font-label-sm text-label-sm transition-colors border border-outline-variant text-on-surface-variant hover:bg-surface-container">
                       Marcar como leída
                     </button>
-                    <button (click)="irACitas()"
+                    <button (click)="abrirDetalle(alert.citaId)"
                             class="flex items-center gap-2 px-4 py-2 rounded-lg font-label-sm text-label-sm transition-colors text-primary hover:underline">
                       <span class="material-symbols-outlined text-[18px]">visibility</span>
                       Ver detalles
@@ -160,6 +161,62 @@ type ItemType = 'critica' | 'recordatorio' | 'seguimiento';
         <app-call-modal [alerta]="alerta"
                         (cerrar)="cerrarModalLlamada()"
                         (resultado)="guardarResultadoLlamada($event)" />
+      }
+
+      @if (detalleAlerta(); as detalle) {
+        <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" (click)="cerrarDetalle()">
+          <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" (click)="$event.stopPropagation()">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold text-gray-900">Detalle de alerta</h3>
+              <button (click)="cerrarDetalle()" class="text-gray-400 hover:text-gray-600">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div class="space-y-3 mb-4">
+              <div class="flex justify-between p-3 bg-blue-50 rounded-xl">
+                <span class="text-sm text-gray-500">Mascota</span>
+                <span class="font-semibold">{{ detalle.mascotaNombre }}</span>
+              </div>
+              <div class="flex justify-between p-3 bg-blue-50 rounded-xl">
+                <span class="text-sm text-gray-500">Propietario</span>
+                <span class="font-semibold">{{ detalle.duenioNombreCompleto }}</span>
+              </div>
+              <div class="flex justify-between p-3 bg-blue-50 rounded-xl">
+                <span class="text-sm text-gray-500">Motivo</span>
+                <span class="font-semibold">{{ detalle.motivo }}</span>
+              </div>
+              <div class="flex justify-between p-3 bg-blue-50 rounded-xl">
+                <span class="text-sm text-gray-500">Fecha / Hora</span>
+                <span class="font-semibold">{{ detalle.fecha }} {{ detalle.horaInicio }}</span>
+              </div>
+              <div class="flex justify-between p-3 bg-yellow-50 rounded-xl">
+                <span class="text-sm text-gray-500">Estado</span>
+                <span class="font-semibold">{{ detalle.estado }}</span>
+              </div>
+            </div>
+
+            @if (intentosLlamada(detalle.citaId); as llamadas) {
+              <div class="border-t pt-4">
+                <h4 class="font-semibold text-gray-700 mb-2">Historial de llamadas</h4>
+                <div class="space-y-2">
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Intentos:</span>
+                    <span class="font-semibold">{{ llamadas.intentos }}</span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Último intento:</span>
+                    <span class="font-semibold">{{ llamadas.ultimo }}</span>
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <div class="border-t pt-4 text-center text-sm text-gray-400">
+                Sin llamadas registradas
+              </div>
+            }
+          </div>
+        </div>
       }
 
       <!-- Right Sidebar: Widgets -->
@@ -221,6 +278,7 @@ export class AlertasComponent implements OnInit {
   private alertaService = inject(AlertaService);
   protected auth = inject(AuthService);
   private router = inject(Router);
+  private citaService = inject(CitaService);
 
   panel = signal<PanelAlertasDiaResponse | null>(null);
   loading = signal(true);
@@ -303,6 +361,7 @@ export class AlertasComponent implements OnInit {
 
   protected leidas = signal<Set<string>>(new Set());
   protected alertaSeleccionada = signal<AlertaCitaResponse | null>(null);
+  protected detalleAlerta = signal<AlertaCitaResponse | null>(null);
   protected historialLlamadas = signal<Map<number, { intentos: number; ultimo: string; registros: CallResult[] }>>(new Map());
 
   protected irACitas(): void {
@@ -326,6 +385,18 @@ export class AlertasComponent implements OnInit {
     this.alertaSeleccionada.set(null);
   }
 
+  protected abrirDetalle(citaId: number): void {
+    const p = this.panel();
+    if (!p) return;
+    const todas = [...p.citasSinConfirmar, ...p.citasProgramadasHoy, ...p.citasConfirmadasPendientesAtencion, ...p.citasNoAsistidasHoy];
+    const alerta = todas.find(c => c.citaId === citaId);
+    if (alerta) this.detalleAlerta.set(alerta);
+  }
+
+  protected cerrarDetalle(): void {
+    this.detalleAlerta.set(null);
+  }
+
   protected intentosLlamada(citaId: number): { intentos: number; ultimo: string } | null {
     const info = this.historialLlamadas().get(citaId);
     if (!info) return null;
@@ -343,8 +414,34 @@ export class AlertasComponent implements OnInit {
       return new Map(m);
     });
 
-    if (result.resultado === 'confirmada' || result.resultado === 'cancelada') {
-      this.marcarLeida(`critica-${result.citaId}`);
+    const id = result.citaId;
+
+    if (result.resultado === 'confirmada') {
+      this.citaService.confirmar(id).subscribe();
+      this.marcarLeida(`critica-${id}`);
+    }
+
+    if (result.resultado === 'cancelada') {
+      this.citaService.cancelar(id).subscribe();
+      this.marcarLeida(`critica-${id}`);
+    }
+
+    if (result.resultado === 'reprogramar' && result.nuevaFecha && result.nuevaHora) {
+      this.citaService.findById(id).subscribe(cita => {
+        const duracion = cita.duracionMinutos;
+        const [h, m] = result.nuevaHora!.split(':').map(Number);
+        const horaFin = `${String(h + Math.floor((m + duracion) / 60)).padStart(2, '0')}:${String((m + duracion) % 60).padStart(2, '0')}`;
+        this.citaService.update(id, {
+          duenioId: cita.duenioId,
+          mascotaId: cita.mascotaId,
+          veterinarioId: cita.veterinarioId,
+          fecha: result.nuevaFecha!,
+          horaInicio: result.nuevaHora!,
+          duracionMinutos: duracion,
+          motivo: cita.motivo,
+          servicios: [],
+        }).subscribe();
+      });
     }
 
     this.alertaSeleccionada.set(null);
