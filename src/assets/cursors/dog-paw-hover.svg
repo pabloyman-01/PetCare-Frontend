@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Dog face - hover variant (tongue out) -->
+  <!-- Ears -->
+  <ellipse cx="9" cy="9" rx="5" ry="6" fill="#4FC3F7"/>
+  <ellipse cx="23" cy="9" rx="5" ry="6" fill="#4FC3F7"/>
+  <!-- Head -->
+  <ellipse cx="16" cy="17" rx="11" ry="10" fill="#4FC3F7"/>
+  <!-- Eyes -->
+  <circle cx="11" cy="15" r="2.2" fill="#fff"/>
+  <circle cx="21" cy="15" r="2.2" fill="#fff"/>
+  <circle cx="12" cy="14.5" r="1" fill="#1a1a1a"/>
+  <circle cx="22" cy="14.5" r="1" fill="#1a1a1a"/>
+  <!-- Nose -->
+  <ellipse cx="16" cy="19" rx="2.5" ry="1.8" fill="#1a1a1a"/>
+  <!-- Smile -->
+  <path d="M12.5 21.5 Q16 24.5 19.5 21.5" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/>
+  <!-- Tongue -->
+  <ellipse cx="16" cy="23.5" rx="1.8" ry="2.5" fill="#ff6b8a"/>
+  <ellipse cx="16" cy="24.5" rx="1.2" ry="1.2" fill="#ff4d6d"/>
+</svg>

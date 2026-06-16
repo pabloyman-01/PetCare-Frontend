@@ -3,8 +3,20 @@
 @tailwind utilities;
 
 @layer base {
-  * { box-sizing: border-box; cursor: url('/assets/cursors/paw.svg') 16 20, pointer; }
+  * { box-sizing: border-box; cursor: url('/assets/cursors/dog-paw.svg') 16 16, auto; }
   body { margin: 0; font-family: 'Manrope', sans-serif; }
+}
+
+a,
+button,
+[role="button"],
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+select,
+summary,
+[onclick] {
+  cursor: url('/assets/cursors/dog-paw-hover.svg') 16 16, pointer;
 }
 
 @layer components {
