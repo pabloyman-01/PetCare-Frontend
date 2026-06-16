@@ -112,24 +112,29 @@ type ItemType = 'critica' | 'recordatorio' | 'seguimiento';
                   </div>
                   <p class="text-body-sm text-on-surface-variant mb-4">{{ alert.description }}</p>
                   <div class="flex flex-wrap gap-3">
-                    @for (action of alert.actions; track action.label) {
-                      <button (click)="action.handler?.()"
-                              class="flex items-center gap-2 px-4 py-2 rounded-lg font-label-sm text-label-sm transition-colors"
-                              [class.bg-primary]="action.primary"
-                              [class.text-on-primary]="action.primary"
-                              [class.border]="!action.primary"
-                              [class.border-outline-variant]="!action.primary"
-                              [class.text-on-surface-variant]="!action.primary"
-                              [class.hover:bg-surface-container]="!action.primary"
-                              [class.hover:opacity-90]="action.primary"
-                              [class.text-primary]="action.link"
-                              [class.hover:underline]="action.link">
-                        @if (action.icon) {
-                          <span class="material-symbols-outlined text-[18px]">{{ action.icon }}</span>
-                        }
-                        {{ action.label }}
+                    @if (alert.alertType === 'critica' || alert.alertType === 'seguimiento') {
+                      <button (click)="irACita(alert.citaId)"
+                              class="flex items-center gap-2 px-4 py-2 rounded-lg font-label-sm text-label-sm transition-colors bg-primary text-on-primary hover:opacity-90">
+                        <span class="material-symbols-outlined text-[18px]">{{ alert.alertType === 'critica' ? 'call' : 'history_edu' }}</span>
+                        {{ alert.alertType === 'critica' ? 'Llamar' : 'Registrar Nota' }}
                       </button>
                     }
+                    @if (alert.alertType === 'recordatorio') {
+                      <button (click)="irACita(alert.citaId)"
+                              class="flex items-center gap-2 px-4 py-2 rounded-lg font-label-sm text-label-sm transition-colors border border-outline-variant text-on-surface-variant hover:bg-surface-container">
+                        <span class="material-symbols-outlined text-[18px]">chat</span>
+                        WhatsApp
+                      </button>
+                    }
+                    <button (click)="marcarLeida(alert.id)"
+                            class="flex items-center gap-2 px-4 py-2 rounded-lg font-label-sm text-label-sm transition-colors border border-outline-variant text-on-surface-variant hover:bg-surface-container">
+                      Marcar como leída
+                    </button>
+                    <button (click)="irACita(alert.citaId)"
+                            class="flex items-center gap-2 px-4 py-2 rounded-lg font-label-sm text-label-sm transition-colors text-primary hover:underline">
+                      <span class="material-symbols-outlined text-[18px]">visibility</span>
+                      Ver detalles
+                    </button>
                   </div>
                 </div>
               </div>
@@ -220,16 +225,12 @@ export class AlertasComponent implements OnInit {
     for (const c of p.citasSinConfirmar) {
       alerts.push({
         id: `critica-${c.citaId}`,
+        citaId: c.citaId,
         alertType: 'critica',
         icon: 'emergency_home',
         title: `Cita sin confirmar - ${c.mascotaNombre}`,
         description: `El dueño ${c.duenioNombreCompleto} no ha confirmado la cita de ${c.motivo}.`,
         time: this.formatTime(c.horaInicio),
-        actions: [
-          { label: 'Llamar', icon: 'call', primary: true, handler: () => this.irACita(c.citaId) },
-          { label: 'Marcar como leída', primary: false, handler: () => this.marcarLeida(`critica-${c.citaId}`) },
-          { label: 'Ver detalles', link: true, handler: () => this.irACita(c.citaId) },
-        ],
       });
     }
 
@@ -237,15 +238,12 @@ export class AlertasComponent implements OnInit {
     for (const c of p.citasProgramadasHoy) {
       alerts.push({
         id: `recordatorio-${c.citaId}`,
+        citaId: c.citaId,
         alertType: 'recordatorio',
         icon: 'calendar_clock',
         title: `${c.motivo} - ${c.mascotaNombre}`,
         description: `Programada con ${c.veterinarioNombreCompleto}. Dueño: ${c.duenioNombreCompleto}`,
         time: this.formatTime(c.horaInicio),
-        actions: [
-          { label: 'WhatsApp', icon: 'chat', primary: false, handler: () => this.irACita(c.citaId) },
-          { label: 'Marcar como leída', primary: false, handler: () => this.marcarLeida(`recordatorio-${c.citaId}`) },
-        ],
       });
     }
 
@@ -253,15 +251,12 @@ export class AlertasComponent implements OnInit {
     for (const c of p.citasConfirmadasPendientesAtencion) {
       alerts.push({
         id: `seguimiento-${c.citaId}`,
+        citaId: c.citaId,
         alertType: 'seguimiento',
         icon: 'medical_information',
         title: `Pendiente de atención - ${c.mascotaNombre}`,
         description: `${c.motivo}. Dueño: ${c.duenioNombreCompleto}`,
         time: this.formatTime(c.horaInicio),
-        actions: [
-          { label: 'Registrar Nota', icon: 'history_edu', primary: true, handler: () => this.router.navigate(['/citas', c.citaId]) },
-          { label: 'Ver detalles', link: true, handler: () => this.irACita(c.citaId) },
-        ],
       });
     }
 
@@ -281,13 +276,13 @@ export class AlertasComponent implements OnInit {
     });
   }
 
-  leidas = signal<Set<string>>(new Set());
+  protected leidas = signal<Set<string>>(new Set());
 
-  private irACita(citaId: number): void {
+  protected irACita(citaId: number): void {
     this.router.navigate(['/citas', citaId]);
   }
 
-  private marcarLeida(id: string): void {
+  protected marcarLeida(id: string): void {
     this.leidas.update(s => { s.add(id); return new Set(s); });
   }
 
@@ -296,20 +291,12 @@ export class AlertasComponent implements OnInit {
   }
 }
 
-interface AlertAction {
-  label: string;
-  icon?: string;
-  primary?: boolean;
-  link?: boolean;
-  handler?: () => void;
-}
-
 interface AlertItem {
   id: string;
   alertType: ItemType;
+  citaId: number;
   icon: string;
   title: string;
   description: string;
   time: string;
-  actions: AlertAction[];
 }
