@@ -5,6 +5,7 @@ import { AlertaService } from '../../core/services/alerta.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PanelAlertasDiaResponse, AlertaCitaResponse } from '../../core/models/alerta.model';
 import { finalize } from 'rxjs';
+import { CallModalComponent, CallResult } from '../../shared/components/call-modal/call-modal.component';
 
 type FilterType = 'todas' | 'criticas' | 'recordatorios' | 'seguimiento';
 type ItemType = 'critica' | 'recordatorio' | 'seguimiento';
@@ -12,7 +13,7 @@ type ItemType = 'critica' | 'recordatorio' | 'seguimiento';
 @Component({
   selector: 'app-alertas',
   standalone: true,
-  imports: [CommonModule, DatePipe, RouterLink],
+  imports: [CommonModule, DatePipe, RouterLink, CallModalComponent],
   template: `
   <div class="p-6 lg:p-8">
     <div class="flex flex-col lg:flex-row gap-8">
@@ -112,25 +113,37 @@ type ItemType = 'critica' | 'recordatorio' | 'seguimiento';
                   </div>
                   <p class="text-body-sm text-on-surface-variant mb-4">{{ alert.description }}</p>
                   <div class="flex flex-wrap gap-3">
-                    @if (alert.alertType === 'critica' || alert.alertType === 'seguimiento') {
-                      <button (click)="irACita(alert.citaId)"
-                              class="flex items-center gap-2 px-4 py-2 rounded-lg font-label-sm text-label-sm transition-colors bg-primary text-on-primary hover:opacity-90">
-                        <span class="material-symbols-outlined text-[18px]">{{ alert.alertType === 'critica' ? 'call' : 'history_edu' }}</span>
-                        {{ alert.alertType === 'critica' ? 'Llamar' : 'Registrar Nota' }}
-                      </button>
+                    @if (alert.alertType === 'critica') {
+                      <div class="flex flex-col gap-1">
+                        <button (click)="abrirModalLlamada(alert.citaId)"
+                                class="flex items-center gap-2 px-4 py-2 rounded-lg font-label-sm text-label-sm transition-colors bg-primary text-on-primary hover:opacity-90">
+                          <span class="material-symbols-outlined text-[18px]">call</span>
+                          Llamar
+                        </button>
+                        @if (intentosLlamada(alert.citaId); as info) {
+                          <span class="text-xs text-gray-400">{{ info.intentos }} intento{{ info.intentos !== 1 ? 's' : '' }}</span>
+                        }
+                      </div>
                     }
                     @if (alert.alertType === 'recordatorio') {
-                      <button (click)="irACita(alert.citaId)"
+                      <button (click)="abrirWhatsApp(alert)"
                               class="flex items-center gap-2 px-4 py-2 rounded-lg font-label-sm text-label-sm transition-colors border border-outline-variant text-on-surface-variant hover:bg-surface-container">
                         <span class="material-symbols-outlined text-[18px]">chat</span>
                         WhatsApp
+                      </button>
+                    }
+                    @if (alert.alertType === 'seguimiento') {
+                      <button (click)="irACitas()"
+                              class="flex items-center gap-2 px-4 py-2 rounded-lg font-label-sm text-label-sm transition-colors bg-primary text-on-primary hover:opacity-90">
+                        <span class="material-symbols-outlined text-[18px]">history_edu</span>
+                        Registrar Nota
                       </button>
                     }
                     <button (click)="marcarLeida(alert.id)"
                             class="flex items-center gap-2 px-4 py-2 rounded-lg font-label-sm text-label-sm transition-colors border border-outline-variant text-on-surface-variant hover:bg-surface-container">
                       Marcar como leída
                     </button>
-                    <button (click)="irACita(alert.citaId)"
+                    <button (click)="irACitas()"
                             class="flex items-center gap-2 px-4 py-2 rounded-lg font-label-sm text-label-sm transition-colors text-primary hover:underline">
                       <span class="material-symbols-outlined text-[18px]">visibility</span>
                       Ver detalles
@@ -142,6 +155,12 @@ type ItemType = 'critica' | 'recordatorio' | 'seguimiento';
           }
         </div>
       </div>
+
+      @if (alertaSeleccionada(); as alerta) {
+        <app-call-modal [alerta]="alerta"
+                        (cerrar)="cerrarModalLlamada()"
+                        (resultado)="guardarResultadoLlamada($event)" />
+      }
 
       <!-- Right Sidebar: Widgets -->
       <aside class="w-full lg:w-80 space-y-6">
@@ -226,6 +245,8 @@ export class AlertasComponent implements OnInit {
       alerts.push({
         id: `critica-${c.citaId}`,
         citaId: c.citaId,
+        mascotaNombre: c.mascotaNombre,
+        motivo: c.motivo,
         alertType: 'critica',
         icon: 'emergency_home',
         title: `Cita sin confirmar - ${c.mascotaNombre}`,
@@ -239,6 +260,8 @@ export class AlertasComponent implements OnInit {
       alerts.push({
         id: `recordatorio-${c.citaId}`,
         citaId: c.citaId,
+        mascotaNombre: c.mascotaNombre,
+        motivo: c.motivo,
         alertType: 'recordatorio',
         icon: 'calendar_clock',
         title: `${c.motivo} - ${c.mascotaNombre}`,
@@ -252,6 +275,8 @@ export class AlertasComponent implements OnInit {
       alerts.push({
         id: `seguimiento-${c.citaId}`,
         citaId: c.citaId,
+        mascotaNombre: c.mascotaNombre,
+        motivo: c.motivo,
         alertType: 'seguimiento',
         icon: 'medical_information',
         title: `Pendiente de atención - ${c.mascotaNombre}`,
@@ -277,9 +302,52 @@ export class AlertasComponent implements OnInit {
   }
 
   protected leidas = signal<Set<string>>(new Set());
+  protected alertaSeleccionada = signal<AlertaCitaResponse | null>(null);
+  protected historialLlamadas = signal<Map<number, { intentos: number; ultimo: string; registros: CallResult[] }>>(new Map());
 
-  protected irACita(citaId: number): void {
-    this.router.navigate(['/citas', citaId]);
+  protected irACitas(): void {
+    this.router.navigate(['/citas']);
+  }
+
+  protected abrirWhatsApp(alert: AlertItem): void {
+    const msg = encodeURIComponent(`Hola, te escribo de PetCare sobre la cita de ${alert.mascotaNombre}: ${alert.motivo}`);
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
+  }
+
+  protected abrirModalLlamada(citaId: number): void {
+    const p = this.panel();
+    if (!p) return;
+    const todas = [...p.citasSinConfirmar, ...p.citasProgramadasHoy, ...p.citasConfirmadasPendientesAtencion, ...p.citasNoAsistidasHoy];
+    const alerta = todas.find(c => c.citaId === citaId);
+    if (alerta) this.alertaSeleccionada.set(alerta);
+  }
+
+  protected cerrarModalLlamada(): void {
+    this.alertaSeleccionada.set(null);
+  }
+
+  protected intentosLlamada(citaId: number): { intentos: number; ultimo: string } | null {
+    const info = this.historialLlamadas().get(citaId);
+    if (!info) return null;
+    return { intentos: info.intentos, ultimo: info.ultimo };
+  }
+
+  protected guardarResultadoLlamada(result: CallResult): void {
+    const now = new Date().toLocaleString('es-PE');
+    this.historialLlamadas.update(m => {
+      const prev = m.get(result.citaId) || { intentos: 0, ultimo: '', registros: [] };
+      prev.intentos++;
+      prev.ultimo = now;
+      prev.registros.push(result);
+      m.set(result.citaId, prev);
+      return new Map(m);
+    });
+
+    if (result.resultado === 'confirmada' || result.resultado === 'cancelada') {
+      this.marcarLeida(`critica-${result.citaId}`);
+    }
+
+    this.alertaSeleccionada.set(null);
   }
 
   protected marcarLeida(id: string): void {
@@ -295,6 +363,8 @@ interface AlertItem {
   id: string;
   alertType: ItemType;
   citaId: number;
+  mascotaNombre: string;
+  motivo: string;
   icon: string;
   title: string;
   description: string;
