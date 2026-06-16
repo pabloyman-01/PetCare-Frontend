@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AlertaService } from '../../core/services/alerta.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PanelAlertasDiaResponse, AlertaCitaResponse } from '../../core/models/alerta.model';
+import { CitaResponse } from '../../core/models/cita.model';
 import { finalize } from 'rxjs';
 import { CallModalComponent, CallResult } from '../../shared/components/call-modal/call-modal.component';
 import { CitaService } from '../../core/services/cita.service';
@@ -228,30 +229,22 @@ type ItemType = 'critica' | 'recordatorio' | 'seguimiento';
             <span class="w-2 h-2 bg-secondary rounded-full animate-pulse"></span>
           </div>
           <div class="space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-white/20">
-            <div class="relative pl-8">
-              <span class="absolute left-0 top-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center border-4 border-inverse-surface">
-                <span class="w-1.5 h-1.5 bg-on-primary rounded-full"></span>
-              </span>
-              <p class="font-label-sm text-label-sm opacity-60">10:30 AM</p>
-              <p class="font-label-md text-label-md">Llamada Dr. Garc&iacute;a</p>
-              <p class="text-body-sm opacity-80">Revisi&oacute;n de resultados laboratorio</p>
-            </div>
-            <div class="relative pl-8">
-              <span class="absolute left-0 top-1 w-6 h-6 rounded-full bg-outline flex items-center justify-center border-4 border-inverse-surface">
-                <span class="w-1.5 h-1.5 bg-inverse-on-surface rounded-full"></span>
-              </span>
-              <p class="font-label-sm text-label-sm opacity-60">11:15 AM</p>
-              <p class="font-label-md text-label-md">Entrada de Insumos</p>
-              <p class="text-body-sm opacity-80">Recibir pedido de vacunas</p>
-            </div>
-            <div class="relative pl-8">
-              <span class="absolute left-0 top-1 w-6 h-6 rounded-full bg-tertiary-container flex items-center justify-center border-4 border-inverse-surface">
-                <span class="w-1.5 h-1.5 bg-on-tertiary-container rounded-full"></span>
-              </span>
-              <p class="font-label-sm text-label-sm opacity-60">12:00 PM</p>
-              <p class="font-label-md text-label-md">Cita: Limpieza Dental</p>
-              <p class="text-body-sm opacity-80">Paciente: Simba</p>
-            </div>
+            @if (proximasActividades().length === 0) {
+              <div class="relative pl-8">
+                <p class="text-body-sm opacity-80">No hay actividades programadas para las pr&oacute;ximas 2 horas.</p>
+              </div>
+            } @else {
+              @for (act of proximasActividades(); track act.id) {
+                <div class="relative pl-8">
+                  <span class="absolute left-0 top-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center border-4 border-inverse-surface">
+                    <span class="w-1.5 h-1.5 bg-on-primary rounded-full"></span>
+                  </span>
+                  <p class="font-label-sm text-label-sm opacity-60">{{ act.hora }}</p>
+                  <p class="font-label-md text-label-md">{{ act.tipo }}</p>
+                  <p class="text-body-sm opacity-80">{{ act.descripcion }}</p>
+                </div>
+              }
+            }
           </div>
         </div>
 
@@ -289,8 +282,39 @@ export class AlertasComponent implements OnInit {
   criticalCount = computed(() => this.panel()?.totalCitasSinConfirmar ?? 0);
   infoCount = computed(() => (this.panel()?.totalVacunasProximas ?? 0) + (this.panel()?.totalControlesMensualesPendientes ?? 0));
 
-  efficiency = computed(() => Math.floor(70 + Math.random() * 20));
-  resolvedCount = computed(() => Math.floor(Math.random() * 10) + 5);
+  efficiency = computed(() => {
+    const p = this.panel();
+    if (!p) return 0;
+    const total = p.totalCitasProgramadasHoy + p.totalCitasConfirmadasPendientesAtencion + p.totalCitasNoAsistidasHoy;
+    if (total === 0) return 0;
+    const atendidas = this.citasHoy().filter(c => c.estado === 'ATENDIDA').length;
+    return Math.round((atendidas / (total + atendidas)) * 100);
+  });
+  resolvedCount = computed(() => this.citasHoy().filter(c => c.estado === 'ATENDIDA').length);
+  citasHoy = signal<CitaResponse[]>([]);
+
+  protected proximasActividades = computed(() => {
+    const ahora = new Date();
+    const dentroDe2h = new Date(ahora.getTime() + 2 * 60 * 60 * 1000);
+    const formatHora = (s: string) => {
+      const [h, m] = s.split(':').map(Number);
+      return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+    };
+    return this.citasHoy()
+      .filter(c => {
+        const [h, m] = c.horaInicio.split(':').map(Number);
+        const citaDate = new Date(ahora);
+        citaDate.setHours(h, m, 0, 0);
+        return citaDate >= ahora && citaDate <= dentroDe2h;
+      })
+      .sort((a, b) => a.horaInicio.localeCompare(b.horaInicio))
+      .map(c => ({
+        id: c.id,
+        hora: formatHora(c.horaInicio),
+        tipo: c.motivo,
+        descripcion: `${c.mascotaNombre} · ${c.duenioNombreCompleto}`,
+      }));
+  });
 
   filteredAlerts = computed(() => {
     const p = this.panel();
@@ -354,6 +378,10 @@ export class AlertasComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    const today = new Date().toISOString().split('T')[0];
+    this.citaService.findAll({ fecha: today }).subscribe({
+      next: (data) => this.citasHoy.set(data),
+    });
     this.alertaService.getDailyPanel().pipe(finalize(() => this.loading.set(false))).subscribe({
       next: (data) => this.panel.set(data),
     });
