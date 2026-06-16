@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @layer base {
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; cursor: url('/assets/cursors/paw.svg') 16 20, pointer; }
   body { margin: 0; font-family: 'Manrope', sans-serif; }
 }
 
