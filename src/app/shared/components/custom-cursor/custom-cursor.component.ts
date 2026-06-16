@@ -1,15 +1,47 @@
-import { Component, HostListener, ElementRef, Renderer2, OnInit, OnDestroy } from '@angular/core';
+import { Component, HostListener, ElementRef, OnInit, OnDestroy } from '@angular/core';
 
 @Component({
   selector: 'app-custom-cursor',
   standalone: true,
   template: `
     <div class="custom-cursor" #cursor>
-      <div class="cursor-pointer">
-        <img [src]="pointerSrc" alt="" draggable="false" />
+      <!-- Pointer SVG inline -->
+      <div class="cursor-pointer" #pointer>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="100%" height="100%">
+          <defs>
+            <linearGradient id="cg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#4FC3F7"/>
+              <stop offset="100%" stop-color="#29B6F6"/>
+            </linearGradient>
+          </defs>
+          <path d="M5 3 L5 22 L9.5 17.5 L14 26 L16.5 24.5 L12 16 L18 15 Z" fill="url(#cg)" stroke="#fff" stroke-width="0.8" stroke-linejoin="round"/>
+        </svg>
       </div>
+      <!-- Dog face SVG inline -->
       <div class="cursor-dog" #dog>
-        <img [src]="dogSrc" alt="" draggable="false" />
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%">
+          <defs>
+            <filter id="ds" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#4FC3F7" flood-opacity="0.4"/>
+            </filter>
+          </defs>
+          <path d="M18 20 Q13 5 24 12" fill="#29B6F6"/>
+          <path d="M46 20 Q51 5 40 12" fill="#29B6F6"/>
+          <ellipse cx="32" cy="32" rx="20" ry="19" fill="#4FC3F7" filter="url(#ds)"/>
+          <path d="M19 19 Q16 9 24 14" fill="#81D4FA" opacity="0.6"/>
+          <path d="M45 19 Q48 9 40 14" fill="#81D4FA" opacity="0.6"/>
+          <ellipse cx="24" cy="29" rx="3.5" ry="4" fill="#fff"/>
+          <ellipse cx="40" cy="29" rx="3.5" ry="4" fill="#fff"/>
+          <ellipse cx="25" cy="29" rx="2" ry="2.5" fill="#1a1a1a"/>
+          <ellipse cx="41" cy="29" rx="2" ry="2.5" fill="#1a1a1a"/>
+          <circle cx="26" cy="27.5" r="1" fill="#fff"/>
+          <circle cx="42" cy="27.5" r="1" fill="#fff"/>
+          <ellipse cx="18" cy="35" rx="3.5" ry="2" fill="#81D4FA" opacity="0.5"/>
+          <ellipse cx="46" cy="35" rx="3.5" ry="2" fill="#81D4FA" opacity="0.5"/>
+          <ellipse cx="32" cy="35" rx="3" ry="2.2" fill="#1a1a1a"/>
+          <path d="M27 38 Q32 43 37 38" fill="none" stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M30.5 40 Q30.5 47 32 47 Q33.5 47 33.5 40" fill="#ff6b8a" stroke="#ff4d6d" stroke-width="0.8"/>
+        </svg>
       </div>
     </div>
   `,
@@ -22,7 +54,6 @@ import { Component, HostListener, ElementRef, Renderer2, OnInit, OnDestroy } fro
       z-index: 99999;
       transform: translate(-8px, -8px);
       will-change: transform;
-      transition: none;
     }
     .cursor-pointer {
       position: absolute;
@@ -32,11 +63,6 @@ import { Component, HostListener, ElementRef, Renderer2, OnInit, OnDestroy } fro
       top: 0;
       transition: transform 0.15s ease;
     }
-    .cursor-pointer img {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
     .cursor-dog {
       position: absolute;
       width: 48px;
@@ -45,11 +71,6 @@ import { Component, HostListener, ElementRef, Renderer2, OnInit, OnDestroy } fro
       top: -20px;
       transition: transform 0.2s ease-out;
       animation: float 2s ease-in-out infinite;
-    }
-    .cursor-dog img {
-      width: 100%;
-      height: 100%;
-      display: block;
     }
     .cursor-dog.bounce {
       animation: bounce 0.3s ease-out;
@@ -73,17 +94,12 @@ import { Component, HostListener, ElementRef, Renderer2, OnInit, OnDestroy } fro
   `]
 })
 export class CustomCursorComponent implements OnInit, OnDestroy {
-  pointerSrc = '/assets/cursor/dog-cursor.svg';
-  dogSrc = '/assets/cursor/dog-face.svg';
   private rafId = 0;
   private mouseX = 0;
   private mouseY = 0;
   private isHovering = false;
 
-  constructor(
-    private el: ElementRef,
-    private renderer: Renderer2
-  ) {}
+  constructor(private el: ElementRef) {}
 
   ngOnInit() {
     this.checkInteractiveElements();
@@ -126,10 +142,10 @@ export class CustomCursorComponent implements OnInit, OnDestroy {
       const isInteractive = target.matches?.(
         'a, button, [role="button"], input[type="submit"], input[type="button"], select, [onclick]'
       ) || target.closest?.('a, button, [role="button"]');
-      
+
       const dog = this.el.nativeElement.querySelector('.cursor-dog');
       const pointer = this.el.nativeElement.querySelector('.cursor-pointer');
-      
+
       if (isInteractive && !this.isHovering) {
         this.isHovering = true;
         if (dog) dog.classList.add('hover');

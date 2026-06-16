@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AlertaService } from '../../core/services/alerta.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PanelAlertasDiaResponse, AlertaCitaResponse } from '../../core/models/alerta.model';
@@ -196,6 +196,7 @@ type ItemType = 'critica' | 'recordatorio' | 'seguimiento';
 export class AlertasComponent implements OnInit {
   private alertaService = inject(AlertaService);
   protected auth = inject(AuthService);
+  private router = inject(Router);
 
   panel = signal<PanelAlertasDiaResponse | null>(null);
   loading = signal(true);
@@ -225,9 +226,9 @@ export class AlertasComponent implements OnInit {
         description: `El dueño ${c.duenioNombreCompleto} no ha confirmado la cita de ${c.motivo}.`,
         time: this.formatTime(c.horaInicio),
         actions: [
-          { label: 'Llamar', icon: 'call', primary: true },
-          { label: 'Marcar como leída', primary: false },
-          { label: 'Ver detalles', link: true },
+          { label: 'Llamar', icon: 'call', primary: true, handler: () => this.irACita(c.citaId) },
+          { label: 'Marcar como leída', primary: false, handler: () => this.marcarLeida(`critica-${c.citaId}`) },
+          { label: 'Ver detalles', link: true, handler: () => this.irACita(c.citaId) },
         ],
       });
     }
@@ -242,8 +243,8 @@ export class AlertasComponent implements OnInit {
         description: `Programada con ${c.veterinarioNombreCompleto}. Dueño: ${c.duenioNombreCompleto}`,
         time: this.formatTime(c.horaInicio),
         actions: [
-          { label: 'WhatsApp', icon: 'chat', primary: false },
-          { label: 'Marcar como leída', primary: false },
+          { label: 'WhatsApp', icon: 'chat', primary: false, handler: () => this.irACita(c.citaId) },
+          { label: 'Marcar como leída', primary: false, handler: () => this.marcarLeida(`recordatorio-${c.citaId}`) },
         ],
       });
     }
@@ -258,23 +259,36 @@ export class AlertasComponent implements OnInit {
         description: `${c.motivo}. Dueño: ${c.duenioNombreCompleto}`,
         time: this.formatTime(c.horaInicio),
         actions: [
-          { label: 'Registrar Nota', icon: 'history_edu', primary: true },
-          { label: 'Ver detalles', link: true },
+          { label: 'Registrar Nota', icon: 'history_edu', primary: true, handler: () => this.router.navigate(['/citas', c.citaId]) },
+          { label: 'Ver detalles', link: true, handler: () => this.irACita(c.citaId) },
         ],
       });
     }
 
+    const leidasSet = this.leidas();
+    const visibles = alerts.filter(a => !leidasSet.has(a.id));
+
     const f = this.filter();
-    if (f === 'todas') return alerts;
+    if (f === 'todas') return visibles;
     const itemMap: Record<string, ItemType> = { criticas: 'critica', recordatorios: 'recordatorio', seguimiento: 'seguimiento' };
     const target = itemMap[f];
-    return target ? alerts.filter(a => a.alertType === target) : alerts;
+    return target ? visibles.filter(a => a.alertType === target) : visibles;
   });
 
   ngOnInit(): void {
     this.alertaService.getDailyPanel().pipe(finalize(() => this.loading.set(false))).subscribe({
       next: (data) => this.panel.set(data),
     });
+  }
+
+  leidas = signal<Set<string>>(new Set());
+
+  private irACita(citaId: number): void {
+    this.router.navigate(['/citas', citaId]);
+  }
+
+  private marcarLeida(id: string): void {
+    this.leidas.update(s => { s.add(id); return new Set(s); });
   }
 
   private formatTime(time: string): string {
