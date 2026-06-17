@@ -46,7 +46,7 @@ export interface CallResult {
               </div>
               <div class="p-3 bg-blue-50 rounded-xl">
                 <p class="text-xs text-gray-500 mb-1">Teléfono</p>
-                <p class="font-semibold text-gray-900">No disponible</p>
+                <p class="font-semibold text-gray-900">{{ alerta().duenioTelefono || 'No disponible' }}</p>
               </div>
               <div class="p-3 bg-blue-50 rounded-xl">
                 <p class="text-xs text-gray-500 mb-1">Tipo de cita</p>
@@ -212,7 +212,7 @@ export class CallModalComponent {
     const now = new Date();
     this.horaInicio = now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
     this.paso = 'gestion';
-    window.open(`tel:${''}`, '_self');
+    window.open(`tel:${this.alerta().duenioTelefono}`, '_self');
   }
 
   finalizarLlamada(): void {

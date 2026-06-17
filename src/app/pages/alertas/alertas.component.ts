@@ -445,34 +445,52 @@ export class AlertasComponent implements OnInit {
     const id = result.citaId;
 
     if (result.resultado === 'confirmada') {
-      this.citaService.confirmar(id).subscribe();
+      this.citaService.confirmar(id).subscribe({
+        next: () => this.recargarDatos(),
+        error: (err) => console.error('Error al confirmar cita:', err),
+      });
       this.marcarLeida(`critica-${id}`);
     }
 
     if (result.resultado === 'cancelada') {
-      this.citaService.cancelar(id).subscribe();
+      this.citaService.cancelar(id).subscribe({
+        next: () => this.recargarDatos(),
+        error: (err) => console.error('Error al cancelar cita:', err),
+      });
       this.marcarLeida(`critica-${id}`);
     }
 
     if (result.resultado === 'reprogramar' && result.nuevaFecha && result.nuevaHora) {
-      this.citaService.findById(id).subscribe(cita => {
-        const duracion = cita.duracionMinutos;
-        const [h, m] = result.nuevaHora!.split(':').map(Number);
-        const horaFin = `${String(h + Math.floor((m + duracion) / 60)).padStart(2, '0')}:${String((m + duracion) % 60).padStart(2, '0')}`;
-        this.citaService.update(id, {
-          duenioId: cita.duenioId,
-          mascotaId: cita.mascotaId,
-          veterinarioId: cita.veterinarioId,
-          fecha: result.nuevaFecha!,
-          horaInicio: result.nuevaHora!,
-          duracionMinutos: duracion,
-          motivo: cita.motivo,
-          servicios: [],
-        }).subscribe();
+      const alerta = this.alertaSeleccionada();
+      if (!alerta) return;
+      this.citaService.update(id, {
+        duenioId: alerta.duenioId,
+        mascotaId: alerta.mascotaId,
+        veterinarioId: alerta.veterinarioId,
+        fecha: result.nuevaFecha,
+        horaInicio: result.nuevaHora,
+        duracionMinutos: 30,
+        motivo: alerta.motivo,
+        servicios: [],
+      }).subscribe({
+        next: () => this.recargarDatos(),
+        error: (err) => console.error('Error al reprogramar cita:', err),
       });
     }
 
     this.alertaSeleccionada.set(null);
+  }
+
+  private recargarDatos(): void {
+    const today = new Date().toISOString().split('T')[0];
+    this.citaService.findAll({ fecha: today }).subscribe({
+      next: (data) => this.citasHoy.set(data),
+      error: (err) => console.error('Error al recargar citas:', err),
+    });
+    this.alertaService.getDailyPanel().subscribe({
+      next: (data) => this.panel.set(data),
+      error: (err) => console.error('Error al recargar panel:', err),
+    });
   }
 
   protected marcarLeida(id: string): void {
