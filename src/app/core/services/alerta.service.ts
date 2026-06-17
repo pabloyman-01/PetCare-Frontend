@@ -39,7 +39,7 @@ export class AlertaService {
       citaId: c.id,
       duenioId: c.duenioId,
       duenioNombreCompleto: c.duenioNombreCompleto,
-      duenioTelefono: '',
+      duenioTelefono: c.duenioTelefono || '',
       mascotaId: c.mascotaId,
       mascotaNombre: c.mascotaNombre,
       veterinarioId: c.veterinarioId,
