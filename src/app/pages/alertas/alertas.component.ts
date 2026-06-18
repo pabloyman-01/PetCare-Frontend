@@ -7,6 +7,7 @@ import { PanelAlertasDiaResponse, AlertaCitaResponse } from '../../core/models/a
 import { CitaResponse } from '../../core/models/cita.model';
 import { finalize } from 'rxjs';
 import { CallModalComponent, CallResult } from '../../shared/components/call-modal/call-modal.component';
+import { NotaModalComponent } from '../../shared/components/nota-modal/nota-modal.component';
 import { CitaService } from '../../core/services/cita.service';
 
 type FilterType = 'todas' | 'criticas' | 'recordatorios' | 'seguimiento';
@@ -15,7 +16,7 @@ type ItemType = 'critica' | 'recordatorio' | 'seguimiento';
 @Component({
   selector: 'app-alertas',
   standalone: true,
-  imports: [CommonModule, DatePipe, RouterLink, CallModalComponent],
+  imports: [CommonModule, DatePipe, RouterLink, CallModalComponent, NotaModalComponent],
   template: `
   <div class="p-6 lg:p-8">
     <div class="flex flex-col lg:flex-row gap-8">
@@ -135,10 +136,10 @@ type ItemType = 'critica' | 'recordatorio' | 'seguimiento';
                       </button>
                     }
                     @if (alert.alertType === 'seguimiento') {
-                      <button (click)="irACitas()"
+                      <button (click)="abrirNotaModal(alert.citaId)"
                               class="flex items-center gap-2 px-4 py-2 rounded-lg font-label-sm text-label-sm transition-colors bg-primary text-on-primary hover:opacity-90">
-                        <span class="material-symbols-outlined text-[18px]">history_edu</span>
-                        Registrar Nota
+                        <span class="material-symbols-outlined text-[18px]">note_add</span>
+                        Anotación
                       </button>
                     }
                     <button (click)="marcarLeida(alert.id)"
@@ -162,6 +163,10 @@ type ItemType = 'critica' | 'recordatorio' | 'seguimiento';
         <app-call-modal [alerta]="alerta"
                         (cerrar)="cerrarModalLlamada()"
                         (resultado)="guardarResultadoLlamada($event)" />
+      }
+
+      @if (notaCitaId(); as citaId) {
+        <app-nota-modal [citaId]="citaId" (cerrar)="cerrarNotaModal()" />
       }
 
       @if (detalleAlerta(); as detalle) {
@@ -390,6 +395,7 @@ export class AlertasComponent implements OnInit {
   protected leidas = signal<Set<string>>(new Set());
   protected alertaSeleccionada = signal<AlertaCitaResponse | null>(null);
   protected detalleAlerta = signal<AlertaCitaResponse | null>(null);
+  protected notaCitaId = signal<number | null>(null);
   protected historialLlamadas = signal<Map<number, { intentos: number; ultimo: string; registros: CallResult[] }>>(new Map());
 
   protected irACitas(): void {
@@ -423,6 +429,14 @@ export class AlertasComponent implements OnInit {
 
   protected cerrarDetalle(): void {
     this.detalleAlerta.set(null);
+  }
+
+  protected abrirNotaModal(citaId: number): void {
+    this.notaCitaId.set(citaId);
+  }
+
+  protected cerrarNotaModal(): void {
+    this.notaCitaId.set(null);
   }
 
   protected intentosLlamada(citaId: number): { intentos: number; ultimo: string } | null {
