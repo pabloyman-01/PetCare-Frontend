@@ -430,7 +430,7 @@ const TURNO_CONFIG: Record<TurnoAsistente, { dot: string; label: string }> = {
   </div>
 
   @if (showPlanificador()) {
-    <app-planificador-semanal (cerrar)="showPlanificador.set(false)" />
+    <app-planificador-semanal (onCerrar)="showPlanificador.set(false)" />
   }
   `
 })
