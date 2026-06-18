@@ -8,6 +8,7 @@ import { EmptyStateComponent } from '../../shared/components/empty-state/empty-s
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { AsistenteResponse, AsistenteRequest } from '../../core/models/asistente.model';
 import { catchError, EMPTY } from 'rxjs';
+import { PlanificadorSemanalComponent } from '../../shared/components/planificador-semanal/planificador-semanal.component';
 
 type RolAsistente = 'Enfermeria' | 'Recepcion' | 'Apoyo';
 type TurnoAsistente = 'morning' | 'afternoon' | 'absent';
@@ -46,6 +47,7 @@ const TURNO_CONFIG: Record<TurnoAsistente, { dot: string; label: string }> = {
     ConfirmDialogComponent,
     EmptyStateComponent,
     LoadingSpinnerComponent,
+    PlanificadorSemanalComponent,
   ],
   template: `
   <div class="space-y-6 pb-8">
@@ -333,9 +335,9 @@ const TURNO_CONFIG: Record<TurnoAsistente, { dot: string; label: string }> = {
             </div>
           </div>
           <div class="p-4 border-t border-outline-variant bg-surface-container-low/30">
-            <button class="w-full py-2 bg-transparent border border-outline-variant text-on-surface font-label-md text-label-md rounded-lg hover:bg-surface-container-high transition-colors">
-              Generar Horario Semanal
-            </button>
+              <button (click)="showPlanificador.set(true)" class="w-full py-2 bg-transparent border border-outline-variant text-on-surface font-label-md text-label-md rounded-lg hover:bg-surface-container-high transition-colors">
+               Generar Horario Semanal
+              </button>
           </div>
         </div>
       </div>
@@ -424,8 +426,12 @@ const TURNO_CONFIG: Record<TurnoAsistente, { dot: string; label: string }> = {
                         confirmText="Desactivar"
                         cancelText="Cancelar"
                         (onConfirm)="deleteAsistente()"
-                        (onCancel)="showDeleteConfirm.set(false)" />
+                         (onCancel)="showDeleteConfirm.set(false)" />
   </div>
+
+  @if (showPlanificador()) {
+    <app-planificador-semanal (cerrar)="showPlanificador.set(false)" />
+  }
   `
 })
 export class AsistentesComponent implements OnInit {
@@ -438,6 +444,7 @@ export class AsistentesComponent implements OnInit {
   searchTerm = signal('');
   rolFilter = signal<RolAsistente | ''>('');
   showForm = signal(false);
+  showPlanificador = signal(false);
   editingAsistente = signal<AsistenteResponse | null>(null);
   showDeleteConfirm = signal(false);
   deletingAsistente = signal<AsistenteResponse | null>(null);
