@@ -9,9 +9,10 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
 import { AsistenteResponse, AsistenteRequest } from '../../core/models/asistente.model';
 import { catchError, EMPTY } from 'rxjs';
 import { PlanificadorSemanalComponent } from '../../shared/components/planificador-semanal/planificador-semanal.component';
+import { HorarioSemanalService, HorarioSemanalResponse } from '../../core/services/horario-semanal.service';
 
 type RolAsistente = 'Enfermeria' | 'Recepcion' | 'Apoyo';
-type TurnoAsistente = 'morning' | 'afternoon' | 'absent';
+type TurnoAsistente = 'morning' | 'afternoon' | 'night' | 'absent';
 
 const ROL_LABELS: Record<RolAsistente, string> = {
   Enfermeria: 'Enfermería',
@@ -34,8 +35,11 @@ const ROL_BORDER: Record<RolAsistente, string> = {
 const TURNO_CONFIG: Record<TurnoAsistente, { dot: string; label: string }> = {
   morning: { dot: 'bg-secondary', label: 'Mañana (08:00 - 16:00)' },
   afternoon: { dot: 'bg-tertiary', label: 'Tarde (14:00 - 22:00)' },
-  absent: { dot: 'bg-error', label: 'Ausente' },
+  night: { dot: 'bg-primary', label: 'Noche (22:00 - 08:00)' },
+  absent: { dot: 'bg-error', label: 'Descanso' },
 };
+
+const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
 
 @Component({
   selector: 'app-asistentes',
@@ -436,10 +440,12 @@ const TURNO_CONFIG: Record<TurnoAsistente, { dot: string; label: string }> = {
 })
 export class AsistentesComponent implements OnInit {
   private asistenteService = inject(AsistenteService);
+  private horarioService = inject(HorarioSemanalService);
   protected auth = inject(AuthService);
   private fb = inject(FormBuilder);
 
   asistentes = signal<AsistenteResponse[]>([]);
+  horariosSemanales = signal<HorarioSemanalResponse[]>([]);
   loading = signal(true);
   searchTerm = signal('');
   rolFilter = signal<RolAsistente | ''>('');
@@ -500,15 +506,38 @@ export class AsistentesComponent implements OnInit {
   completedTasksTotal = computed(() => this.completedTasks() + Math.max(0, this.asistentes().length * 2));
   responseTime = computed(() => (3 + this.asistentes().filter(a => !a.active).length * 0.5).toFixed(1));
 
-  morningStaff = computed(() => this.asistentes().filter((_, i) => i % 3 === 0));
-  afternoonStaff = computed(() => this.asistentes().filter((_, i) => i % 3 === 1));
+  private turnoHoy = computed(() => {
+    const hoy = new Date().toISOString().split('T')[0];
+    const s = this.horariosSemanales();
+    return (id: number): string => {
+      const h = s.find(h => h.usuarioId === id);
+      if (!h) return '';
+      const dia = DIAS_SEMANA[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
+      return (h as any)[dia] || '';
+    };
+  });
+
+  morningStaff = computed(() => this.asistentes().filter(a => this.turnoHoy()(a.id) === 'MANANA'));
+  afternoonStaff = computed(() => this.asistentes().filter(a => this.turnoHoy()(a.id) === 'TARDE'));
+  nightStaff = computed(() => this.asistentes().filter(a => this.turnoHoy()(a.id) === 'NOCHE'));
 
   ngOnInit(): void {
     this.loadAsistentes();
   }
 
+  private inicioSemana(d: Date): Date {
+    const r = new Date(d);
+    r.setDate(r.getDate() - ((r.getDay() + 6) % 7));
+    r.setHours(0, 0, 0, 0);
+    return r;
+  }
+
   private loadAsistentes(): void {
     this.loading.set(true);
+    const semana = this.inicioSemana(new Date()).toISOString().split('T')[0];
+    this.horarioService.findBySemana(semana).subscribe({
+      next: (data) => this.horariosSemanales.set(data),
+    });
     this.asistenteService.findAll().pipe(catchError(() => EMPTY)).subscribe({
       next: (data) => {
         this.asistentes.set(data);
@@ -556,8 +585,11 @@ export class AsistentesComponent implements OnInit {
   }
 
   turnoActual(id: number): TurnoAsistente {
-    const turnos: TurnoAsistente[] = ['morning', 'afternoon', 'absent'];
-    return turnos[id % turnos.length];
+    const t = this.turnoHoy()(id);
+    if (t === 'MANANA') return 'morning';
+    if (t === 'TARDE') return 'afternoon';
+    if (t === 'NOCHE') return 'night';
+    return 'absent';
   }
 
   taskDone(id: number): number {
