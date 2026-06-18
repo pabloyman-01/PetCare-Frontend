@@ -29,6 +29,7 @@ export interface CitaResponse {
   id: number;
   duenioId: number;
   duenioNombreCompleto: string;
+  duenioTelefono: string;
   mascotaId: number;
   mascotaNombre: string;
   veterinarioId: number;

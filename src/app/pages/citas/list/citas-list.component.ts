@@ -726,7 +726,7 @@ export class CitasListComponent implements OnInit {
 
     obs.subscribe({
       next: (data) => {
-        this.citas.set(data);
+        this.citas.set(data.filter(c => c.estado !== 'CANCELADA'));
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
