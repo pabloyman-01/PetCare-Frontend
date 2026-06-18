@@ -434,7 +434,7 @@ const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabad
   </div>
 
   @if (showPlanificador()) {
-    <app-planificador-semanal (onCerrar)="showPlanificador.set(false)" />
+    <app-planificador-semanal (onCerrar)="showPlanificador.set(false); recargarHorarios()" />
   }
   `
 })
@@ -530,6 +530,13 @@ export class AsistentesComponent implements OnInit {
     r.setDate(r.getDate() - ((r.getDay() + 6) % 7));
     r.setHours(0, 0, 0, 0);
     return r;
+  }
+
+  protected recargarHorarios(): void {
+    const semana = this.inicioSemana(new Date()).toISOString().split('T')[0];
+    this.horarioService.findBySemana(semana).subscribe({
+      next: (data) => this.horariosSemanales.set(data),
+    });
   }
 
   private loadAsistentes(): void {
