@@ -507,19 +507,18 @@ export class AsistentesComponent implements OnInit {
   responseTime = computed(() => (3 + this.asistentes().filter(a => !a.active).length * 0.5).toFixed(1));
 
   private turnoHoy = computed(() => {
-    const hoy = new Date().toISOString().split('T')[0];
     const s = this.horariosSemanales();
-    return (id: number): string => {
-      const h = s.find(h => h.usuarioId === id);
-      if (!h) return '';
-      const dia = DIAS_SEMANA[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
-      return (h as any)[dia] || '';
-    };
+    const dia = DIAS_SEMANA[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
+    const mapa = new Map<number, string>();
+    for (const h of s) {
+      mapa.set(h.usuarioId, (h as any)[dia] || '');
+    }
+    return mapa;
   });
 
-  morningStaff = computed(() => this.asistentes().filter(a => this.turnoHoy()(a.id) === 'MANANA'));
-  afternoonStaff = computed(() => this.asistentes().filter(a => this.turnoHoy()(a.id) === 'TARDE'));
-  nightStaff = computed(() => this.asistentes().filter(a => this.turnoHoy()(a.id) === 'NOCHE'));
+  morningStaff = computed(() => this.asistentes().filter(a => this.turnoHoy().get(a.id) === 'MANANA'));
+  afternoonStaff = computed(() => this.asistentes().filter(a => this.turnoHoy().get(a.id) === 'TARDE'));
+  nightStaff = computed(() => this.asistentes().filter(a => this.turnoHoy().get(a.id) === 'NOCHE'));
 
   ngOnInit(): void {
     this.loadAsistentes();
@@ -592,7 +591,7 @@ export class AsistentesComponent implements OnInit {
   }
 
   turnoActual(id: number): TurnoAsistente {
-    const t = this.turnoHoy()(id);
+    const t = this.turnoHoy().get(id);
     if (t === 'MANANA') return 'morning';
     if (t === 'TARDE') return 'afternoon';
     if (t === 'NOCHE') return 'night';
