@@ -11,7 +11,7 @@ import { CitaResponse, EstadoCita } from '../../../core/models/cita.model';
 import { VeterinarioResponse } from '../../../core/models/veterinario.model';
 import { ServicioResponse } from '../../../core/models/servicio.model';
 import { InasistenciaRequest } from '../../../core/models/inasistencia.model';
-import { catchError, EMPTY } from 'rxjs';
+import { catchError, EMPTY, finalize } from 'rxjs';
 
 type ViewMode = 'month' | 'week' | 'day';
 
@@ -720,16 +720,13 @@ export class CitasListComponent implements OnInit {
 
   private loadCitas(): void {
     this.loading.set(true);
-    const obs = this.auth.isDuenioOnly()
-      ? this.citaService.findAll({ duenioId: 0 }).pipe(catchError(() => EMPTY))
-      : this.citaService.findAll();
-
-    obs.subscribe({
+    this.citaService.findAll().pipe(
+      finalize(() => this.loading.set(false))
+    ).subscribe({
       next: (data) => {
         this.citas.set(data.filter(c => c.estado !== 'CANCELADA'));
-        this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {},
     });
   }
 
