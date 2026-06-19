@@ -366,7 +366,7 @@ import { finalize, filter, catchError, EMPTY } from 'rxjs';
                           </span>
                         </td>
                         <td class="px-6 py-4">
-                          <button (click)="router.navigate(['/atencion-clinica'])"
+                          <button (click)="router.navigate(['/atencion-clinica'], { queryParams: { citaId: cita.citaId } })"
                                   class="text-primary font-bold text-body-sm hover:underline">Pasar a Sala</button>
                         </td>
                       </tr>
@@ -539,23 +539,20 @@ import { finalize, filter, catchError, EMPTY } from 'rxjs';
               } @else {
                 <div class="space-y-3 mb-6">
                   @for (cita of todayPanel()?.citasConfirmadasPendientesAtencion; track cita.citaId) {
-                    <div class="flex items-center gap-3 p-3 bg-white/10 rounded-lg border border-white/20">
-                      <span class="w-3 h-3 rounded-full animate-pulse"
+                    <div class="flex items-center gap-2 p-3 bg-white/10 rounded-lg border border-white/20 hover:bg-white/20 transition-colors cursor-pointer"
+                         (click)="router.navigate(['/atencion-clinica'], { queryParams: { citaId: cita.citaId } })">
+                      <span class="w-3 h-3 rounded-full animate-pulse shrink-0"
                             [class.bg-error]="$first"
                             [class.bg-secondary-fixed]="!$first"></span>
-                      <div>
-                        <p class="font-bold text-white">{{ cita.mascotaNombre }} &mdash; {{ cita.motivo }}</p>
-                        <p class="text-body-sm text-on-primary/80">Due&ntilde;o: {{ cita.duenioNombreCompleto }} &bull; {{ cita.horaInicio | slice:0:5 }}</p>
+                      <div class="flex-1 min-w-0">
+                        <p class="font-bold text-white truncate">{{ cita.mascotaNombre }} &mdash; {{ cita.motivo }}</p>
+                        <p class="text-body-sm text-on-primary/80 truncate">Due&ntilde;o: {{ cita.duenioNombreCompleto }} &bull; {{ cita.horaInicio | slice:0:5 }}</p>
                       </div>
+                      <span class="material-symbols-outlined text-on-primary/60 text-lg shrink-0">launch</span>
                     </div>
                   }
                 </div>
               }
-
-              <button (click)="router.navigate(['/atencion-clinica'])"
-                      class="w-full py-3 bg-white text-primary font-bold rounded-lg hover:bg-surface-container-low transition-colors flex justify-center items-center gap-2">
-                Entrar al M&oacute;dulo Cl&iacute;nico <span class="material-symbols-outlined">launch</span>
-              </button>
             </div>
 
             <!-- Gestión Vacunas -->

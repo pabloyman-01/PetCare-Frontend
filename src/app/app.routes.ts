@@ -18,6 +18,10 @@ export const routes: Routes = [
     path: 'auth/activate/:token',
     loadComponent: () => import('./pages/auth/activate/activate.component').then(m => m.ActivateComponent)
   },
+  {
+    path: 'activate-account',
+    loadComponent: () => import('./pages/auth/activate/activate.component').then(m => m.ActivateComponent)
+  },
 
   // Protected routes
   {

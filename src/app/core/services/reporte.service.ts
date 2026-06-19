@@ -49,6 +49,10 @@ export class ReporteService {
     return this.http.get<ReporteCostoCitaResponse>(`${API_URL}/reportes/citas/${citaId}/costos`);
   }
 
+  findReporteServicios(): Observable<any> {
+    return this.http.get<any>(`${API_URL}/reportes/servicios`);
+  }
+
   findServiciosMasSolicitados(fechaInicio?: string, fechaFin?: string): Observable<ServicioSolicitadoResponse[]> {
     let params = new HttpParams();
     if (fechaInicio) params = params.set('fechaInicio', fechaInicio);

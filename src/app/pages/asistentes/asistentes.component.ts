@@ -8,9 +8,11 @@ import { EmptyStateComponent } from '../../shared/components/empty-state/empty-s
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { AsistenteResponse, AsistenteRequest } from '../../core/models/asistente.model';
 import { catchError, EMPTY } from 'rxjs';
+import { PlanificadorSemanalComponent } from '../../shared/components/planificador-semanal/planificador-semanal.component';
+import { HorarioSemanalService, HorarioSemanalResponse } from '../../core/services/horario-semanal.service';
 
 type RolAsistente = 'Enfermeria' | 'Recepcion' | 'Apoyo';
-type TurnoAsistente = 'morning' | 'afternoon' | 'absent';
+type TurnoAsistente = 'morning' | 'afternoon' | 'night' | 'absent';
 
 const ROL_LABELS: Record<RolAsistente, string> = {
   Enfermeria: 'Enfermería',
@@ -33,8 +35,11 @@ const ROL_BORDER: Record<RolAsistente, string> = {
 const TURNO_CONFIG: Record<TurnoAsistente, { dot: string; label: string }> = {
   morning: { dot: 'bg-secondary', label: 'Mañana (08:00 - 16:00)' },
   afternoon: { dot: 'bg-tertiary', label: 'Tarde (14:00 - 22:00)' },
-  absent: { dot: 'bg-error', label: 'Ausente' },
+  night: { dot: 'bg-primary', label: 'Noche (22:00 - 08:00)' },
+  absent: { dot: 'bg-error', label: 'Descanso' },
 };
+
+const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
 
 @Component({
   selector: 'app-asistentes',
@@ -46,6 +51,7 @@ const TURNO_CONFIG: Record<TurnoAsistente, { dot: string; label: string }> = {
     ConfirmDialogComponent,
     EmptyStateComponent,
     LoadingSpinnerComponent,
+    PlanificadorSemanalComponent,
   ],
   template: `
   <div class="space-y-6 pb-8">
@@ -247,94 +253,75 @@ const TURNO_CONFIG: Record<TurnoAsistente, { dot: string; label: string }> = {
         </div>
       </div>
 
-      <!-- Scheduling Widget -->
+      <!-- Staff Roster Widget -->
       <div class="lg:col-span-4 flex flex-col gap-4">
-        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden flex flex-col h-full relative">
-          <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full pointer-events-none"></div>
-          <div class="p-5 border-b border-outline-variant flex justify-between items-center z-10">
-            <h3 class="text-headline-md font-bold text-on-surface flex items-center gap-2">
-              <span class="material-symbols-outlined text-primary">calendar_month</span>
-              Asignaci&oacute;n de Turnos
-            </h3>
-            <button class="p-1 text-on-surface-variant hover:bg-surface-container-low rounded-md transition-colors">
-              <span class="material-symbols-outlined">edit_calendar</span>
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div class="p-5 border-b border-gray-50 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
+                <span class="material-symbols-outlined text-white text-lg">group</span>
+              </div>
+              <div>
+                <h3 class="font-bold text-gray-900">Personal de Hoy</h3>
+                <p class="text-xs text-gray-400">{{ hoyLabel }}</p>
+              </div>
+            </div>
+            <button (click)="showPlanificador.set(true)"
+                    class="text-xs px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-medium flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm">edit_calendar</span>
+              Planificar
             </button>
           </div>
-          <div class="p-5 flex-1 flex flex-col gap-5 z-10">
-            <div class="flex items-center justify-between bg-surface-container-low p-2 rounded-lg">
-              <button class="p-1 text-on-surface-variant hover:text-on-surface transition-colors">
-                <span class="material-symbols-outlined">chevron_left</span>
-              </button>
-              <span class="font-label-md text-label-md text-on-surface">Hoy, {{ todayDate }}</span>
-              <button class="p-1 text-on-surface-variant hover:text-on-surface transition-colors">
-                <span class="material-symbols-outlined">chevron_right</span>
-              </button>
-            </div>
-            <div class="space-y-4">
-              <div class="relative pl-6 before:absolute before:left-2 before:top-2 before:bottom-[-1rem] before:w-px before:bg-outline-variant last:before:hidden">
-                <div class="absolute left-[3px] top-[6px] w-2.5 h-2.5 rounded-full bg-secondary ring-4 ring-surface-container-lowest"></div>
-                <div class="bg-surface-bright p-3 rounded-lg border border-outline-variant/50">
-                  <div class="flex justify-between items-start mb-2">
-                    <h4 class="font-label-md text-label-md text-on-surface">Turno Ma&ntilde;ana</h4>
-                    <span class="font-label-sm text-label-sm text-on-surface-variant">08:00 - 16:00</span>
-                  </div>
-                  <div class="flex flex-wrap gap-2">
-                    @for (a of morningStaff(); track a.id) {
-                      <div class="w-8 h-8 rounded-full flex items-center justify-center text-label-sm font-bold text-white ring-2 ring-surface-container-lowest -ml-2 first:ml-0"
-                           [style.background-color]="avatarColor(a.id)"
-                           [title]="a.nombres + ' ' + a.apellidos">
-                        {{ getInitials(a.nombres, a.apellidos) }}
-                      </div>
+
+          <div class="divide-y divide-gray-50">
+            @if (asistentes().length === 0) {
+              <div class="p-8 text-center text-gray-400">
+                <p class="text-sm">No hay asistentes registrados</p>
+              </div>
+            }
+            @for (a of asistentes(); track a.id) {
+              @let turno = turnoActual(a.id);
+              <div class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50/50 transition-colors">
+                <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-sm"
+                     [style.background-color]="avatarColor(a.id)">
+                  {{ getInitials(a.nombres, a.apellidos) }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <p class="text-sm font-semibold text-gray-900 truncate">{{ a.nombres }} {{ a.apellidos }}</p>
+                    @if (turno !== 'absent') {
+                      <span class="w-1.5 h-1.5 rounded-full shrink-0"
+                            [class.bg-green-500]="turno === 'morning'"
+                            [class.bg-orange-500]="turno === 'afternoon'"
+                            [class.bg-blue-500]="turno === 'night'"></span>
                     }
-                    <button class="w-8 h-8 rounded-full bg-surface-container-low border border-dashed border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-colors -ml-4 z-10"
-                            title="A&ntilde;adir">
-                      <span class="material-symbols-outlined text-[16px]">add</span>
-                    </button>
                   </div>
+                  <p class="text-xs text-gray-400">{{ a.funciones || 'Asistente' }}</p>
+                </div>
+                <div class="text-right shrink-0">
+                  @if (turno !== 'absent') {
+                    <span class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full"
+                          [class.bg-green-50]="turno === 'morning'"
+                          [class.text-green-700]="turno === 'morning'"
+                          [class.bg-orange-50]="turno === 'afternoon'"
+                          [class.text-orange-700]="turno === 'afternoon'"
+                          [class.bg-blue-50]="turno === 'night'"
+                          [class.text-blue-700]="turno === 'night'">
+                      {{ turnoConfig[turno].label.replace(' (','\n').split('\n')[0] }}
+                    </span>
+                  } @else {
+                    <span class="text-xs text-gray-300 italic">—</span>
+                  }
                 </div>
               </div>
-              <div class="relative pl-6 before:absolute before:left-2 before:top-2 before:bottom-[-1rem] before:w-px before:bg-outline-variant last:before:hidden">
-                <div class="absolute left-[3px] top-[6px] w-2.5 h-2.5 rounded-full bg-tertiary ring-4 ring-surface-container-lowest"></div>
-                <div class="bg-surface-bright p-3 rounded-lg border border-outline-variant/50">
-                  <div class="flex justify-between items-start mb-2">
-                    <h4 class="font-label-md text-label-md text-on-surface">Turno Tarde</h4>
-                    <span class="font-label-sm text-label-sm text-on-surface-variant">14:00 - 22:00</span>
-                  </div>
-                  <div class="flex flex-wrap gap-2">
-                    @for (a of afternoonStaff(); track a.id) {
-                      <div class="w-8 h-8 rounded-full flex items-center justify-center text-label-sm font-bold text-white ring-2 ring-surface-container-lowest -ml-2 first:ml-0"
-                           [style.background-color]="avatarColor(a.id)"
-                           [title]="a.nombres + ' ' + a.apellidos">
-                        {{ getInitials(a.nombres, a.apellidos) }}
-                      </div>
-                    }
-                    @if (afternoonStaff().length === 0) {
-                      <span class="font-label-sm text-label-sm text-on-surface-variant italic">Sin asignaciones</span>
-                    }
-                    <button class="w-8 h-8 rounded-full bg-surface-container-low border border-dashed border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-colors -ml-4 z-10"
-                            title="A&ntilde;adir">
-                      <span class="material-symbols-outlined text-[16px]">add</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="relative pl-6">
-                <div class="absolute left-[3px] top-[6px] w-2.5 h-2.5 rounded-full bg-outline ring-4 ring-surface-container-lowest"></div>
-                <div class="bg-surface-container-lowest p-3 rounded-lg border border-dashed border-outline-variant/50 opacity-70">
-                  <div class="flex justify-between items-start mb-2">
-                    <h4 class="font-label-md text-label-md text-on-surface-variant">Turno Noche (Guardia)</h4>
-                    <span class="font-label-sm text-label-sm text-on-surface-variant">22:00 - 08:00</span>
-                  </div>
-                  <div class="flex items-center justify-center p-2">
-                    <span class="font-body-sm text-body-sm text-on-surface-variant italic">Sin asignaciones</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            }
           </div>
-          <div class="p-4 border-t border-outline-variant bg-surface-container-low/30">
-            <button class="w-full py-2 bg-transparent border border-outline-variant text-on-surface font-label-md text-label-md rounded-lg hover:bg-surface-container-high transition-colors">
-              Generar Horario Semanal
+
+          <div class="p-3 border-t border-gray-50 bg-gray-50/30">
+            <button (click)="showPlanificador.set(true)"
+                    class="w-full py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-base">calendar_month</span>
+              Gestionar Horario Semanal
             </button>
           </div>
         </div>
@@ -424,20 +411,28 @@ const TURNO_CONFIG: Record<TurnoAsistente, { dot: string; label: string }> = {
                         confirmText="Desactivar"
                         cancelText="Cancelar"
                         (onConfirm)="deleteAsistente()"
-                        (onCancel)="showDeleteConfirm.set(false)" />
+                         (onCancel)="showDeleteConfirm.set(false)" />
   </div>
+
+  @if (showPlanificador()) {
+    <app-planificador-semanal (onCerrar)="showPlanificador.set(false); recargarHorarios()" />
+  }
   `
 })
 export class AsistentesComponent implements OnInit {
   private asistenteService = inject(AsistenteService);
+  private horarioService = inject(HorarioSemanalService);
   protected auth = inject(AuthService);
+  protected turnoConfig = TURNO_CONFIG;
   private fb = inject(FormBuilder);
 
   asistentes = signal<AsistenteResponse[]>([]);
+  horariosSemanales = signal<HorarioSemanalResponse[]>([]);
   loading = signal(true);
   searchTerm = signal('');
   rolFilter = signal<RolAsistente | ''>('');
   showForm = signal(false);
+  showPlanificador = signal(false);
   editingAsistente = signal<AsistenteResponse | null>(null);
   showDeleteConfirm = signal(false);
   deletingAsistente = signal<AsistenteResponse | null>(null);
@@ -446,6 +441,7 @@ export class AsistentesComponent implements OnInit {
   errorMsg = signal('');
 
   todayDate: string;
+  hoyLabel: string;
 
   asistenteForm = this.fb.group({
     nombres: ['', Validators.required],
@@ -461,7 +457,9 @@ export class AsistentesComponent implements OnInit {
   constructor() {
     const now = new Date();
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     this.todayDate = `${now.getDate()} ${months[now.getMonth()]}`;
+    this.hoyLabel = `${dias[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
   }
 
   filteredAsistentes = computed(() => {
@@ -493,15 +491,44 @@ export class AsistentesComponent implements OnInit {
   completedTasksTotal = computed(() => this.completedTasks() + Math.max(0, this.asistentes().length * 2));
   responseTime = computed(() => (3 + this.asistentes().filter(a => !a.active).length * 0.5).toFixed(1));
 
-  morningStaff = computed(() => this.asistentes().filter((_, i) => i % 3 === 0));
-  afternoonStaff = computed(() => this.asistentes().filter((_, i) => i % 3 === 1));
+  private turnoHoy = computed(() => {
+    const s = this.horariosSemanales();
+    const dia = DIAS_SEMANA[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
+    const mapa = new Map<number, string>();
+    for (const h of s) {
+      mapa.set(h.usuarioId, (h as any)[dia] || '');
+    }
+    return mapa;
+  });
+
+  morningStaff = computed(() => this.asistentes().filter(a => this.turnoHoy().get(a.id) === 'MANANA'));
+  afternoonStaff = computed(() => this.asistentes().filter(a => this.turnoHoy().get(a.id) === 'TARDE'));
+  nightStaff = computed(() => this.asistentes().filter(a => this.turnoHoy().get(a.id) === 'NOCHE'));
 
   ngOnInit(): void {
     this.loadAsistentes();
   }
 
+  private inicioSemana(d: Date): Date {
+    const r = new Date(d);
+    r.setDate(r.getDate() - ((r.getDay() + 6) % 7));
+    r.setHours(0, 0, 0, 0);
+    return r;
+  }
+
+  protected recargarHorarios(): void {
+    const semana = this.inicioSemana(new Date()).toISOString().split('T')[0];
+    this.horarioService.findBySemana(semana).subscribe({
+      next: (data) => this.horariosSemanales.set(data),
+    });
+  }
+
   private loadAsistentes(): void {
     this.loading.set(true);
+    const semana = this.inicioSemana(new Date()).toISOString().split('T')[0];
+    this.horarioService.findBySemana(semana).subscribe({
+      next: (data) => this.horariosSemanales.set(data),
+    });
     this.asistenteService.findAll().pipe(catchError(() => EMPTY)).subscribe({
       next: (data) => {
         this.asistentes.set(data);
@@ -549,8 +576,11 @@ export class AsistentesComponent implements OnInit {
   }
 
   turnoActual(id: number): TurnoAsistente {
-    const turnos: TurnoAsistente[] = ['morning', 'afternoon', 'absent'];
-    return turnos[id % turnos.length];
+    const t = this.turnoHoy().get(id);
+    if (t === 'MANANA') return 'morning';
+    if (t === 'TARDE') return 'afternoon';
+    if (t === 'NOCHE') return 'night';
+    return 'absent';
   }
 
   taskDone(id: number): number {

@@ -8,6 +8,7 @@ import { DuenioService } from '../../../core/services/duenio.service';
 import { MascotaResponse, MascotaRequest, SexoMascota } from '../../../core/models/mascota.model';
 import { DuenioResponse } from '../../../core/models/duenio.model';
 import { catchError, EMPTY } from 'rxjs';
+import { obtenerConsejoDelDia, Consejo } from '../../../data/consejosDelDia';
 
 type EspecieFilter = '' | 'CANINO' | 'FELINO' | 'EXOTICO';
 type EstadoFilter = '' | 'SALUDABLE' | 'EN_TRATAMIENTO' | 'EN_OBSERVACION' | 'CRITICO' | 'URGENTE';
@@ -146,13 +147,9 @@ const ESTADO_STYLES: Record<string, { bg: string; text: string; dot: string }> =
 
             <!-- Consejo del día -->
             <div class="bg-gradient-to-br from-primary to-primary-container p-6 rounded-3xl text-on-primary shadow-lg shadow-primary/30 relative overflow-hidden">
-              <div class="relative z-10 space-y-4">
-                <h3 class="text-headline-md font-bold">Consejo del d&iacute;a</h3>
-                <p class="text-body-md leading-relaxed opacity-90">Recuerda mantener al d&iacute;a las vacunas y chequeos preventivos de tus mascotas. Una visita al veterinario cada 6 meses puede prevenir enfermedades graves.</p>
-                <a [routerLink]="['/vacunas']"
-                   class="inline-block bg-on-primary text-primary px-4 py-2 rounded-full text-label-md font-bold hover:opacity-90 transition-opacity">
-                  Saber m&aacute;s
-                </a>
+              <div class="relative z-10 flex flex-col justify-center min-h-[120px]">
+                <h3 class="text-headline-md font-bold mb-3">Consejo del d&iacute;a</h3>
+                <p class="text-body-md leading-relaxed opacity-90">{{ consejoDelDia.texto }}</p>
               </div>
               <div class="absolute -bottom-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
               <div class="absolute -top-10 -left-10 w-40 h-40 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
@@ -649,6 +646,7 @@ export class MascotasListComponent implements OnInit {
     return active;
   });
   loading = signal(true);
+  consejoDelDia: Consejo = obtenerConsejoDelDia();
   searchTerm = signal('');
   especieFilter = signal<EspecieFilter>('');
   estadoFilter = signal<EstadoFilter>('');

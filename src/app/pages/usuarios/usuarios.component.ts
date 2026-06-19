@@ -394,6 +394,16 @@ export class UsuariosComponent implements OnInit {
   protected allRoles = ALL_ROLES;
   protected internalRoles = ['ROLE_VETERINARIO', 'ROLE_ASISTENTE'];
   protected roleLabel = (role: string) => ROLE_LABELS[role] || role;
+  protected roleCount = (role: string) => this.usuarios().filter(u => u.roles.includes(role)).length;
+
+  protected totalPorRol = computed(() => {
+    const total = ALL_ROLES.reduce((sum, r) => sum + this.roleCount(r), 0);
+    const real = this.usuarios().length;
+    if (total !== real) {
+      console.warn(`[Niveles de Acceso] Suma de roles (${total}) difiere del total de usuarios (${real}). Esto es normal si hay usuarios con múltiples roles.`);
+    }
+    return { total, real };
+  });
 
   usuarios = signal<UsuarioResponse[]>([]);
   loading = signal(true);
@@ -451,8 +461,6 @@ export class UsuariosComponent implements OnInit {
   });
 
   activeCount = computed(() => this.usuarios().filter(u => u.active).length);
-
-  roleCount = (role: string) => this.usuarios().filter(u => u.roles.includes(role)).length;
 
   ngOnInit(): void {
     this.loadUsuarios();

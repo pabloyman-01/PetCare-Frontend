@@ -8,6 +8,7 @@ import { EmptyStateComponent } from '../../shared/components/empty-state/empty-s
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { ServicioResponse, ServicioRequest, CalculoCostoCitaResponse, CostoCitaServicioRequest } from '../../core/models/servicio.model';
 import { catchError, EMPTY } from 'rxjs';
+import { ReporteServiciosComponent } from '../../shared/components/reporte-servicios/reporte-servicios.component';
 
 const CATEGORIAS = ['Consulta', 'Vacunaci\u00F3n', 'Cirug\u00EDa', 'Laboratorio', 'Est\u00E9tica'] as const;
 type Categoria = (typeof CATEGORIAS)[number];
@@ -72,6 +73,7 @@ function detectDuracion(nombre: string): string {
     ConfirmDialogComponent,
     EmptyStateComponent,
     LoadingSpinnerComponent,
+    ReporteServiciosComponent,
   ],
   template: `
   <div class="space-y-6 pb-8">
@@ -263,7 +265,7 @@ function detectDuracion(nombre: string): string {
               </div>
             }
           </div>
-          <button class="w-full mt-6 py-2 text-primary font-label-md text-label-md hover:bg-primary/5 rounded-lg transition-colors border border-primary/20">
+          <button (click)="showReporte.set(true)" class="w-full mt-6 py-2 text-primary font-label-md text-label-md hover:bg-primary/5 rounded-lg transition-colors border border-primary/20">
             Ver reporte detallado
           </button>
         </div>
@@ -487,6 +489,10 @@ function detectDuracion(nombre: string): string {
                         cancelText="Cancelar"
                         (onConfirm)="deleteServicio()"
                         (onCancel)="showDeleteConfirm.set(false)" />
+
+    @if (showReporte()) {
+      <app-reporte-servicios (onCerrar)="showReporte.set(false)" />
+    }
   </div>
   `
 })
@@ -502,6 +508,9 @@ export class ServiciosComponent implements OnInit {
   searchTerm = signal('');
   selectedCategory = signal('');
   showForm = signal(false);
+  showReporte = signal(false);
+  reporteData = signal<any>(null);
+  reporteLoading = signal(false);
   editingServicio = signal<ServicioResponse | null>(null);
   showDeleteConfirm = signal(false);
   deletingServicio = signal<ServicioResponse | null>(null);
