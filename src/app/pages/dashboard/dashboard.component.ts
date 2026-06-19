@@ -140,104 +140,151 @@ import { finalize, filter, catchError, EMPTY } from 'rxjs';
         <!-- Welcome Section -->
         <section class="mb-8">
           <h2 class="text-headline-lg font-extrabold text-on-surface mb-2">&iexcl;Hola, {{ auth.user()?.fullName || 'Carlos' }}!</h2>
-          <p class="text-body-lg text-on-surface-variant">As&iacute; est&aacute;n tus compa&ntilde;eros hoy.</p>
+          <p class="text-body-lg text-on-surface-variant">{{ uniquePets().length === 0 ? 'Estamos listos para ayudarte a cuidar de tu mascota.' : 'As&iacute; est&aacute;n tus compa&ntilde;eros hoy.' }}</p>
         </section>
 
-        <!-- Bento Dashboard Grid -->
-        <div class="grid grid-cols-12 gap-6">
-          <!-- Próxima Cita -->
-          <div class="col-span-12 lg:col-span-5 bg-primary rounded-3xl p-8 text-on-primary shadow-xl shadow-primary/20 flex flex-col justify-between min-h-[320px] relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-8 opacity-20 pointer-events-none">
-              <span class="material-symbols-outlined text-[120px]" style="font-variation-settings:'FILL' 1">calendar_month</span>
-            </div>
-            <div>
-              <span class="px-4 py-1.5 bg-white/20 backdrop-blur-md rounded-full font-label-sm text-label-sm mb-6 inline-block uppercase tracking-widest">Siguiente Cita</span>
-              <h3 class="text-display-lg text-[40px] leading-tight mb-2">{{ nextAppointmentDate() }}</h3>
-              <p class="text-headline-md opacity-90">{{ nextAppointmentTime() }}</p>
-            </div>
-            <div class="flex items-end justify-between">
-              <div>
-                <p class="text-body-md opacity-80">{{ nextAppointmentReason() }}</p>
-                <p class="text-headline-md font-bold">{{ nextAppointmentPet() }} <span class="font-normal opacity-70">con {{ nextAppointmentVet() }}</span></p>
+        @if (uniquePets().length === 0) {
+          <!-- EMPTY STATE - Sin mascotas registradas -->
+          <div class="grid grid-cols-12 gap-6">
+            <!-- Mascotas Empty State -->
+            <div class="col-span-12 lg:col-span-7 bg-surface-container-lowest border border-outline-variant rounded-3xl p-10 flex flex-col items-center justify-center text-center min-h-[320px]">
+              <div class="w-20 h-20 rounded-full bg-primary-container/20 flex items-center justify-center mb-6">
+                <span class="material-symbols-outlined text-5xl text-primary" style="font-variation-settings:'FILL' 1">pets</span>
               </div>
-              <button (click)="router.navigate(['/citas'])"
-                      class="w-12 h-12 bg-white text-primary rounded-2xl flex items-center justify-center hover:scale-105 transition-transform">
-                <span class="material-symbols-outlined">arrow_forward</span>
+              <h3 class="text-headline-md font-bold text-on-surface mb-2">A&uacute;n no tienes mascotas registradas</h3>
+              <p class="text-body-sm text-on-surface-variant max-w-sm mb-8">
+                Registra tu primera mascota para comenzar a gestionar sus citas, vacunas e historial m&eacute;dico.
+              </p>
+              <button (click)="router.navigate(['/mascotas'])"
+                      class="inline-flex items-center gap-2 px-8 py-3 bg-primary text-on-primary rounded-xl font-label-md text-label-md hover:opacity-90 active:scale-[0.98] transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[20px]">add</span>
+                Registrar Mascota
               </button>
             </div>
-          </div>
 
-          <!-- Mis Mascotas -->
-          <div class="col-span-12 lg:col-span-7 space-y-6">
-            <div class="flex items-center justify-between">
-              <h3 class="text-headline-md font-bold text-on-surface">Mis Mascotas</h3>
-              <a [routerLink]="['/mascotas']" class="text-primary font-label-md hover:underline">Ver todas</a>
+            <!-- Citas Empty State -->
+            <div class="col-span-12 lg:col-span-5 bg-surface-container-lowest border border-outline-variant rounded-3xl p-10 flex flex-col items-center justify-center text-center min-h-[320px]">
+              <div class="w-20 h-20 rounded-full bg-secondary-container/20 flex items-center justify-center mb-6">
+                <span class="material-symbols-outlined text-5xl text-secondary" style="font-variation-settings:'FILL' 1">calendar_month</span>
+              </div>
+              <h3 class="text-headline-md font-bold text-on-surface mb-2">No tienes citas programadas</h3>
+              <p class="text-body-sm text-on-surface-variant max-w-sm mb-8">
+                Cuando registres una mascota podr&aacute;s agendar y visualizar sus pr&oacute;ximas citas.
+              </p>
+              <button (click)="router.navigate(['/mascotas'])"
+                      class="inline-flex items-center gap-2 px-8 py-3 bg-primary text-on-primary rounded-xl font-label-md text-label-md hover:opacity-90 active:scale-[0.98] transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[20px]">add</span>
+                Registrar Mascota
+              </button>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              @for (m of uniquePets(); track m.id) {
-                <a [routerLink]="['/mascotas', m.id]"
-                   class="bg-surface-container-lowest border border-outline-variant p-5 rounded-2xl flex items-center gap-4 hover:shadow-lg transition-shadow">
-                  <div class="w-20 h-20 rounded-2xl bg-primary-container/20 flex items-center justify-center text-primary flex-shrink-0">
-                    <span class="material-symbols-outlined text-4xl">pets</span>
-                  </div>
-                  <div>
-                    <h4 class="text-headline-md font-bold">{{ m.nombre }}</h4>
-                    <div class="flex items-center gap-2 mt-1">
-                      <span class="w-2 h-2 rounded-full" [class]="cardStatus(m.id).dot + ' mr-1'"></span>
-                      <p class="font-body-sm text-body-sm" [class.text-on-secondary-container]="cardStatus(m.id).label === 'Saludable'">{{ cardStatus(m.id).label }}</p>
+
+            <!-- Vacunas Empty State -->
+            <div class="col-span-12 bg-surface-container-lowest border border-outline-variant rounded-3xl p-10 flex flex-col items-center justify-center text-center">
+              <div class="w-20 h-20 rounded-full bg-tertiary-fixed/20 flex items-center justify-center mb-6">
+                <span class="material-symbols-outlined text-5xl text-tertiary" style="font-variation-settings:'FILL' 1">vaccines</span>
+              </div>
+              <h3 class="text-headline-md font-bold text-on-surface mb-2">Sin informaci&oacute;n de vacunas</h3>
+              <p class="text-body-sm text-on-surface-variant max-w-sm">
+                Agrega una mascota para visualizar y administrar su esquema de vacunaci&oacute;n.
+              </p>
+            </div>
+          </div>
+        } @else {
+          <!-- Bento Dashboard Grid -->
+          <div class="grid grid-cols-12 gap-6">
+            <!-- Próxima Cita -->
+            <div class="col-span-12 lg:col-span-5 bg-primary rounded-3xl p-8 text-on-primary shadow-xl shadow-primary/20 flex flex-col justify-between min-h-[320px] relative overflow-hidden">
+              <div class="absolute top-0 right-0 p-8 opacity-20 pointer-events-none">
+                <span class="material-symbols-outlined text-[120px]" style="font-variation-settings:'FILL' 1">calendar_month</span>
+              </div>
+              <div>
+                <span class="px-4 py-1.5 bg-white/20 backdrop-blur-md rounded-full font-label-sm text-label-sm mb-6 inline-block uppercase tracking-widest">Siguiente Cita</span>
+                <h3 class="text-display-lg text-[40px] leading-tight mb-2">{{ nextAppointmentDate() }}</h3>
+                <p class="text-headline-md opacity-90">{{ nextAppointmentTime() }}</p>
+              </div>
+              <div class="flex items-end justify-between">
+                <div>
+                  <p class="text-body-md opacity-80">{{ nextAppointmentReason() }}</p>
+                  <p class="text-headline-md font-bold">{{ nextAppointmentPet() }} <span class="font-normal opacity-70">con {{ nextAppointmentVet() }}</span></p>
+                </div>
+                <button (click)="router.navigate(['/citas'])"
+                        class="w-12 h-12 bg-white text-primary rounded-2xl flex items-center justify-center hover:scale-105 transition-transform">
+                  <span class="material-symbols-outlined">arrow_forward</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Mis Mascotas -->
+            <div class="col-span-12 lg:col-span-7 space-y-6">
+              <div class="flex items-center justify-between">
+                <h3 class="text-headline-md font-bold text-on-surface">Mis Mascotas</h3>
+                <a [routerLink]="['/mascotas']" class="text-primary font-label-md hover:underline">Ver todas</a>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                @for (m of uniquePets(); track m.id) {
+                  <a [routerLink]="['/mascotas', m.id]"
+                     class="bg-surface-container-lowest border border-outline-variant p-5 rounded-2xl flex items-center gap-4 hover:shadow-lg transition-shadow">
+                    <div class="w-20 h-20 rounded-2xl bg-primary-container/20 flex items-center justify-center text-primary flex-shrink-0">
+                      <span class="material-symbols-outlined text-4xl">pets</span>
                     </div>
-                    <p class="text-outline font-label-sm mt-1">{{ especieLabel(m.especie) }} &bull; {{ m.edadAnios }} {{ m.edadAnios === 1 ? 'a&ntilde;o' : 'a&ntilde;os' }}</p>
+                    <div>
+                      <h4 class="text-headline-md font-bold">{{ m.nombre }}</h4>
+                      <div class="flex items-center gap-2 mt-1">
+                        <span class="w-2 h-2 rounded-full" [class]="cardStatus(m.id).dot + ' mr-1'"></span>
+                        <p class="font-body-sm text-body-sm" [class.text-on-secondary-container]="cardStatus(m.id).label === 'Saludable'">{{ cardStatus(m.id).label }}</p>
+                      </div>
+                      <p class="text-outline font-label-sm mt-1">{{ especieLabel(m.especie) }} &bull; {{ m.edadAnios }} {{ m.edadAnios === 1 ? 'a&ntilde;o' : 'a&ntilde;os' }}</p>
+                    </div>
+                  </a>
+                }
+              </div>
+            </div>
+
+            <!-- Estado de Vacunas -->
+            <div class="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-3xl p-8 flex flex-col md:flex-row gap-8">
+              <div class="md:w-1/3 flex flex-col items-center justify-center text-center">
+                <div class="relative w-40 h-40 mb-4">
+                  <svg class="w-full h-full transform -rotate-90">
+                    <circle class="text-surface-container" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" stroke-width="12"></circle>
+                    <circle class="text-primary" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" stroke-dasharray="440" stroke-dashoffset="110" stroke-width="12"></circle>
+                  </svg>
+                  <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span class="text-headline-lg font-extrabold text-primary">75%</span>
+                    <span class="font-label-sm text-label-sm text-outline">Al d&iacute;a</span>
                   </div>
-                </a>
-              }
+                </div>
+                <h4 class="text-headline-md font-bold">Estado de Vacunas</h4>
+              </div>
+              <div class="flex-1 space-y-4">
+                <h5 class="font-label-md text-label-md text-outline uppercase tracking-wider mb-2">Pr&oacute;ximas Dosis</h5>
+                <div class="flex items-center justify-between p-4 bg-surface rounded-2xl">
+                  <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-tertiary-fixed text-tertiary rounded-lg flex items-center justify-center">
+                      <span class="material-symbols-outlined">vaccines</span>
+                    </div>
+                    <div>
+                      <p class="font-label-md text-label-md">Rabia</p>
+                      <p class="text-outline font-body-sm">Refuerzo anual</p>
+                    </div>
+                  </div>
+                  <span class="px-3 py-1 bg-tertiary-container text-on-tertiary-container rounded-lg font-label-sm">En 15 d&iacute;as</span>
+                </div>
+                <div class="flex items-center justify-between p-4 bg-surface rounded-2xl">
+                  <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-secondary-fixed text-on-secondary-fixed-variant rounded-lg flex items-center justify-center">
+                      <span class="material-symbols-outlined">health_and_safety</span>
+                    </div>
+                    <div>
+                      <p class="font-label-md text-label-md">Leucemia Felina</p>
+                      <p class="text-outline font-body-sm">Dosis completa</p>
+                    </div>
+                  </div>
+                  <span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-lg font-label-sm">Completada</span>
+                </div>
+              </div>
             </div>
           </div>
-
-          <!-- Estado de Vacunas -->
-          <div class="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-3xl p-8 flex flex-col md:flex-row gap-8">
-            <div class="md:w-1/3 flex flex-col items-center justify-center text-center">
-              <div class="relative w-40 h-40 mb-4">
-                <svg class="w-full h-full transform -rotate-90">
-                  <circle class="text-surface-container" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" stroke-width="12"></circle>
-                  <circle class="text-primary" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" stroke-dasharray="440" stroke-dashoffset="110" stroke-width="12"></circle>
-                </svg>
-                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                  <span class="text-headline-lg font-extrabold text-primary">75%</span>
-                  <span class="font-label-sm text-label-sm text-outline">Al d&iacute;a</span>
-                </div>
-              </div>
-              <h4 class="text-headline-md font-bold">Estado de Vacunas</h4>
-            </div>
-            <div class="flex-1 space-y-4">
-              <h5 class="font-label-md text-label-md text-outline uppercase tracking-wider mb-2">Pr&oacute;ximas Dosis</h5>
-              <div class="flex items-center justify-between p-4 bg-surface rounded-2xl">
-                <div class="flex items-center gap-4">
-                  <div class="w-10 h-10 bg-tertiary-fixed text-tertiary rounded-lg flex items-center justify-center">
-                    <span class="material-symbols-outlined">vaccines</span>
-                  </div>
-                  <div>
-                    <p class="font-label-md text-label-md">Rabia</p>
-                    <p class="text-outline font-body-sm">Refuerzo anual</p>
-                  </div>
-                </div>
-                <span class="px-3 py-1 bg-tertiary-container text-on-tertiary-container rounded-lg font-label-sm">En 15 d&iacute;as</span>
-              </div>
-              <div class="flex items-center justify-between p-4 bg-surface rounded-2xl">
-                <div class="flex items-center gap-4">
-                  <div class="w-10 h-10 bg-secondary-fixed text-on-secondary-fixed-variant rounded-lg flex items-center justify-center">
-                    <span class="material-symbols-outlined">health_and_safety</span>
-                  </div>
-                  <div>
-                    <p class="font-label-md text-label-md">Leucemia Felina</p>
-                    <p class="text-outline font-body-sm">Dosis completa</p>
-                  </div>
-                </div>
-                <span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-lg font-label-sm">Completada</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
+        }
       } @else if (auth.isAsistente()) {
         <!-- ASSISTANT DASHBOARD -->
         <!-- Header & Quick Actions -->
