@@ -253,105 +253,75 @@ const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabad
         </div>
       </div>
 
-      <!-- Scheduling Widget -->
+      <!-- Staff Roster Widget -->
       <div class="lg:col-span-4 flex flex-col gap-4">
-        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden flex flex-col h-full relative">
-          <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full pointer-events-none"></div>
-          <div class="p-4 border-b border-outline-variant flex items-center justify-between z-10">
-            <h3 class="text-lg font-bold flex items-center gap-2">
-              <span class="material-symbols-outlined text-primary">calendar_month</span>
-              Asignaci&oacute;n de Turnos
-            </h3>
-            <span class="text-xs text-gray-500">{{ hoyLabel }}</span>
-          </div>
-
-          <!-- Debug info - hidden in production, shows schedule data -->
-          @if (horariosSemanales().length > 0) {
-            <div class="hidden">{{ horariosSemanales().length }} horarios cargados</div>
-          }
-
-          <div class="p-4 space-y-3 flex-1">
-            <!-- Mañana -->
-            <div class="rounded-xl bg-green-50 border border-green-200 p-4">
-              <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2">
-                  <span class="w-3 h-3 rounded-full bg-green-500"></span>
-                  <span class="font-semibold text-green-800">Turno Mañana</span>
-                </div>
-                <span class="text-xs text-green-600 font-medium">08:00 - 16:00</span>
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div class="p-5 border-b border-gray-50 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
+                <span class="material-symbols-outlined text-white text-lg">group</span>
               </div>
-              <div class="flex flex-wrap gap-2">
-                @for (a of morningStaff(); track a.id) {
-                  <div class="flex items-center gap-1.5 bg-white rounded-lg px-2.5 py-1.5 shadow-sm border border-green-100">
-                    <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                         [style.background-color]="avatarColor(a.id)">
-                      {{ getInitials(a.nombres, a.apellidos) }}
-                    </div>
-                    <span class="text-xs font-medium text-gray-700">{{ a.nombres.split(' ')[0] }}</span>
-                  </div>
-                }
-                @if (morningStaff().length === 0) {
-                  <span class="text-xs text-gray-400 italic">Sin asignaciones</span>
-                }
+              <div>
+                <h3 class="font-bold text-gray-900">Personal de Hoy</h3>
+                <p class="text-xs text-gray-400">{{ hoyLabel }}</p>
               </div>
             </div>
-
-            <!-- Tarde -->
-            <div class="rounded-xl bg-orange-50 border border-orange-200 p-4">
-              <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2">
-                  <span class="w-3 h-3 rounded-full bg-orange-500"></span>
-                  <span class="font-semibold text-orange-800">Turno Tarde</span>
-                </div>
-                <span class="text-xs text-orange-600 font-medium">14:00 - 22:00</span>
-              </div>
-              <div class="flex flex-wrap gap-2">
-                @for (a of afternoonStaff(); track a.id) {
-                  <div class="flex items-center gap-1.5 bg-white rounded-lg px-2.5 py-1.5 shadow-sm border border-orange-100">
-                    <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                         [style.background-color]="avatarColor(a.id)">
-                      {{ getInitials(a.nombres, a.apellidos) }}
-                    </div>
-                    <span class="text-xs font-medium text-gray-700">{{ a.nombres.split(' ')[0] }}</span>
-                  </div>
-                }
-                @if (afternoonStaff().length === 0) {
-                  <span class="text-xs text-gray-400 italic">Sin asignaciones</span>
-                }
-              </div>
-            </div>
-
-            <!-- Noche -->
-            <div class="rounded-xl bg-blue-50 border border-blue-200 p-4">
-              <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2">
-                  <span class="w-3 h-3 rounded-full bg-blue-500"></span>
-                  <span class="font-semibold text-blue-800">Turno Noche</span>
-                </div>
-                <span class="text-xs text-blue-600 font-medium">22:00 - 08:00</span>
-              </div>
-              <div class="flex flex-wrap gap-2">
-                @for (a of nightStaff(); track a.id) {
-                  <div class="flex items-center gap-1.5 bg-white rounded-lg px-2.5 py-1.5 shadow-sm border border-blue-100">
-                    <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                         [style.background-color]="avatarColor(a.id)">
-                      {{ getInitials(a.nombres, a.apellidos) }}
-                    </div>
-                    <span class="text-xs font-medium text-gray-700">{{ a.nombres.split(' ')[0] }}</span>
-                  </div>
-                }
-                @if (nightStaff().length === 0) {
-                  <span class="text-xs text-gray-400 italic">Sin asignaciones</span>
-                }
-              </div>
-            </div>
-          </div>
-
-          <div class="p-3 border-t border-outline-variant bg-surface-container-low/30">
             <button (click)="showPlanificador.set(true)"
-                    class="w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-              <span class="material-symbols-outlined text-lg">edit_calendar</span>
-              Generar Horario Semanal
+                    class="text-xs px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-medium flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm">edit_calendar</span>
+              Planificar
+            </button>
+          </div>
+
+          <div class="divide-y divide-gray-50">
+            @if (asistentes().length === 0) {
+              <div class="p-8 text-center text-gray-400">
+                <p class="text-sm">No hay asistentes registrados</p>
+              </div>
+            }
+            @for (a of asistentes(); track a.id) {
+              @let turno = turnoActual(a.id);
+              <div class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50/50 transition-colors">
+                <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-sm"
+                     [style.background-color]="avatarColor(a.id)">
+                  {{ getInitials(a.nombres, a.apellidos) }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <p class="text-sm font-semibold text-gray-900 truncate">{{ a.nombres }} {{ a.apellidos }}</p>
+                    @if (turno !== 'absent') {
+                      <span class="w-1.5 h-1.5 rounded-full shrink-0"
+                            [class.bg-green-500]="turno === 'morning'"
+                            [class.bg-orange-500]="turno === 'afternoon'"
+                            [class.bg-blue-500]="turno === 'night'"></span>
+                    }
+                  </div>
+                  <p class="text-xs text-gray-400">{{ a.funciones || 'Asistente' }}</p>
+                </div>
+                <div class="text-right shrink-0">
+                  @if (turno !== 'absent') {
+                    <span class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full"
+                          [class.bg-green-50]="turno === 'morning'"
+                          [class.text-green-700]="turno === 'morning'"
+                          [class.bg-orange-50]="turno === 'afternoon'"
+                          [class.text-orange-700]="turno === 'afternoon'"
+                          [class.bg-blue-50]="turno === 'night'"
+                          [class.text-blue-700]="turno === 'night'">
+                      {{ turnoConfig[turno].label.replace(' (','\n').split('\n')[0] }}
+                    </span>
+                  } @else {
+                    <span class="text-xs text-gray-300 italic">—</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="p-3 border-t border-gray-50 bg-gray-50/30">
+            <button (click)="showPlanificador.set(true)"
+                    class="w-full py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-base">calendar_month</span>
+              Gestionar Horario Semanal
             </button>
           </div>
         </div>
@@ -453,6 +423,7 @@ export class AsistentesComponent implements OnInit {
   private asistenteService = inject(AsistenteService);
   private horarioService = inject(HorarioSemanalService);
   protected auth = inject(AuthService);
+  protected turnoConfig = TURNO_CONFIG;
   private fb = inject(FormBuilder);
 
   asistentes = signal<AsistenteResponse[]>([]);
