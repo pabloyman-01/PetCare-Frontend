@@ -147,7 +147,7 @@ export class ActivateComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.token = this.route.snapshot.paramMap.get('token') || '';
+    this.token = this.route.snapshot.paramMap.get('token') || this.route.snapshot.queryParamMap.get('token') || '';
     if (!this.token) {
       this.expired = true;
     }
