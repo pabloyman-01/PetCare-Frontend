@@ -257,91 +257,102 @@ const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabad
       <div class="lg:col-span-4 flex flex-col gap-4">
         <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden flex flex-col h-full relative">
           <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full pointer-events-none"></div>
-          <div class="p-5 border-b border-outline-variant flex justify-between items-center z-10">
-            <h3 class="text-headline-md font-bold text-on-surface flex items-center gap-2">
+          <div class="p-4 border-b border-outline-variant flex items-center justify-between z-10">
+            <h3 class="text-lg font-bold flex items-center gap-2">
               <span class="material-symbols-outlined text-primary">calendar_month</span>
               Asignaci&oacute;n de Turnos
             </h3>
-            <button class="p-1 text-on-surface-variant hover:bg-surface-container-low rounded-md transition-colors">
-              <span class="material-symbols-outlined">edit_calendar</span>
+            <span class="text-xs text-gray-500">{{ hoyLabel }}</span>
+          </div>
+
+          <!-- Debug info - hidden in production, shows schedule data -->
+          @if (horariosSemanales().length > 0) {
+            <div class="hidden">{{ horariosSemanales().length }} horarios cargados</div>
+          }
+
+          <div class="p-4 space-y-3 flex-1">
+            <!-- Mañana -->
+            <div class="rounded-xl bg-green-50 border border-green-200 p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                  <span class="font-semibold text-green-800">Turno Mañana</span>
+                </div>
+                <span class="text-xs text-green-600 font-medium">08:00 - 16:00</span>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                @for (a of morningStaff(); track a.id) {
+                  <div class="flex items-center gap-1.5 bg-white rounded-lg px-2.5 py-1.5 shadow-sm border border-green-100">
+                    <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                         [style.background-color]="avatarColor(a.id)">
+                      {{ getInitials(a.nombres, a.apellidos) }}
+                    </div>
+                    <span class="text-xs font-medium text-gray-700">{{ a.nombres.split(' ')[0] }}</span>
+                  </div>
+                }
+                @if (morningStaff().length === 0) {
+                  <span class="text-xs text-gray-400 italic">Sin asignaciones</span>
+                }
+              </div>
+            </div>
+
+            <!-- Tarde -->
+            <div class="rounded-xl bg-orange-50 border border-orange-200 p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-orange-500"></span>
+                  <span class="font-semibold text-orange-800">Turno Tarde</span>
+                </div>
+                <span class="text-xs text-orange-600 font-medium">14:00 - 22:00</span>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                @for (a of afternoonStaff(); track a.id) {
+                  <div class="flex items-center gap-1.5 bg-white rounded-lg px-2.5 py-1.5 shadow-sm border border-orange-100">
+                    <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                         [style.background-color]="avatarColor(a.id)">
+                      {{ getInitials(a.nombres, a.apellidos) }}
+                    </div>
+                    <span class="text-xs font-medium text-gray-700">{{ a.nombres.split(' ')[0] }}</span>
+                  </div>
+                }
+                @if (afternoonStaff().length === 0) {
+                  <span class="text-xs text-gray-400 italic">Sin asignaciones</span>
+                }
+              </div>
+            </div>
+
+            <!-- Noche -->
+            <div class="rounded-xl bg-blue-50 border border-blue-200 p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                  <span class="font-semibold text-blue-800">Turno Noche</span>
+                </div>
+                <span class="text-xs text-blue-600 font-medium">22:00 - 08:00</span>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                @for (a of nightStaff(); track a.id) {
+                  <div class="flex items-center gap-1.5 bg-white rounded-lg px-2.5 py-1.5 shadow-sm border border-blue-100">
+                    <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                         [style.background-color]="avatarColor(a.id)">
+                      {{ getInitials(a.nombres, a.apellidos) }}
+                    </div>
+                    <span class="text-xs font-medium text-gray-700">{{ a.nombres.split(' ')[0] }}</span>
+                  </div>
+                }
+                @if (nightStaff().length === 0) {
+                  <span class="text-xs text-gray-400 italic">Sin asignaciones</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3 border-t border-outline-variant bg-surface-container-low/30">
+            <button (click)="showPlanificador.set(true)"
+                    class="w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-lg">edit_calendar</span>
+              Generar Horario Semanal
             </button>
-          </div>
-          <div class="p-5 flex-1 flex flex-col gap-5 z-10">
-            <div class="flex items-center justify-between bg-surface-container-low p-2 rounded-lg">
-              <button class="p-1 text-on-surface-variant hover:text-on-surface transition-colors">
-                <span class="material-symbols-outlined">chevron_left</span>
-              </button>
-              <span class="font-label-md text-label-md text-on-surface">Hoy, {{ todayDate }}</span>
-              <button class="p-1 text-on-surface-variant hover:text-on-surface transition-colors">
-                <span class="material-symbols-outlined">chevron_right</span>
-              </button>
-            </div>
-            <div class="space-y-4">
-              <div class="relative pl-6 before:absolute before:left-2 before:top-2 before:bottom-[-1rem] before:w-px before:bg-outline-variant last:before:hidden">
-                <div class="absolute left-[3px] top-[6px] w-2.5 h-2.5 rounded-full bg-secondary ring-4 ring-surface-container-lowest"></div>
-                <div class="bg-surface-bright p-3 rounded-lg border border-outline-variant/50">
-                  <div class="flex justify-between items-start mb-2">
-                    <h4 class="font-label-md text-label-md text-on-surface">Turno Ma&ntilde;ana</h4>
-                    <span class="font-label-sm text-label-sm text-on-surface-variant">08:00 - 16:00</span>
-                  </div>
-                  <div class="flex flex-wrap gap-2">
-                    @for (a of morningStaff(); track a.id) {
-                      <div class="w-8 h-8 rounded-full flex items-center justify-center text-label-sm font-bold text-white ring-2 ring-surface-container-lowest -ml-2 first:ml-0"
-                           [style.background-color]="avatarColor(a.id)"
-                           [title]="a.nombres + ' ' + a.apellidos">
-                        {{ getInitials(a.nombres, a.apellidos) }}
-                      </div>
-                    }
-                    <button class="w-8 h-8 rounded-full bg-surface-container-low border border-dashed border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-colors -ml-4 z-10"
-                            title="A&ntilde;adir">
-                      <span class="material-symbols-outlined text-[16px]">add</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="relative pl-6 before:absolute before:left-2 before:top-2 before:bottom-[-1rem] before:w-px before:bg-outline-variant last:before:hidden">
-                <div class="absolute left-[3px] top-[6px] w-2.5 h-2.5 rounded-full bg-tertiary ring-4 ring-surface-container-lowest"></div>
-                <div class="bg-surface-bright p-3 rounded-lg border border-outline-variant/50">
-                  <div class="flex justify-between items-start mb-2">
-                    <h4 class="font-label-md text-label-md text-on-surface">Turno Tarde</h4>
-                    <span class="font-label-sm text-label-sm text-on-surface-variant">14:00 - 22:00</span>
-                  </div>
-                  <div class="flex flex-wrap gap-2">
-                    @for (a of afternoonStaff(); track a.id) {
-                      <div class="w-8 h-8 rounded-full flex items-center justify-center text-label-sm font-bold text-white ring-2 ring-surface-container-lowest -ml-2 first:ml-0"
-                           [style.background-color]="avatarColor(a.id)"
-                           [title]="a.nombres + ' ' + a.apellidos">
-                        {{ getInitials(a.nombres, a.apellidos) }}
-                      </div>
-                    }
-                    @if (afternoonStaff().length === 0) {
-                      <span class="font-label-sm text-label-sm text-on-surface-variant italic">Sin asignaciones</span>
-                    }
-                    <button class="w-8 h-8 rounded-full bg-surface-container-low border border-dashed border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-colors -ml-4 z-10"
-                            title="A&ntilde;adir">
-                      <span class="material-symbols-outlined text-[16px]">add</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="relative pl-6">
-                <div class="absolute left-[3px] top-[6px] w-2.5 h-2.5 rounded-full bg-outline ring-4 ring-surface-container-lowest"></div>
-                <div class="bg-surface-container-lowest p-3 rounded-lg border border-dashed border-outline-variant/50 opacity-70">
-                  <div class="flex justify-between items-start mb-2">
-                    <h4 class="font-label-md text-label-md text-on-surface-variant">Turno Noche (Guardia)</h4>
-                    <span class="font-label-sm text-label-sm text-on-surface-variant">22:00 - 08:00</span>
-                  </div>
-                  <div class="flex items-center justify-center p-2">
-                    <span class="font-body-sm text-body-sm text-on-surface-variant italic">Sin asignaciones</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="p-4 border-t border-outline-variant bg-surface-container-low/30">
-              <button (click)="showPlanificador.set(true)" class="w-full py-2 bg-transparent border border-outline-variant text-on-surface font-label-md text-label-md rounded-lg hover:bg-surface-container-high transition-colors">
-               Generar Horario Semanal
-              </button>
           </div>
         </div>
       </div>
@@ -459,6 +470,7 @@ export class AsistentesComponent implements OnInit {
   errorMsg = signal('');
 
   todayDate: string;
+  hoyLabel: string;
 
   asistenteForm = this.fb.group({
     nombres: ['', Validators.required],
@@ -474,7 +486,9 @@ export class AsistentesComponent implements OnInit {
   constructor() {
     const now = new Date();
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     this.todayDate = `${now.getDate()} ${months[now.getMonth()]}`;
+    this.hoyLabel = `${dias[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
   }
 
   filteredAsistentes = computed(() => {
