@@ -91,6 +91,18 @@ export class AuthService {
     return this.http.post<{ message: string; activationToken: string }>(`${API_URL}/usuarios/internal`, data);
   }
 
+  refreshUser(): void {
+    this.me().subscribe({
+      next: (user) => {
+        localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+        const current = this._session();
+        if (current) {
+          this._session.set({ ...current, user });
+        }
+      },
+    });
+  }
+
   private loadSession(): void {
     const token = localStorage.getItem(this.TOKEN_KEY);
     const userStr = localStorage.getItem(this.USER_KEY);

@@ -281,6 +281,7 @@ export class ProfileComponent implements OnInit {
 
       this.duenioService.update(this.duenioProfile()!.id, req).pipe(catchError(() => EMPTY)).subscribe({
         next: () => {
+          this.auth.refreshUser();
           this.duenioService.findOwn().pipe(catchError(() => EMPTY)).subscribe({
             next: (data) => this.duenioProfile.set(data),
           });
