@@ -485,9 +485,9 @@ type ViewMode = 'month' | 'week' | 'day';
           }
 
           <!-- Actions -->
-          @if (!auth.isDuenioOnly() && cita.estado !== 'CANCELADA' && cita.estado !== 'ATENDIDA' && cita.estado !== 'NO_ASISTIO') {
+          @if (cita.estado !== 'CANCELADA' && cita.estado !== 'ATENDIDA' && cita.estado !== 'NO_ASISTIO') {
             <div class="flex flex-wrap gap-3 pt-4 border-t border-outline-variant/20">
-              @if (cita.estado === 'PROGRAMADA') {
+              @if (cita.estado === 'PROGRAMADA' && !auth.isDuenioOnly()) {
                 <button (click)="confirmarCita(cita.id)"
                         class="btn btn-primary">
                   <span class="material-symbols-outlined text-[18px]">check</span>
