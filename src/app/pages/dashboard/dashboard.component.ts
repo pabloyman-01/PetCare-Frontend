@@ -4,12 +4,14 @@ import { RouterLink, NavigationEnd, Router } from '@angular/router';
 import { AlertaService } from '../../core/services/alerta.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MascotaService } from '../../core/services/mascota.service';
+import { CitaService } from '../../core/services/cita.service';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { ServicioService } from '../../core/services/servicio.service';
 import { VeterinarioService } from '../../core/services/veterinario.service';
 import { AsistenteService } from '../../core/services/asistente.service';
 import { PanelAlertasDiaResponse, AlertaCitaResponse } from '../../core/models/alerta.model';
 import { MascotaResponse } from '../../core/models/mascota.model';
+import { CitaResponse } from '../../core/models/cita.model';
 import { finalize, filter, catchError, EMPTY } from 'rxjs';
 
 @Component({
@@ -193,26 +195,38 @@ import { finalize, filter, catchError, EMPTY } from 'rxjs';
           <!-- Bento Dashboard Grid -->
           <div class="grid grid-cols-12 gap-6">
             <!-- Próxima Cita -->
-            <div class="col-span-12 lg:col-span-5 bg-primary rounded-3xl p-8 text-on-primary shadow-xl shadow-primary/20 flex flex-col justify-between min-h-[320px] relative overflow-hidden">
-              <div class="absolute top-0 right-0 p-8 opacity-20 pointer-events-none">
-                <span class="material-symbols-outlined text-[120px]" style="font-variation-settings:'FILL' 1">calendar_month</span>
-              </div>
-              <div>
-                <span class="px-4 py-1.5 bg-white/20 backdrop-blur-md rounded-full font-label-sm text-label-sm mb-6 inline-block uppercase tracking-widest">Siguiente Cita</span>
-                <h3 class="text-display-lg text-[40px] leading-tight mb-2">{{ nextAppointmentDate() }}</h3>
-                <p class="text-headline-md opacity-90">{{ nextAppointmentTime() }}</p>
-              </div>
-              <div class="flex items-end justify-between">
-                <div>
-                  <p class="text-body-md opacity-80">{{ nextAppointmentReason() }}</p>
-                  <p class="text-headline-md font-bold">{{ nextAppointmentPet() }} <span class="font-normal opacity-70">con {{ nextAppointmentVet() }}</span></p>
+            @if (nextAppointment(); as cita) {
+              <div class="col-span-12 lg:col-span-5 bg-primary rounded-3xl p-8 text-on-primary shadow-xl shadow-primary/20 flex flex-col justify-between min-h-[320px] relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-8 opacity-20 pointer-events-none">
+                  <span class="material-symbols-outlined text-[120px]" style="font-variation-settings:'FILL' 1">calendar_month</span>
                 </div>
-                <button (click)="router.navigate(['/citas'])"
-                        class="w-12 h-12 bg-white text-primary rounded-2xl flex items-center justify-center hover:scale-105 transition-transform">
-                  <span class="material-symbols-outlined">arrow_forward</span>
-                </button>
+                <div>
+                  <span class="px-4 py-1.5 bg-white/20 backdrop-blur-md rounded-full font-label-sm text-label-sm mb-6 inline-block uppercase tracking-widest">Siguiente Cita</span>
+                  <h3 class="text-display-lg text-[40px] leading-tight mb-2">{{ cita.fecha | date:'d MMM' }}</h3>
+                  <p class="text-headline-md opacity-90">{{ cita.horaInicio | slice:0:5 }}</p>
+                </div>
+                <div class="flex items-end justify-between">
+                  <div>
+                    <p class="text-body-md opacity-80">{{ cita.motivo }}</p>
+                    <p class="text-headline-md font-bold">{{ cita.mascotaNombre }} <span class="font-normal opacity-70">con {{ cita.veterinarioNombreCompleto }}</span></p>
+                  </div>
+                  <button (click)="router.navigate(['/citas'])"
+                          class="w-12 h-12 bg-white text-primary rounded-2xl flex items-center justify-center hover:scale-105 transition-transform">
+                    <span class="material-symbols-outlined">arrow_forward</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            } @else {
+              <div class="col-span-12 lg:col-span-5 bg-surface-container-lowest border border-outline-variant rounded-3xl p-8 flex flex-col items-center justify-center text-center min-h-[320px]">
+                <div class="w-16 h-16 rounded-full bg-secondary-container/20 flex items-center justify-center mb-4">
+                  <span class="material-symbols-outlined text-4xl text-secondary" style="font-variation-settings:'FILL' 1">calendar_month</span>
+                </div>
+                <h3 class="text-headline-md font-bold text-on-surface mb-2">No tienes citas programadas</h3>
+                <p class="text-body-sm text-on-surface-variant max-w-xs">
+                  Las pr&oacute;ximas citas de tus mascotas aparecer&aacute;n aqu&iacute; cuando sean programadas.
+                </p>
+              </div>
+            }
 
             <!-- Mis Mascotas -->
             <div class="col-span-12 lg:col-span-7 space-y-6">
@@ -672,6 +686,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   });
 
   private mascotaService = inject(MascotaService);
+  private citaService = inject(CitaService);
   private usuarioService = inject(UsuarioService);
   private servicioService = inject(ServicioService);
   private veterinarioService = inject(VeterinarioService);
@@ -680,6 +695,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   adminCounts = signal({ usuarios: 0, servicios: 0, veterinarios: 0, asistentes: 0 });
   myPets = signal<MascotaResponse[]>([]);
+  nextAppointment = signal<CitaResponse | null>(null);
   uniquePets = computed(() => {
     const seen = new Set<string>();
     return this.myPets().filter(p => {
@@ -699,12 +715,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     ];
     return statuses[id % statuses.length];
   }
-
-  nextAppointmentDate = () => '12 de Octubre';
-  nextAppointmentTime = () => '10:30 AM';
-  nextAppointmentReason = () => 'Chequeo Anual';
-  nextAppointmentPet = () => 'Luna';
-  nextAppointmentVet = () => 'Dr. Méndez';
 
   especieLabel(especie: string): string {
     const map: Record<string, string> = { CANINO: 'Canino', FELINO: 'Felino', EXOTICO: 'Exótico' };
@@ -737,9 +747,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (this.auth.isDuenioOnly()) {
       this.loading.set(false);
       this.loadDuenioPets();
+      this.loadDuenioCitas();
       this.routerSub = this.router.events.pipe(
         filter(e => e instanceof NavigationEnd)
-      ).subscribe(() => this.loadDuenioPets());
+      ).subscribe(() => {
+        this.loadDuenioPets();
+        this.loadDuenioCitas();
+      });
       return;
     }
     this.alertaService.getDailyPanel().pipe(finalize(() => this.loading.set(false))).subscribe({
@@ -754,6 +768,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private loadDuenioPets(): void {
     this.mascotaService.findAll(undefined, undefined, true).subscribe({
       next: (data) => this.myPets.set(data),
+    });
+  }
+
+  private loadDuenioCitas(): void {
+    this.citaService.findAll().subscribe({
+      next: (data) => {
+        const today = new Date().toISOString().split('T')[0];
+        const upcoming = data
+          .filter(c => c.fecha >= today && c.estado !== 'CANCELADA' && c.estado !== 'ATENDIDA' && c.estado !== 'NO_ASISTIO')
+          .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.horaInicio.localeCompare(b.horaInicio));
+        this.nextAppointment.set(upcoming.length > 0 ? upcoming[0] : null);
+      },
     });
   }
 
