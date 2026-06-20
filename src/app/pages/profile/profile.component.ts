@@ -162,16 +162,6 @@ import { catchError, EMPTY } from 'rxjs';
                 <h4 class="text-label-md font-semibold text-on-surface-variant mb-4">Datos de Dueño</h4>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div class="space-y-1.5">
-                    <label class="text-label-sm font-semibold text-on-surface-variant">Nombres</label>
-               <input type="text" formControlName="duenioNombres" placeholder="Nombres"
-                      class="input input-bordered w-full" />
-                  </div>
-                  <div class="space-y-1.5">
-                    <label class="text-label-sm font-semibold text-on-surface-variant">Apellidos</label>
-               <input type="text" formControlName="duenioApellidos" placeholder="Apellidos"
-                      class="input input-bordered w-full" />
-                  </div>
-                  <div class="space-y-1.5">
                     <label class="text-label-sm font-semibold text-on-surface-variant">Dirección</label>
                <input type="text" formControlName="duenioDireccion" placeholder="Dirección"
                       class="input input-bordered w-full" />
@@ -215,8 +205,6 @@ export class ProfileComponent implements OnInit {
     fullName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     telefono: [''],
-    duenioNombres: [''],
-    duenioApellidos: [''],
     duenioDireccion: [''],
   });
 
@@ -263,8 +251,6 @@ export class ProfileComponent implements OnInit {
       fullName: user?.fullName || '',
       email: user?.email || '',
       telefono: user?.telefono || '',
-      duenioNombres: duenio?.nombres || '',
-      duenioApellidos: duenio?.apellidos || '',
       duenioDireccion: duenio?.direccion || '',
     });
     this.editing.set(true);
@@ -278,10 +264,14 @@ export class ProfileComponent implements OnInit {
     this.saving.set(true);
     const fv = this.profileForm.value;
 
+    const parts = (fv.fullName || '').trim().split(/\s+/);
+    const nombres = parts[0] || '';
+    const apellidos = parts.slice(1).join(' ') || '';
+
     if (this.auth.isDuenio() && this.duenioProfile()) {
       const req: DuenioRequest = {
-        nombres: fv.duenioNombres || this.duenioProfile()!.nombres,
-        apellidos: fv.duenioApellidos || this.duenioProfile()!.apellidos,
+        nombres: nombres || this.duenioProfile()!.nombres,
+        apellidos: apellidos || this.duenioProfile()!.apellidos,
         tipoDocumento: this.duenioProfile()!.tipoDocumento,
         numeroDocumento: this.duenioProfile()!.numeroDocumento,
         telefono: fv.telefono || this.duenioProfile()!.telefono,
