@@ -8,7 +8,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { CitaResponse } from '../../core/models/cita.model';
 import { AtencionClinicaRequest, AtencionClinicaResponse, HistoriaClinicaResponse } from '../../core/models/atencion-clinica.model';
-import { catchError, EMPTY } from 'rxjs';
+import { EstadoMascota } from '../../core/models/mascota.model';
+import { catchError, EMPTY, finalize, of } from 'rxjs';
 
 interface MedicationRow {
   medicamento: string;
@@ -346,6 +347,21 @@ interface MedicationRow {
               </div>
             </div>
 
+            <!-- Estado Mascota -->
+            <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
+              <h4 class="font-label-md text-label-md text-on-surface mb-4">Estado actual de la mascota</h4>
+              <select formControlName="estadoMascota" class="input input-bordered w-full">
+                <option value="">Seleccionar estado</option>
+                <option value="SALUDABLE">Saludable</option>
+                <option value="EN_OBSERVACION">En observaci&oacute;n</option>
+                <option value="EN_TRATAMIENTO">En tratamiento</option>
+                <option value="CRITICO">Cr&iacute;tico</option>
+              </select>
+              @if (submitted && atencionForm.controls.estadoMascota.invalid) {
+                <p class="text-error text-body-sm mt-1">Debe seleccionar el estado actual de la mascota.</p>
+              }
+            </div>
+
             <!-- Bottom Action Bar -->
             <div class="sticky bottom-0 bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant p-4 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-4 z-30">
               <div class="flex gap-3">
@@ -401,6 +417,7 @@ export class AtencionClinicaComponent implements OnInit {
     pesoKg: [null as number | null],
     temperatura: [null as number | null],
     frecuenciaCardiaca: [null as number | null],
+    estadoMascota: ['', Validators.required],
   });
 
   citasPendientes = computed(() =>
@@ -410,7 +427,12 @@ export class AtencionClinicaComponent implements OnInit {
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
       if (params['citaId']) {
-        this.citaService.findById(Number(params['citaId'])).pipe(catchError(() => EMPTY)).subscribe({
+        this.citaService.findById(Number(params['citaId'])).pipe(
+          catchError(() => {
+            this.loadCitas();
+            return EMPTY;
+          })
+        ).subscribe({
           next: (cita) => {
             if (cita.estado === 'PROGRAMADA' || cita.estado === 'CONFIRMADA') {
               this.loadCitas(Number(params['citaId']));
@@ -418,7 +440,6 @@ export class AtencionClinicaComponent implements OnInit {
               this.loadCitas();
             }
           },
-          error: () => this.loadCitas(),
         });
       } else {
         this.loadCitas();
@@ -428,21 +449,23 @@ export class AtencionClinicaComponent implements OnInit {
 
   private loadCitas(preselectedId?: number): void {
     this.loading.set(true);
-    this.citaService.findAll({ estado: 'PROGRAMADA' }).pipe(catchError(() => EMPTY)).subscribe({
+    this.citaService.findAll({ estado: 'PROGRAMADA' }).pipe(
+      catchError(() => of([] as CitaResponse[]))
+    ).subscribe({
       next: (programadas) => {
-        this.citaService.findAll({ estado: 'CONFIRMADA' }).pipe(catchError(() => EMPTY)).subscribe({
+        this.citaService.findAll({ estado: 'CONFIRMADA' }).pipe(
+          catchError(() => of([] as CitaResponse[])),
+          finalize(() => this.loading.set(false))
+        ).subscribe({
           next: (confirmadas) => {
             this.citas.set([...programadas, ...confirmadas]);
-            this.loading.set(false);
             if (preselectedId) {
               const found = this.citas().find(c => c.id === preselectedId);
               if (found) this.selectCita(found);
             }
           },
-          error: () => this.loading.set(false),
         });
       },
-      error: () => this.loading.set(false),
     });
   }
 
@@ -500,6 +523,7 @@ export class AtencionClinicaComponent implements OnInit {
       recomendaciones: formValue.recomendaciones || undefined,
       observacionesClinicas: formValue.observacionesClinicas || undefined,
       notasInternas: formValue.notasInternas || undefined,
+      estadoMascota: formValue.estadoMascota as EstadoMascota,
     };
 
     this.atencionClinicaService.register(cita.id, req).subscribe({
