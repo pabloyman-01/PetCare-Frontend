@@ -5,8 +5,10 @@ import { RouterLink } from '@angular/router';
 import { MascotaService } from '../../../core/services/mascota.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { DuenioService } from '../../../core/services/duenio.service';
+import { CitaService } from '../../../core/services/cita.service';
 import { MascotaResponse, MascotaRequest, SexoMascota } from '../../../core/models/mascota.model';
 import { DuenioResponse } from '../../../core/models/duenio.model';
+import { CitaResponse } from '../../../core/models/cita.model';
 import { catchError, EMPTY } from 'rxjs';
 import { obtenerConsejoDelDia, Consejo } from '../../../data/consejosDelDia';
 
@@ -123,22 +125,29 @@ const ESTADO_STYLES: Record<string, { bg: string; text: string; dot: string }> =
                 <h2 class="text-headline-md font-bold text-on-surface">Pr&oacute;ximas Citas</h2>
                 <span class="material-symbols-outlined text-primary">event</span>
               </div>
-              <div class="space-y-4">
-                <div class="flex gap-4 p-4 bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/10">
-                  <div class="flex flex-col items-center justify-center bg-primary-fixed text-primary px-3 rounded-xl min-w-[60px]">
-                    <span class="text-label-sm font-label-sm">{{ currentMonth() }}</span>
-                    <span class="text-headline-md font-bold">{{ currentDay() }}</span>
-                  </div>
-                  <div class="flex-1">
-                    <p class="text-label-md font-bold text-on-surface">Pr&oacute;xima Consulta</p>
-                    <p class="text-body-sm text-on-surface-variant">Vacunaci&oacute;n pendiente</p>
-                    <div class="flex items-center gap-1 mt-1 text-primary">
-                      <span class="material-symbols-outlined text-[14px]">schedule</span>
-                      <span class="text-label-sm font-label-sm">10:30 AM</span>
+              @if (nextAppointment(); as cita) {
+                <div class="space-y-4">
+                  <div class="flex gap-4 p-4 bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/10">
+                    <div class="flex flex-col items-center justify-center bg-primary-fixed text-primary px-3 rounded-xl min-w-[60px]">
+                      <span class="text-label-sm font-label-sm">{{ cita.fecha | date:'MMM' | uppercase }}</span>
+                      <span class="text-headline-md font-bold">{{ cita.fecha | date:'d' }}</span>
+                    </div>
+                    <div class="flex-1">
+                      <p class="text-label-md font-bold text-on-surface">{{ cita.motivo }}</p>
+                      <p class="text-body-sm text-on-surface-variant">{{ cita.mascotaNombre }}</p>
+                      <div class="flex items-center gap-1 mt-1 text-primary">
+                        <span class="material-symbols-outlined text-[14px]">schedule</span>
+                        <span class="text-label-sm font-label-sm">{{ cita.horaInicio | slice:0:5 }}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              } @else {
+                <div class="flex flex-col items-center justify-center py-8 text-center">
+                  <span class="material-symbols-outlined text-4xl text-on-surface-variant/40 mb-2">event_busy</span>
+                  <p class="text-body-sm text-on-surface-variant">No hay citas programadas</p>
+                </div>
+              }
               <a [routerLink]="['/citas']"
                  class="w-full mt-6 py-2 text-primary font-bold text-label-md border border-primary/20 rounded-xl hover:bg-primary/5 transition-colors flex items-center justify-center">
                 Ver Calendario Completo
@@ -622,9 +631,6 @@ const ESTADO_STYLES: Record<string, { bg: string; text: string; dot: string }> =
   `
 })
 export class MascotasListComponent implements OnInit {
-  protected currentMonth = () => new Date().toLocaleString('es', { month: 'short' }).toUpperCase();
-  protected currentDay = () => new Date().getDate();
-
   protected cardStatus(id: number): { bg: string; dot: string; label: string } {
     const statuses = [
       { bg: 'bg-secondary-container/90', dot: 'bg-secondary', label: 'Saludable' },
@@ -635,10 +641,12 @@ export class MascotasListComponent implements OnInit {
   }
   private mascotaService = inject(MascotaService);
   private duenioService = inject(DuenioService);
+  private citaService = inject(CitaService);
   protected auth = inject(AuthService);
   private fb = inject(FormBuilder);
 
   protected allMascotas = signal<MascotaResponse[]>([]);
+  nextAppointment = signal<CitaResponse | null>(null);
   activeMascotas = computed(() => {
     const all = this.allMascotas();
     const active = all.filter(p => p.active);
@@ -743,6 +751,7 @@ export class MascotasListComponent implements OnInit {
       this.duenioService.findOwn().pipe(catchError(() => EMPTY)).subscribe({
         next: (d) => this.duenioActual.set(d),
       });
+      this.loadNextAppointment();
     } else {
       this.loadDuenios();
     }
@@ -760,6 +769,18 @@ export class MascotasListComponent implements OnInit {
       error: (err) => {
         console.error('load mascotas error', err);
         this.loading.set(false);
+      },
+    });
+  }
+
+  private loadNextAppointment(): void {
+    this.citaService.findAll().subscribe({
+      next: (data) => {
+        const today = new Date().toISOString().split('T')[0];
+        const upcoming = data
+          .filter(c => c.fecha >= today && c.estado !== 'CANCELADA' && c.estado !== 'ATENDIDA' && c.estado !== 'NO_ASISTIO')
+          .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.horaInicio.localeCompare(b.horaInicio));
+        this.nextAppointment.set(upcoming.length > 0 ? upcoming[0] : null);
       },
     });
   }

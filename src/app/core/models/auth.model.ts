@@ -6,6 +6,7 @@ export interface LoginRequest {
 export interface RegisterRequest {
   fullName: string;
   email: string;
+  telefono: string;
   password: string;
 }
 
@@ -17,6 +18,7 @@ export interface UserResponse {
   id: number;
   fullName: string;
   email: string;
+  telefono: string;
   active: boolean;
   roles: string[];
 }

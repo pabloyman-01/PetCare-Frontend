@@ -72,6 +72,10 @@ import { catchError, EMPTY } from 'rxjs';
               <p class="text-body-md font-semibold text-on-surface">{{ user()?.email }}</p>
             </div>
             <div>
+              <p class="text-label-sm text-on-surface-variant">Teléfono</p>
+              <p class="text-body-md font-semibold text-on-surface">{{ user()?.telefono || '—' }}</p>
+            </div>
+            <div>
               <p class="text-label-sm text-on-surface-variant">Estado</p>
               @if (user()?.active) {
                 <span class="badge badge-success badge-outline">
@@ -117,10 +121,6 @@ import { catchError, EMPTY } from 'rxjs';
                   <p class="text-body-md font-semibold text-on-surface">{{ duenioProfile()!.tipoDocumento }} {{ duenioProfile()!.numeroDocumento }}</p>
                 </div>
                 <div>
-                  <p class="text-label-sm text-on-surface-variant">Teléfono</p>
-                  <p class="text-body-md font-semibold text-on-surface">{{ duenioProfile()!.telefono }}</p>
-                </div>
-                <div>
                   <p class="text-label-sm text-on-surface-variant">Email</p>
                   <p class="text-body-md font-semibold text-on-surface">{{ duenioProfile()!.email }}</p>
                 </div>
@@ -151,26 +151,16 @@ import { catchError, EMPTY } from 'rxjs';
                <input type="email" formControlName="email" placeholder="Email"
                       class="input input-bordered w-full" />
             </div>
+            <div class="space-y-1.5">
+              <label class="text-label-sm font-semibold text-on-surface-variant">Teléfono</label>
+              <input type="tel" formControlName="telefono" placeholder="Teléfono"
+                     class="input input-bordered w-full" />
+            </div>
 
             @if (auth.isDuenio() && duenioProfile()) {
               <div class="pt-4 border-t border-outline-variant/20">
                 <h4 class="text-label-md font-semibold text-on-surface-variant mb-4">Datos de Dueño</h4>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div class="space-y-1.5">
-                    <label class="text-label-sm font-semibold text-on-surface-variant">Nombres</label>
-               <input type="text" formControlName="duenioNombres" placeholder="Nombres"
-                      class="input input-bordered w-full" />
-                  </div>
-                  <div class="space-y-1.5">
-                    <label class="text-label-sm font-semibold text-on-surface-variant">Apellidos</label>
-               <input type="text" formControlName="duenioApellidos" placeholder="Apellidos"
-                      class="input input-bordered w-full" />
-                  </div>
-                  <div class="space-y-1.5">
-                    <label class="text-label-sm font-semibold text-on-surface-variant">Teléfono</label>
-               <input type="text" formControlName="duenioTelefono" placeholder="Teléfono"
-                      class="input input-bordered w-full" />
-                  </div>
                   <div class="space-y-1.5">
                     <label class="text-label-sm font-semibold text-on-surface-variant">Dirección</label>
                <input type="text" formControlName="duenioDireccion" placeholder="Dirección"
@@ -214,9 +204,7 @@ export class ProfileComponent implements OnInit {
   profileForm = this.fb.group({
     fullName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
-    duenioNombres: [''],
-    duenioApellidos: [''],
-    duenioTelefono: [''],
+    telefono: [''],
     duenioDireccion: [''],
   });
 
@@ -262,9 +250,7 @@ export class ProfileComponent implements OnInit {
     this.profileForm.patchValue({
       fullName: user?.fullName || '',
       email: user?.email || '',
-      duenioNombres: duenio?.nombres || '',
-      duenioApellidos: duenio?.apellidos || '',
-      duenioTelefono: duenio?.telefono || '',
+      telefono: user?.telefono || '',
       duenioDireccion: duenio?.direccion || '',
     });
     this.editing.set(true);
@@ -276,26 +262,30 @@ export class ProfileComponent implements OnInit {
 
   onSubmit(): void {
     this.saving.set(true);
+    const fv = this.profileForm.value;
+
+    const parts = (fv.fullName || '').trim().split(/\s+/);
+    const nombres = parts[0] || '';
+    const apellidos = parts.slice(1).join(' ') || '';
 
     if (this.auth.isDuenio() && this.duenioProfile()) {
-      const fv = this.profileForm.value;
       const req: DuenioRequest = {
-        nombres: fv.duenioNombres || this.duenioProfile()!.nombres,
-        apellidos: fv.duenioApellidos || this.duenioProfile()!.apellidos,
+        nombres: nombres || this.duenioProfile()!.nombres,
+        apellidos: apellidos || this.duenioProfile()!.apellidos,
         tipoDocumento: this.duenioProfile()!.tipoDocumento,
         numeroDocumento: this.duenioProfile()!.numeroDocumento,
-        telefono: fv.duenioTelefono || this.duenioProfile()!.telefono,
+        telefono: fv.telefono || this.duenioProfile()!.telefono,
         email: fv.email || this.duenioProfile()!.email,
         direccion: fv.duenioDireccion || undefined,
       };
 
       this.duenioService.update(this.duenioProfile()!.id, req).pipe(catchError(() => EMPTY)).subscribe({
         next: () => {
-          this.saving.set(false);
-          this.editing.set(false);
           this.duenioService.findOwn().pipe(catchError(() => EMPTY)).subscribe({
             next: (data) => this.duenioProfile.set(data),
           });
+          this.saving.set(false);
+          this.editing.set(false);
         },
         error: () => this.saving.set(false),
       });
