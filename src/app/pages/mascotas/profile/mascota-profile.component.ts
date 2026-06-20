@@ -74,6 +74,17 @@ type TabType = 'historial' | 'vacunas' | 'citas' | 'observaciones';
               <p class="text-body-md font-semibold text-on-surface">{{ m.color || '-' }}</p>
             </div>
             <div>
+              <p class="text-label-sm text-on-surface-variant">Estado</p>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-label-sm font-semibold"
+                    [ngClass]="profileEstadoStyle(m.estado).cls">
+                <span class="w-1.5 h-1.5 rounded-full" [class]="profileEstadoStyle(m.estado).dot"></span>
+                {{ profileEstadoStyle(m.estado).label }}
+              </span>
+              @if (m.veterinarioEstado) {
+                <p class="text-[11px] text-on-surface-variant mt-1">por {{ m.veterinarioEstado }} {{ m.fechaEstado ? '· ' + (m.fechaEstado | date:'dd/MM/yyyy HH:mm') : '' }}</p>
+              }
+            </div>
+            <div>
               <p class="text-label-sm text-on-surface-variant">Registrado</p>
               <p class="text-body-md font-semibold text-on-surface">{{ m.createdAt | date:'dd/MM/yyyy' }}</p>
             </div>
@@ -463,6 +474,17 @@ export class MascotaProfileComponent implements OnInit {
 
   sexoIcon(sexo: string): string {
     return sexo === 'MACHO' ? 'male' : 'female';
+  }
+
+  profileEstadoStyle(estado: string): { cls: string; dot: string; label: string } {
+    const map: Record<string, { cls: string; dot: string; label: string }> = {
+      PENDIENTE: { cls: 'bg-surface-container-high text-on-surface-variant', dot: 'bg-outline', label: 'Pendiente de evaluación' },
+      SALUDABLE: { cls: 'bg-secondary-container text-on-secondary-container', dot: 'bg-secondary', label: 'Saludable' },
+      EN_OBSERVACION: { cls: 'bg-tertiary-fixed text-on-tertiary-fixed-variant', dot: 'bg-tertiary', label: 'En observación' },
+      EN_TRATAMIENTO: { cls: 'bg-tertiary-container text-on-tertiary-container', dot: 'bg-tertiary', label: 'En tratamiento' },
+      CRITICO: { cls: 'bg-error-container text-on-error-container', dot: 'bg-error', label: 'Crítico' },
+    };
+    return map[estado] || map.PENDIENTE;
   }
 
   citaEstadoLabel(estado: string): string {

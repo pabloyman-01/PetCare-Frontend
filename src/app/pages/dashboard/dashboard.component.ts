@@ -246,8 +246,8 @@ import { finalize, filter, catchError, EMPTY } from 'rxjs';
                     <div>
                       <h4 class="text-headline-md font-bold">{{ m.nombre }}</h4>
                       <div class="flex items-center gap-2 mt-1">
-                        <span class="w-2 h-2 rounded-full" [class]="cardStatus(m.id).dot + ' mr-1'"></span>
-                        <p class="font-body-sm text-body-sm" [class.text-on-secondary-container]="cardStatus(m.id).label === 'Saludable'">{{ cardStatus(m.id).label }}</p>
+                        <span class="w-2 h-2 rounded-full" [class]="estadoStyle(m.estado).dot + ' mr-1'"></span>
+                        <p class="font-body-sm text-body-sm" [class.text-on-secondary-container]="estadoStyle(m.estado).label === 'Saludable'">{{ estadoStyle(m.estado).label }}</p>
                       </div>
                       <p class="text-outline font-label-sm mt-1">{{ especieLabel(m.especie) }} &bull; {{ m.edadAnios }} {{ m.edadAnios === 1 ? 'a&ntilde;o' : 'a&ntilde;os' }}</p>
                     </div>
@@ -747,13 +747,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   });
 
-  cardStatus(id: number): { bg: string; dot: string; label: string } {
-    const statuses = [
-      { bg: 'bg-secondary-container/90', dot: 'bg-secondary', label: 'Saludable' },
-      { bg: 'bg-tertiary-fixed/90', dot: 'bg-tertiary', label: 'En tratamiento' },
-      { bg: 'bg-error-container/90', dot: 'bg-error', label: 'Crítico' },
-    ];
-    return statuses[id % statuses.length];
+  estadoStyle(estado: string): { bg: string; dot: string; label: string } {
+    const map: Record<string, { bg: string; dot: string; label: string }> = {
+      PENDIENTE: { bg: 'bg-surface-container-high', dot: 'bg-outline', label: 'Pendiente de evaluación' },
+      SALUDABLE: { bg: 'bg-secondary-container/90', dot: 'bg-secondary', label: 'Saludable' },
+      EN_OBSERVACION: { bg: 'bg-tertiary-fixed/90', dot: 'bg-tertiary', label: 'En observación' },
+      EN_TRATAMIENTO: { bg: 'bg-tertiary-container/90', dot: 'bg-tertiary', label: 'En tratamiento' },
+      CRITICO: { bg: 'bg-error-container/90', dot: 'bg-error', label: 'Crítico' },
+    };
+    return map[estado] || map.PENDIENTE;
   }
 
   especieLabel(especie: string): string {

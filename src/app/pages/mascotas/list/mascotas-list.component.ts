@@ -15,8 +15,6 @@ import { obtenerConsejoDelDia, Consejo } from '../../../data/consejosDelDia';
 type EspecieFilter = '' | 'CANINO' | 'FELINO' | 'EXOTICO';
 type EstadoFilter = '' | 'SALUDABLE' | 'EN_TRATAMIENTO' | 'EN_OBSERVACION' | 'CRITICO' | 'URGENTE';
 
-const ESTADOS = ['SALUDABLE', 'EN_TRATAMIENTO', 'EN_OBSERVACION', 'CRITICO'] as const;
-
 const ESTADO_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
   SALUDABLE: { bg: 'bg-secondary-container', text: 'text-on-secondary-container', dot: 'bg-secondary' },
   EN_TRATAMIENTO: { bg: 'bg-tertiary-fixed', text: 'text-on-tertiary-fixed-variant', dot: 'bg-tertiary' },
@@ -711,7 +709,7 @@ export class MascotasListComponent implements OnInit {
       edadAnios: m.edadAnios,
       pesoKg: m.pesoKg,
       duenioNombre: m.duenioNombreCompleto,
-      estadoSalud: ESTADOS[i % ESTADOS.length],
+      estadoSalud: m.estado || 'PENDIENTE',
       proximaCita: '',
       active: m.active,
     }));
