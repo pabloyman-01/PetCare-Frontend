@@ -121,10 +121,6 @@ import { catchError, EMPTY } from 'rxjs';
                   <p class="text-body-md font-semibold text-on-surface">{{ duenioProfile()!.tipoDocumento }} {{ duenioProfile()!.numeroDocumento }}</p>
                 </div>
                 <div>
-                  <p class="text-label-sm text-on-surface-variant">Teléfono</p>
-                  <p class="text-body-md font-semibold text-on-surface">{{ duenioProfile()!.telefono }}</p>
-                </div>
-                <div>
                   <p class="text-label-sm text-on-surface-variant">Email</p>
                   <p class="text-body-md font-semibold text-on-surface">{{ duenioProfile()!.email }}</p>
                 </div>
@@ -155,6 +151,11 @@ import { catchError, EMPTY } from 'rxjs';
                <input type="email" formControlName="email" placeholder="Email"
                       class="input input-bordered w-full" />
             </div>
+            <div class="space-y-1.5">
+              <label class="text-label-sm font-semibold text-on-surface-variant">Teléfono</label>
+              <input type="tel" formControlName="telefono" placeholder="Teléfono"
+                     class="input input-bordered w-full" />
+            </div>
 
             @if (auth.isDuenio() && duenioProfile()) {
               <div class="pt-4 border-t border-outline-variant/20">
@@ -168,11 +169,6 @@ import { catchError, EMPTY } from 'rxjs';
                   <div class="space-y-1.5">
                     <label class="text-label-sm font-semibold text-on-surface-variant">Apellidos</label>
                <input type="text" formControlName="duenioApellidos" placeholder="Apellidos"
-                      class="input input-bordered w-full" />
-                  </div>
-                  <div class="space-y-1.5">
-                    <label class="text-label-sm font-semibold text-on-surface-variant">Teléfono</label>
-               <input type="text" formControlName="duenioTelefono" placeholder="Teléfono"
                       class="input input-bordered w-full" />
                   </div>
                   <div class="space-y-1.5">
@@ -218,9 +214,9 @@ export class ProfileComponent implements OnInit {
   profileForm = this.fb.group({
     fullName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
+    telefono: [''],
     duenioNombres: [''],
     duenioApellidos: [''],
-    duenioTelefono: [''],
     duenioDireccion: [''],
   });
 
@@ -266,9 +262,9 @@ export class ProfileComponent implements OnInit {
     this.profileForm.patchValue({
       fullName: user?.fullName || '',
       email: user?.email || '',
+      telefono: user?.telefono || '',
       duenioNombres: duenio?.nombres || '',
       duenioApellidos: duenio?.apellidos || '',
-      duenioTelefono: duenio?.telefono || '',
       duenioDireccion: duenio?.direccion || '',
     });
     this.editing.set(true);
@@ -280,26 +276,26 @@ export class ProfileComponent implements OnInit {
 
   onSubmit(): void {
     this.saving.set(true);
+    const fv = this.profileForm.value;
 
     if (this.auth.isDuenio() && this.duenioProfile()) {
-      const fv = this.profileForm.value;
       const req: DuenioRequest = {
         nombres: fv.duenioNombres || this.duenioProfile()!.nombres,
         apellidos: fv.duenioApellidos || this.duenioProfile()!.apellidos,
         tipoDocumento: this.duenioProfile()!.tipoDocumento,
         numeroDocumento: this.duenioProfile()!.numeroDocumento,
-        telefono: fv.duenioTelefono || this.duenioProfile()!.telefono,
+        telefono: fv.telefono || this.duenioProfile()!.telefono,
         email: fv.email || this.duenioProfile()!.email,
         direccion: fv.duenioDireccion || undefined,
       };
 
       this.duenioService.update(this.duenioProfile()!.id, req).pipe(catchError(() => EMPTY)).subscribe({
         next: () => {
-          this.saving.set(false);
-          this.editing.set(false);
           this.duenioService.findOwn().pipe(catchError(() => EMPTY)).subscribe({
             next: (data) => this.duenioProfile.set(data),
           });
+          this.saving.set(false);
+          this.editing.set(false);
         },
         error: () => this.saving.set(false),
       });
