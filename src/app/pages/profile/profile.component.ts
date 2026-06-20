@@ -72,6 +72,10 @@ import { catchError, EMPTY } from 'rxjs';
               <p class="text-body-md font-semibold text-on-surface">{{ user()?.email }}</p>
             </div>
             <div>
+              <p class="text-label-sm text-on-surface-variant">Teléfono</p>
+              <p class="text-body-md font-semibold text-on-surface">{{ user()?.telefono || '—' }}</p>
+            </div>
+            <div>
               <p class="text-label-sm text-on-surface-variant">Estado</p>
               @if (user()?.active) {
                 <span class="badge badge-success badge-outline">

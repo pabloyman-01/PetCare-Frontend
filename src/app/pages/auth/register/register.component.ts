@@ -93,6 +93,22 @@ export const passwordMatchValidator: ValidatorFn = (control: AbstractControl): V
               </div>
 
               <div>
+                <label class="block text-label-md text-on-surface-variant mb-2">N&uacute;mero de Tel&eacute;fono</label>
+                <div class="relative">
+                  <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">call</span>
+                  <input type="tel" formControlName="telefono"
+                         class="input input-bordered w-full pl-10"
+                         placeholder="Ej: +52 5551234567">
+                </div>
+                @if (registerForm.get('telefono')?.touched && registerForm.get('telefono')?.invalid) {
+                  <p class="text-error text-body-sm mt-1 flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[16px]">warning</span>
+                    {{ registerForm.get('telefono')?.hasError('required') ? 'El n&uacute;mero de tel&eacute;fono es obligatorio.' : 'N&uacute;mero de tel&eacute;fono inv&aacute;lido.' }}
+                  </p>
+                }
+              </div>
+
+              <div>
                 <label class="block text-label-md text-on-surface-variant mb-2">Contrase&ntilde;a</label>
                 <div class="relative">
                   <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">lock</span>
@@ -184,6 +200,7 @@ export class RegisterComponent {
     this.registerForm = this.fb.group({
       fullName: ['', [Validators.required, Validators.minLength(3)]],
       email: ['', [Validators.required, Validators.email]],
+      telefono: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(20), Validators.pattern(/^[+\d\s-]+$/)]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]]
     }, { validators: passwordMatchValidator });
@@ -195,12 +212,12 @@ export class RegisterComponent {
       return;
     }
 
-    const { fullName, email, password } = this.registerForm.value;
+    const { fullName, email, telefono, password } = this.registerForm.value;
     this.isLoading = true;
     this.errorMessage = '';
     this.successMessage = '';
 
-    this.auth.register({ fullName, email, password }).subscribe({
+    this.auth.register({ fullName, email, telefono, password }).subscribe({
       next: () => {
         this.successMessage = 'Cuenta creada exitosamente. Redirigiendo...';
         setTimeout(() => {
