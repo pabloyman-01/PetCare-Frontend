@@ -9,14 +9,16 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const token = auth.getAccessToken();
 
+  const skipAuth = ['/api/auth/login', '/api/auth/register', '/api/auth/refresh'].some(p => req.url.includes(p));
+
   let authReq = req;
-  if (token && !req.url.includes('/auth/')) {
+  if (token && !skipAuth) {
     authReq = req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
   }
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && !req.url.includes('/auth/')) {
+      if (error.status === 401 && !skipAuth) {
         try {
           return auth.refreshToken().pipe(
             switchMap(resp => {
