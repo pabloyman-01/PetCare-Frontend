@@ -5,6 +5,7 @@ import { AlertaService } from '../../core/services/alerta.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MascotaService } from '../../core/services/mascota.service';
 import { CitaService } from '../../core/services/cita.service';
+import { VacunaService } from '../../core/services/vacuna.service';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { ServicioService } from '../../core/services/servicio.service';
 import { VeterinarioService } from '../../core/services/veterinario.service';
@@ -12,6 +13,7 @@ import { AsistenteService } from '../../core/services/asistente.service';
 import { PanelAlertasDiaResponse, AlertaCitaResponse } from '../../core/models/alerta.model';
 import { MascotaResponse } from '../../core/models/mascota.model';
 import { CitaResponse } from '../../core/models/cita.model';
+import { VacunaMascotaResponse } from '../../core/models/vacuna.model';
 import { finalize, filter, catchError, EMPTY } from 'rxjs';
 
 @Component({
@@ -255,48 +257,53 @@ import { finalize, filter, catchError, EMPTY } from 'rxjs';
             </div>
 
             <!-- Estado de Vacunas -->
-            <div class="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-3xl p-8 flex flex-col md:flex-row gap-8">
-              <div class="md:w-1/3 flex flex-col items-center justify-center text-center">
-                <div class="relative w-40 h-40 mb-4">
-                  <svg class="w-full h-full transform -rotate-90">
-                    <circle class="text-surface-container" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" stroke-width="12"></circle>
-                    <circle class="text-primary" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" stroke-dasharray="440" stroke-dashoffset="110" stroke-width="12"></circle>
-                  </svg>
-                  <div class="absolute inset-0 flex flex-col items-center justify-center">
-                    <span class="text-headline-lg font-extrabold text-primary">75%</span>
-                    <span class="font-label-sm text-label-sm text-outline">Al d&iacute;a</span>
+            @if (vacunaRecords().length > 0) {
+              <div class="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-3xl p-8 flex flex-col md:flex-row gap-8">
+                <div class="md:w-1/3 flex flex-col items-center justify-center text-center">
+                  <div class="relative w-40 h-40 mb-4">
+                    <svg class="w-full h-full transform -rotate-90">
+                      <circle class="text-surface-container" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" stroke-width="12"></circle>
+                      <circle class="text-primary" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" [attr.stroke-dasharray]="'440'" [attr.stroke-dashoffset]="440 - (440 * vacunacionPct() / 100)" stroke-width="12"></circle>
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                      <span class="text-headline-lg font-extrabold text-primary">{{ vacunacionPct() }}%</span>
+                      <span class="font-label-sm text-label-sm text-outline">Al d&iacute;a</span>
+                    </div>
                   </div>
+                  <h4 class="text-headline-md font-bold">Estado de Vacunas</h4>
                 </div>
-                <h4 class="text-headline-md font-bold">Estado de Vacunas</h4>
-              </div>
-              <div class="flex-1 space-y-4">
-                <h5 class="font-label-md text-label-md text-outline uppercase tracking-wider mb-2">Pr&oacute;ximas Dosis</h5>
-                <div class="flex items-center justify-between p-4 bg-surface rounded-2xl">
-                  <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 bg-tertiary-fixed text-tertiary rounded-lg flex items-center justify-center">
-                      <span class="material-symbols-outlined">vaccines</span>
+                <div class="flex-1 space-y-4">
+                  <h5 class="font-label-md text-label-md text-outline uppercase tracking-wider mb-2">Pr&oacute;ximas Dosis</h5>
+                  @for (v of upcomingVaccines(); track v.id) {
+                    <div class="flex items-center justify-between p-4 bg-surface rounded-2xl">
+                      <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-tertiary-fixed text-tertiary rounded-lg flex items-center justify-center">
+                          <span class="material-symbols-outlined">vaccines</span>
+                        </div>
+                        <div>
+                          <p class="font-label-md text-label-md">{{ v.vacunaNombre }}</p>
+                          <p class="text-outline font-body-sm">{{ v.mascotaNombre }} &bull; {{ daysUntil(v.fechaProximaDosis) }}</p>
+                        </div>
+                      </div>
+                      <span class="px-3 py-1 bg-tertiary-container text-on-tertiary-container rounded-lg font-label-sm">En {{ daysUntilNumber(v.fechaProximaDosis) }} d&iacute;as</span>
                     </div>
-                    <div>
-                      <p class="font-label-md text-label-md">Rabia</p>
-                      <p class="text-outline font-body-sm">Refuerzo anual</p>
-                    </div>
-                  </div>
-                  <span class="px-3 py-1 bg-tertiary-container text-on-tertiary-container rounded-lg font-label-sm">En 15 d&iacute;as</span>
-                </div>
-                <div class="flex items-center justify-between p-4 bg-surface rounded-2xl">
-                  <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 bg-secondary-fixed text-on-secondary-fixed-variant rounded-lg flex items-center justify-center">
-                      <span class="material-symbols-outlined">health_and_safety</span>
-                    </div>
-                    <div>
-                      <p class="font-label-md text-label-md">Leucemia Felina</p>
-                      <p class="text-outline font-body-sm">Dosis completa</p>
-                    </div>
-                  </div>
-                  <span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-lg font-label-sm">Completada</span>
+                  }
+                  @if (upcomingVaccines().length === 0) {
+                    <p class="text-body-sm text-on-surface-variant text-center py-4">No hay pr&oacute;ximas dosis pendientes.</p>
+                  }
                 </div>
               </div>
-            </div>
+            } @else {
+              <div class="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-3xl p-10 flex flex-col items-center justify-center text-center">
+                <div class="w-16 h-16 rounded-full bg-tertiary-fixed/20 flex items-center justify-center mb-4">
+                  <span class="material-symbols-outlined text-4xl text-tertiary" style="font-variation-settings:'FILL' 1">vaccines</span>
+                </div>
+                <h3 class="text-headline-md font-bold text-on-surface mb-2">Sin informaci&oacute;n de vacunaci&oacute;n</h3>
+                <p class="text-body-sm text-on-surface-variant max-w-sm">
+                  Cuando se registren vacunas para tus mascotas, aparecer&aacute;n aqu&iacute;.
+                </p>
+              </div>
+            }
           </div>
         }
       } @else if (auth.isAsistente()) {
@@ -687,6 +694,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private mascotaService = inject(MascotaService);
   private citaService = inject(CitaService);
+  private vacunaService = inject(VacunaService);
   private usuarioService = inject(UsuarioService);
   private servicioService = inject(ServicioService);
   private veterinarioService = inject(VeterinarioService);
@@ -696,6 +704,38 @@ export class DashboardComponent implements OnInit, OnDestroy {
   adminCounts = signal({ usuarios: 0, servicios: 0, veterinarios: 0, asistentes: 0 });
   myPets = signal<MascotaResponse[]>([]);
   nextAppointment = signal<CitaResponse | null>(null);
+  vacunaRecords = signal<VacunaMascotaResponse[]>([]);
+
+  vacunacionPct = computed(() => {
+    const all = this.vacunaRecords();
+    if (all.length === 0) return 0;
+    const today = new Date();
+    const alDia = all.filter(v => {
+      if (!v.fechaProximaDosis) return true;
+      return new Date(v.fechaProximaDosis) >= today;
+    });
+    return Math.round((alDia.length / all.length) * 100);
+  });
+
+  upcomingVaccines = computed(() => {
+    const today = new Date();
+    return this.vacunaRecords()
+      .filter(v => v.fechaProximaDosis && new Date(v.fechaProximaDosis) >= today)
+      .sort((a, b) => new Date(a.fechaProximaDosis!).getTime() - new Date(b.fechaProximaDosis!).getTime());
+  });
+
+  daysUntil(dateStr: string | null): string {
+    if (!dateStr) return 'Sin fecha';
+    const diff = Math.ceil((new Date(dateStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    if (diff <= 0) return 'Vencida';
+    if (diff === 1) return 'Mañana';
+    return `En ${diff} días`;
+  }
+
+  daysUntilNumber(dateStr: string | null): number {
+    if (!dateStr) return 999;
+    return Math.ceil((new Date(dateStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  }
   uniquePets = computed(() => {
     const seen = new Set<string>();
     return this.myPets().filter(p => {
@@ -748,11 +788,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.loading.set(false);
       this.loadDuenioPets();
       this.loadDuenioCitas();
+      this.loadDuenioVacunas();
       this.routerSub = this.router.events.pipe(
         filter(e => e instanceof NavigationEnd)
       ).subscribe(() => {
         this.loadDuenioPets();
         this.loadDuenioCitas();
+        this.loadDuenioVacunas();
       });
       return;
     }
@@ -781,6 +823,33 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.nextAppointment.set(upcoming.length > 0 ? upcoming[0] : null);
       },
     });
+  }
+
+  private loadDuenioVacunas(): void {
+    const pets = this.myPets();
+    if (pets.length === 0) {
+      this.vacunaRecords.set([]);
+      return;
+    }
+    const results: VacunaMascotaResponse[] = [];
+    let completed = 0;
+    for (const pet of pets) {
+      this.vacunaService.findByMascota(pet.id).subscribe({
+        next: (data) => {
+          results.push(...data);
+          completed++;
+          if (completed === pets.length) {
+            this.vacunaRecords.set(results);
+          }
+        },
+        error: () => {
+          completed++;
+          if (completed === pets.length) {
+            this.vacunaRecords.set(results);
+          }
+        },
+      });
+    }
   }
 
   upcomingCitas = (): AlertaCitaResponse[] => {
