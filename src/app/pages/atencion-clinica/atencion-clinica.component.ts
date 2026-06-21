@@ -350,7 +350,7 @@ interface MedicationRow {
             <!-- Estado Mascota -->
             <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
               <h4 class="font-label-md text-label-md text-on-surface mb-4">Estado actual de la mascota</h4>
-              <select formControlName="estadoMascota" class="input input-bordered w-full">
+              <select [formControl]="atencionForm.controls.estadoMascota" class="input input-bordered w-full">
                 <option value="">Seleccionar estado</option>
                 <option value="SALUDABLE">Saludable</option>
                 <option value="EN_OBSERVACION">En observaci&oacute;n</option>
