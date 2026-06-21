@@ -16,6 +16,7 @@ type EspecieFilter = '' | 'CANINO' | 'FELINO' | 'EXOTICO';
 type EstadoFilter = '' | 'SALUDABLE' | 'EN_TRATAMIENTO' | 'EN_OBSERVACION' | 'CRITICO' | 'URGENTE';
 
 const ESTADO_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
+  PENDIENTE: { bg: 'bg-surface-container-high', text: 'text-on-surface-variant', dot: 'bg-outline' },
   SALUDABLE: { bg: 'bg-secondary-container', text: 'text-on-secondary-container', dot: 'bg-secondary' },
   EN_TRATAMIENTO: { bg: 'bg-tertiary-fixed', text: 'text-on-tertiary-fixed-variant', dot: 'bg-tertiary' },
   EN_OBSERVACION: { bg: 'bg-surface-container-high', text: 'text-on-surface-variant', dot: 'bg-outline' },
@@ -60,10 +61,10 @@ const ESTADO_STYLES: Record<string, { bg: string; text: string; dot: string }> =
                       <span class="material-symbols-outlined text-8xl text-primary-container/30" style="font-variation-settings:'FILL' 1">pets</span>
                     }
                     <div class="absolute top-4 right-4 backdrop-blur px-3 py-1 rounded-full flex items-center gap-1"
-                         [ngClass]="cardStatus(m.id).bg">
+                         [ngClass]="estadoStyle(m.estado || 'PENDIENTE').bg">
                       <span class="w-2 h-2 rounded-full"
-                           [class]="cardStatus(m.id).dot"></span>
-                      <span class="text-label-sm font-label-sm">{{ cardStatus(m.id).label }}</span>
+                           [class]="estadoStyle(m.estado || 'PENDIENTE').dot"></span>
+                      <span class="text-label-sm font-label-sm">{{ estadoLabel(m.estado || 'PENDIENTE') }}</span>
                     </div>
                   </div>
                   <div class="p-6 space-y-4">
@@ -629,14 +630,6 @@ const ESTADO_STYLES: Record<string, { bg: string; text: string; dot: string }> =
   `
 })
 export class MascotasListComponent implements OnInit {
-  protected cardStatus(id: number): { bg: string; dot: string; label: string } {
-    const statuses = [
-      { bg: 'bg-secondary-container/90', dot: 'bg-secondary', label: 'Saludable' },
-      { bg: 'bg-tertiary-fixed/90', dot: 'bg-tertiary', label: 'En tratamiento' },
-      { bg: 'bg-error-container/90', dot: 'bg-error', label: 'Crítico' },
-    ];
-    return statuses[id % statuses.length];
-  }
   private mascotaService = inject(MascotaService);
   private duenioService = inject(DuenioService);
   private citaService = inject(CitaService);
@@ -796,14 +789,14 @@ export class MascotasListComponent implements OnInit {
 
   estadoLabel(estado: string): string {
     const map: Record<string, string> = {
-      SALUDABLE: 'Saludable', EN_TRATAMIENTO: 'En Tratamiento',
+      PENDIENTE: 'Pendiente de evaluación', SALUDABLE: 'Saludable', EN_TRATAMIENTO: 'En Tratamiento',
       EN_OBSERVACION: 'En Observación', CRITICO: 'Crítico',
     };
-    return map[estado] || estado;
+    return map[estado] || 'Pendiente de evaluación';
   }
 
   estadoStyle(estado: string) {
-    return ESTADO_STYLES[estado] || ESTADO_STYLES.SALUDABLE;
+    return ESTADO_STYLES[estado] || ESTADO_STYLES.PENDIENTE;
   }
 
   prevPage(): void {
