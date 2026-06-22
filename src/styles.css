@@ -4,11 +4,11 @@
 
 @layer base {
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: 'Manrope', sans-serif; cursor: url('/PetCare-Frontend/assets/cursor/paw.svg') 16 20, auto; }
+  body { margin: 0; font-family: 'Manrope', sans-serif; }
 }
 
 a, button, [role="button"], input[type="submit"], input[type="button"], input[type="reset"], select, summary, [onclick] {
-  cursor: url('/PetCare-Frontend/assets/cursor/paw.svg') 16 20, pointer;
+  cursor: pointer;
 }
 
 @layer components {
