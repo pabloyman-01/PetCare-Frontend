@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+  "index": "/PetCare-Frontend/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": [
+          "/PetCare-Frontend/",
+          "/PetCare-Frontend/index.html",
+          "/PetCare-Frontend/*.css",
+          "/PetCare-Frontend/*.js",
+          "/PetCare-Frontend/*.svg"
+        ]
+      }
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": [
+          "/PetCare-Frontend/assets/**"
+        ]
+      }
+    }
+  ]
+}
