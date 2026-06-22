@@ -188,10 +188,10 @@ const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabad
                         </div>
                       </td>
                       <td class="py-4 px-5">
-                        <span class="inline-flex items-center gap-1.5 font-label-sm text-label-sm px-2.5 py-1 rounded-md"
-                              [ngClass]="rolBorderClass(a.id)">
-                          <span class="material-symbols-outlined text-[14px]">{{ rolIcon(a.id) }}</span>
-                          {{ rolLabel(a.id) }}
+              <span class="inline-flex items-center gap-1.5 font-label-sm text-label-sm px-2.5 py-1 rounded-md"
+                    [ngClass]="rolBorder(a.funciones)">
+                <span class="material-symbols-outlined text-[14px]">{{ rolIcon(a.funciones) }}</span>
+                {{ rolLabel(a.funciones) }}
                         </span>
                       </td>
                       <td class="py-4 px-5">
@@ -352,9 +352,6 @@ const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabad
                   <option [value]="u.id">{{ u.fullName }} ({{ u.email }})</option>
                 }
               </select>
-              @if (submitted && asistenteForm.get('usuarioId')?.invalid) {
-                <p class="text-error text-body-sm mt-1">Debe seleccionar un usuario.</p>
-              }
               @if (usuariosDisponibles().length === 0) {
                 <p class="text-body-sm text-on-surface-variant mt-1">No hay usuarios asistentes disponibles. Cree uno en Usuarios primero.</p>
               }
@@ -376,10 +373,13 @@ const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabad
                        class="input input-bordered w-full" />
               </div>
               <div class="space-y-1.5 sm:col-span-2">
-                <label class="text-label-sm font-semibold text-on-surface-variant">Funciones</label>
-                <textarea formControlName="funciones" rows="3"
-                          placeholder="Describa las funciones del asistente"
-                          class="textarea textarea-bordered w-full resize-none"></textarea>
+                <label class="text-label-sm font-semibold text-on-surface-variant">Rol</label>
+                <select formControlName="funciones" class="input input-bordered w-full">
+                  <option value="">Seleccionar rol...</option>
+                  <option value="Enfermeria">Enfermer&iacute;a</option>
+                  <option value="Recepcion">Recepci&oacute;n</option>
+                  <option value="Apoyo">Apoyo</option>
+                </select>
               </div>
             </div>
             <div class="flex justify-end gap-3 pt-4 border-t border-outline-variant/20 items-center">
@@ -444,7 +444,7 @@ export class AsistentesComponent implements OnInit {
   hoyLabel: string;
 
   asistenteForm = this.fb.group({
-    usuarioId: [null as number | null, Validators.required],
+    usuarioId: [null as number | null],
     nombres: [''],
     apellidos: [''],
     tipoDocumento: ['', Validators.required],
@@ -468,10 +468,7 @@ export class AsistentesComponent implements OnInit {
     const roleFilter = this.rolFilter();
     let list = this.asistentes();
     if (roleFilter) {
-      list = list.filter((_, i) => {
-        const roles: RolAsistente[] = ['Enfermeria', 'Recepcion', 'Apoyo'];
-        return roles[i % roles.length] === roleFilter;
-      });
+      list = list.filter(a => a.funciones === roleFilter);
     }
     if (term) {
       list = list.filter(
@@ -566,21 +563,16 @@ export class AsistentesComponent implements OnInit {
     return colors[id % colors.length];
   }
 
-  private roleForId(id: number): RolAsistente {
-    const roles: RolAsistente[] = ['Enfermeria', 'Recepcion', 'Apoyo'];
-    return roles[id % roles.length];
+  rolLabel(funciones: string): string {
+    return ROL_LABELS[funciones as RolAsistente] || funciones;
   }
 
-  rolLabel(id: number): string {
-    return ROL_LABELS[this.roleForId(id)];
+  rolIcon(funciones: string): string {
+    return ROL_ICONS[funciones as RolAsistente] || 'assignment';
   }
 
-  rolIcon(id: number): string {
-    return ROL_ICONS[this.roleForId(id)];
-  }
-
-  rolBorderClass(id: number): string {
-    return ROL_BORDER[this.roleForId(id)];
+  rolBorder(funciones: string): string {
+    return ROL_BORDER[funciones as RolAsistente] || 'border border-outline-variant bg-surface-variant text-on-surface-variant';
   }
 
   turnoDot(id: number): string {
