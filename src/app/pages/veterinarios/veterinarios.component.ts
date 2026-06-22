@@ -96,7 +96,7 @@ const DAY_MAP: Record<string, string> = {
         <button (click)="openCreate()"
                 class="px-4 py-2 bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:bg-on-primary-fixed-variant transition-colors shadow-sm flex items-center gap-2 w-full sm:w-auto justify-center">
           <span class="material-symbols-outlined text-[18px]">person_add</span>
-          A&ntilde;adir Profesional
+          A&ntilde;adir datos
         </button>
       }
     </div>
@@ -166,7 +166,7 @@ const DAY_MAP: Record<string, string> = {
         <div class="bg-surface-container-lowest rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar" (click)="$event.stopPropagation()">
           <div class="flex items-center justify-between p-6 border-b border-outline-variant/20">
             <h3 class="text-headline-md font-bold text-on-surface">
-              {{ editingVeterinario() ? 'Editar Veterinario' : 'Nuevo Veterinario' }}
+              {{ editingVeterinario() ? 'Editar Veterinario' : 'A&ntilde;adir datos' }}
             </h3>
             <button (click)="closeForm()" class="btn btn-ghost btn-square btn-sm">
               <span class="material-symbols-outlined">close</span>
@@ -261,7 +261,7 @@ const DAY_MAP: Record<string, string> = {
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                   </svg>
                 }
-                {{ editingVeterinario() ? 'Guardar Cambios' : 'Crear Veterinario' }}
+                {{ editingVeterinario() ? 'Guardar Cambios' : 'Guardar cambios' }}
               </button>
             </div>
           </form>
