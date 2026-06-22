@@ -5,9 +5,16 @@ import { environment } from './environments/environment';
 
 console.log('[PetCare] API URL:', environment.apiUrl);
 
-fetch(environment.apiUrl + '/health')
-  .then(r => r.text())
-  .then(t => console.log('[PetCare] Health:', t))
-  .catch(e => console.error('[PetCare] Health error:', e));
+try {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', environment.apiUrl + '/health', true);
+  xhr.timeout = 10000;
+  xhr.onload = function() { console.log('[PetCare] Health:', xhr.status, xhr.responseText); };
+  xhr.onerror = function() { console.error('[PetCare] Health XHR error:', xhr.status); };
+  xhr.ontimeout = function() { console.error('[PetCare] Health XHR timeout'); };
+  xhr.send();
+} catch(e) {
+  console.error('[PetCare] Health exception:', e);
+}
 
 bootstrapApplication(AppComponent, appConfig).catch(err => console.error(err));
