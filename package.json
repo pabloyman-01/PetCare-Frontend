@@ -6,7 +6,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "build:capacitor": "ng build --base-href=./ && npx cap copy android",
+    "build:capacitor": "ng build --base-href=./ && npx cap copy android && rm -f 'android/app/src/main/res/xml/config 2.xml'",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
