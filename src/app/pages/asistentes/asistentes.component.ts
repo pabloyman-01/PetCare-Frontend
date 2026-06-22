@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AsistenteService } from '../../core/services/asistente.service';
 import { AuthService } from '../../core/services/auth.service';
+import { UsuarioService } from '../../core/services/usuario.service';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
@@ -65,7 +66,7 @@ const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabad
         <button (click)="openCreate()"
                 class="bg-primary hover:bg-primary/90 text-on-primary font-label-md text-label-md py-2.5 px-5 rounded-lg flex items-center gap-2 transition-all shadow-sm active:scale-95">
           <span class="material-symbols-outlined text-[20px]">person_add</span>
-          A&ntilde;adir Colaborador
+          A&ntilde;adir datos
         </button>
       }
     </div>
@@ -334,7 +335,7 @@ const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabad
         <div class="bg-surface-container-lowest rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar" (click)="$event.stopPropagation()">
           <div class="flex items-center justify-between p-6 border-b border-outline-variant/20">
             <h3 class="text-headline-md font-bold text-on-surface">
-              {{ editingAsistente() ? 'Editar Asistente' : 'Nuevo Asistente' }}
+              {{ editingAsistente() ? 'Editar Asistente' : 'A&ntilde;adir datos' }}
             </h3>
             <button (click)="closeForm()" class="btn btn-ghost btn-square btn-sm">
               <span class="material-symbols-outlined">close</span>
@@ -342,17 +343,24 @@ const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabad
           </div>
 
           <form [formGroup]="asistenteForm" (ngSubmit)="onSubmit()" class="p-6 space-y-5">
+            <!-- Select Usuario -->
+            <div class="space-y-1.5">
+              <label class="text-label-sm font-semibold text-on-surface-variant">Usuario</label>
+              <select formControlName="usuarioId" class="input input-bordered w-full">
+                <option value="">Seleccionar usuario asistente...</option>
+                @for (u of usuariosDisponibles(); track u.id) {
+                  <option [value]="u.id">{{ u.fullName }} ({{ u.email }})</option>
+                }
+              </select>
+              @if (submitted && asistenteForm.get('usuarioId')?.invalid) {
+                <p class="text-error text-body-sm mt-1">Debe seleccionar un usuario.</p>
+              }
+              @if (usuariosDisponibles().length === 0) {
+                <p class="text-body-sm text-on-surface-variant mt-1">No hay usuarios asistentes disponibles. Cree uno en Usuarios primero.</p>
+              }
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div class="space-y-1.5">
-                <label class="text-label-sm font-semibold text-on-surface-variant">Nombres</label>
-                <input type="text" formControlName="nombres" placeholder="Ingrese nombres"
-                       class="input input-bordered w-full" />
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-label-sm font-semibold text-on-surface-variant">Apellidos</label>
-                <input type="text" formControlName="apellidos" placeholder="Ingrese apellidos"
-                       class="input input-bordered w-full" />
-              </div>
               <div class="space-y-1.5">
                 <label class="text-label-sm font-semibold text-on-surface-variant">Tipo Documento</label>
                 <select formControlName="tipoDocumento" class="select select-bordered w-full">
@@ -365,16 +373,6 @@ const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabad
               <div class="space-y-1.5">
                 <label class="text-label-sm font-semibold text-on-surface-variant">N&uacute;mero Documento</label>
                 <input type="text" formControlName="numeroDocumento" placeholder="Ingrese n&uacute;mero"
-                       class="input input-bordered w-full" />
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-label-sm font-semibold text-on-surface-variant">Tel&eacute;fono</label>
-                <input type="text" formControlName="telefono" placeholder="Ingrese tel&eacute;fono"
-                       class="input input-bordered w-full" />
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-label-sm font-semibold text-on-surface-variant">Email</label>
-                <input type="email" formControlName="email" placeholder="Ingrese email"
                        class="input input-bordered w-full" />
               </div>
               <div class="space-y-1.5 sm:col-span-2">
@@ -396,7 +394,7 @@ const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabad
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                   </svg>
                 }
-                {{ editingAsistente() ? 'Guardar Cambios' : 'Crear Asistente' }}
+                {{ editingAsistente() ? 'Guardar Cambios' : 'Guardar cambios' }}
               </button>
             </div>
           </form>
@@ -421,12 +419,14 @@ const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabad
 })
 export class AsistentesComponent implements OnInit {
   private asistenteService = inject(AsistenteService);
+  private usuarioService = inject(UsuarioService);
   private horarioService = inject(HorarioSemanalService);
   protected auth = inject(AuthService);
   protected turnoConfig = TURNO_CONFIG;
   private fb = inject(FormBuilder);
 
   asistentes = signal<AsistenteResponse[]>([]);
+  usuariosDisponibles = signal<{ id: number; fullName: string; email: string }[]>([]);
   horariosSemanales = signal<HorarioSemanalResponse[]>([]);
   loading = signal(true);
   searchTerm = signal('');
@@ -444,12 +444,13 @@ export class AsistentesComponent implements OnInit {
   hoyLabel: string;
 
   asistenteForm = this.fb.group({
-    nombres: ['', Validators.required],
-    apellidos: ['', Validators.required],
+    usuarioId: [null as number | null, Validators.required],
+    nombres: [''],
+    apellidos: [''],
     tipoDocumento: ['', Validators.required],
     numeroDocumento: ['', Validators.required],
-    telefono: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
+    telefono: [''],
+    email: [''],
     funciones: ['', Validators.required],
     password: [''],
   });
@@ -507,6 +508,7 @@ export class AsistentesComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadAsistentes();
+    this.loadUsuariosDisponibles();
   }
 
   private inicioSemana(d: Date): Date {
@@ -533,8 +535,22 @@ export class AsistentesComponent implements OnInit {
       next: (data) => {
         this.asistentes.set(data);
         this.loading.set(false);
+        this.loadUsuariosDisponibles();
       },
       error: () => this.loading.set(false),
+    });
+  }
+
+  private loadUsuariosDisponibles(): void {
+    this.usuarioService.findAll().pipe(catchError(() => EMPTY)).subscribe({
+      next: (data) => {
+        const idsConPerfil = new Set(this.asistentes().filter(a => a.usuarioId).map(a => a.usuarioId));
+        this.usuariosDisponibles.set(
+          data
+            .filter(u => u.roles.includes('ROLE_ASISTENTE') && !idsConPerfil.has(u.id))
+            .map(u => ({ id: u.id, fullName: u.fullName, email: u.email }))
+        );
+      },
     });
   }
 
@@ -601,11 +617,24 @@ export class AsistentesComponent implements OnInit {
     this.submitted = false;
     this.errorMsg.set('');
     this.showForm.set(true);
+    this.asistenteForm.get('usuarioId')?.valueChanges.subscribe(id => {
+      if (!id) return;
+      const user = this.usuariosDisponibles().find(u => u.id === id);
+      if (!user) return;
+      const parts = user.fullName.split(/\s+/);
+      this.asistenteForm.patchValue({
+        nombres: parts[0] || '',
+        apellidos: parts.slice(1).join(' ') || '',
+        email: user.email,
+        telefono: '',
+      });
+    });
   }
 
   openEdit(a: AsistenteResponse): void {
     this.editingAsistente.set(a);
     this.asistenteForm.patchValue({
+      usuarioId: a.usuarioId,
       nombres: a.nombres,
       apellidos: a.apellidos,
       tipoDocumento: a.tipoDocumento,
@@ -633,12 +662,9 @@ export class AsistentesComponent implements OnInit {
     this.saving.set(true);
     const formValue = this.asistenteForm.value;
     const req: AsistenteRequest = {
-      nombres: formValue.nombres!,
-      apellidos: formValue.apellidos!,
+      usuarioId: formValue.usuarioId || undefined,
       tipoDocumento: formValue.tipoDocumento!,
       numeroDocumento: formValue.numeroDocumento!,
-      telefono: formValue.telefono!,
-      email: formValue.email!,
       funciones: formValue.funciones!,
       password: this.editingAsistente() ? undefined : Math.random().toString(36).slice(2, 10),
     };
