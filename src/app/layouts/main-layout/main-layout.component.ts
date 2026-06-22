@@ -15,7 +15,7 @@ interface NavItem {
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
   template: `
-  <div class="flex h-screen w-full overflow-hidden bg-surface">
+  <div class="flex h-screen w-full overflow-hidden bg-surface safe-pt">
     <!-- Sidebar -->
     <aside class="hidden md:flex flex-col h-full w-[280px] bg-surface border-r border-outline-variant shadow-sm flex-shrink-0">
       <div class="flex items-center gap-3 px-6 py-5">
