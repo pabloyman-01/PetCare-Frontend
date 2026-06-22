@@ -271,6 +271,33 @@ const ESTADO_STYLES: Record<string, { bg: string; text: string; dot: string }> =
         </div>
       </div>
 
+      @if (showFiltros()) {
+        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex flex-wrap items-center gap-4">
+          <div class="flex items-center gap-2">
+            <label class="text-label-sm text-on-surface-variant">Especie:</label>
+            <select [ngModel]="especieFilter()" (ngModelChange)="especieFilter.set($event); currentPage.set(0)"
+                    class="bg-surface-container-low border-none rounded-lg py-1.5 px-3 text-body-sm focus:ring-2 focus:ring-primary">
+              <option value="">Todas</option>
+              <option value="CANINO">Canino</option>
+              <option value="FELINO">Felino</option>
+              <option value="EXOTICO">Exótico</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-label-sm text-on-surface-variant">Estado:</label>
+            <select [ngModel]="estadoFilter()" (ngModelChange)="estadoFilter.set($event); currentPage.set(0)"
+                    class="bg-surface-container-low border-none rounded-lg py-1.5 px-3 text-body-sm focus:ring-2 focus:ring-primary">
+              <option value="">Todos</option>
+              <option value="PENDIENTE">Pendiente</option>
+              <option value="SALUDABLE">Saludable</option>
+              <option value="EN_OBSERVACION">En observación</option>
+              <option value="EN_TRATAMIENTO">En tratamiento</option>
+              <option value="CRITICO">Crítico</option>
+            </select>
+          </div>
+        </div>
+      }
+
       <!-- Loading -->
       @if (loading()) {
         <div class="flex items-center justify-center py-20">
