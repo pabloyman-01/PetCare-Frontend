@@ -581,12 +581,13 @@ export class VeterinariosComponent implements OnInit {
       }));
 
     const req: VeterinarioRequest = {
-      nombres: formValue.nombres!,
-      apellidos: formValue.apellidos!,
+      usuarioId: formValue.usuarioId || undefined,
+      nombres: formValue.nombres || '',
+      apellidos: formValue.apellidos || '',
       numeroColegiatura: formValue.numeroColegiatura!,
       especialidad: formValue.especialidad!,
-      telefono: formValue.telefono!,
-      email: formValue.email!,
+      telefono: formValue.telefono || '',
+      email: formValue.email || '',
       horarios: horarios.length > 0 ? horarios : undefined,
     };
 
