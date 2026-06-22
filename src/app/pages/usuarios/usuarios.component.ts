@@ -165,13 +165,18 @@ const ALL_ROLES = ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_ASISTENTE', 'ROLE_DUE
                       <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button (click)="openEdit(u)"
                                 class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary-container/10 rounded-lg transition-all"
-                                title="Editar permisos">
+                                title="Editar">
                           <span class="material-symbols-outlined text-[20px]">edit</span>
                         </button>
                         <button (click)="openRolesEditor(u)"
                                 class="p-2 text-on-surface-variant hover:text-tertiary hover:bg-tertiary-container/10 rounded-lg transition-all"
                                 title="Gestionar roles">
                           <span class="material-symbols-outlined text-[20px]">manage_accounts</span>
+                        </button>
+                        <button (click)="deleteUsuario(u)"
+                                class="p-2 text-error hover:bg-error-container/20 rounded-lg transition-all"
+                                title="Eliminar usuario">
+                          <span class="material-symbols-outlined text-[20px]">person_remove</span>
                         </button>
                         @if (u.active) {
                           <button (click)="confirmToggleActive(u)"
@@ -668,5 +673,13 @@ export class UsuariosComponent implements OnInit {
     this.usuarioService.toggleActive(u.id).pipe(catchError(() => EMPTY)).subscribe({
       next: () => this.loadUsuarios(),
     });
+  }
+
+  deleteUsuario(u: UsuarioResponse): void {
+    if (confirm(`¿Eliminar usuario "${u.fullName}"? Esta acción no se puede deshacer.`)) {
+      this.usuarioService.delete(u.id).pipe(catchError(() => EMPTY)).subscribe({
+        next: () => this.loadUsuarios(),
+      });
+    }
   }
 }
