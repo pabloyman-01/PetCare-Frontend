@@ -5,16 +5,6 @@
 @layer base {
   * { box-sizing: border-box; }
   body { margin: 0; font-family: 'Manrope', sans-serif; }
-  html, body, app-root { height: 100%; overflow: hidden; }
-  app-root { display: block; }
-}
-
-/* Safe area for mobile notches/status bars */
-.safe-area-top {
-  padding-top: env(safe-area-inset-top, 0px);
-}
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 a, button, [role="button"], input[type="submit"], input[type="button"], input[type="reset"], select, summary, [onclick] {
