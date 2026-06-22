@@ -7,6 +7,11 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'http',
     cleartext: true,
+    allowNavigation: [
+      '*.onrender.com',
+      '*.github.io',
+      '*.netlify.app',
+    ],
   },
 };
 
