@@ -15,10 +15,10 @@ interface NavItem {
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
   template: `
-  <div class="flex h-screen w-full overflow-hidden bg-surface">
+  <div class="flex h-screen w-full overflow-hidden bg-surface safe-area-top">
     <!-- Sidebar -->
     <aside class="hidden md:flex flex-col h-full w-[280px] bg-surface border-r border-outline-variant shadow-sm flex-shrink-0">
-      <div class="flex items-center gap-3 px-6 py-5">
+      <div class="flex items-center gap-3 px-6 py-5 pt-[max(1.25rem,env(safe-area-inset-top,1.25rem))]">
         <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
           <span class="material-symbols-outlined text-on-primary fill">pets</span>
         </div>
@@ -58,7 +58,7 @@ interface NavItem {
     <!-- Main content -->
     <main class="flex-1 flex flex-col min-w-0 h-full">
       <!-- Topbar -->
-      <header class="h-16 sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30 flex items-center justify-between px-6 flex-shrink-0">
+      <header class="h-16 sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30 flex items-center justify-between px-6 flex-shrink-0 pt-[env(safe-area-inset-top)]" style="height:calc(64px + env(safe-area-inset-top, 0px))">
         <div class="flex items-center gap-3">
           <button class="md:hidden p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant" (click)="mobileSidebarOpen = !mobileSidebarOpen">
             <span class="material-symbols-outlined">menu</span>
