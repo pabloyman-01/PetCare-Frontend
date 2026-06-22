@@ -261,10 +261,11 @@ const ESTADO_STYLES: Record<string, { bg: string; text: string; dot: string }> =
           </div>
         </div>
         <div class="flex items-center gap-2 self-end pb-1">
-          <button class="p-2.5 rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-low transition-colors" title="Exportar">
+          <button (click)="exportMascotas()" class="p-2.5 rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-low transition-colors" title="Exportar">
             <span class="material-symbols-outlined">download</span>
           </button>
-          <button class="p-2.5 rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-low transition-colors" title="M&aacute;s filtros">
+          <button (click)="showFiltros.set(!showFiltros())" class="p-2.5 rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-low transition-colors"
+                  [class.bg-primary-container]="showFiltros()" [class.text-primary]="showFiltros()" title="M&aacute;s filtros">
             <span class="material-symbols-outlined">tune</span>
           </button>
         </div>
@@ -662,6 +663,7 @@ export class MascotasListComponent implements OnInit {
   duenioActual = signal<DuenioResponse | null>(null);
 
   showForm = signal(false);
+  showFiltros = signal(false);
   editingMascota = signal<MascotaResponse | null>(null);
   saving = signal(false);
   submitted = false;
@@ -711,7 +713,7 @@ export class MascotasListComponent implements OnInit {
       edadAnios: m.edadAnios,
       pesoKg: m.pesoKg,
       duenioNombre: m.duenioNombreCompleto,
-      estadoSalud: ESTADOS[i % ESTADOS.length],
+      estadoSalud: m.estado || 'PENDIENTE',
       proximaCita: '',
       active: m.active,
     }));
@@ -794,6 +796,27 @@ export class MascotasListComponent implements OnInit {
   especieLabel(especie: string): string {
     const map: Record<string, string> = { CANINO: 'Canino', FELINO: 'Felino', EXOTICO: 'Exótico' };
     return map[especie] || especie;
+  }
+
+  exportMascotas(): void {
+    const data = this.filteredMascotas();
+    if (data.length === 0) return;
+    const BOM = '\uFEFF';
+    const rows = [
+      ['Nombre', 'Especie', 'Raza', 'Edad', 'Peso', 'Dueño', 'Estado'],
+      ...data.map(m => [
+        m.nombre, this.especieLabel(m.especie), m.raza,
+        m.edadAnios + (m.edadAnios === 1 ? ' año' : ' años'),
+        m.pesoKg ? m.pesoKg + ' kg' : '-',
+        m.duenioNombre, this.estadoLabel(m.estadoSalud),
+      ])
+    ];
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'mascotas.csv'; a.click();
+    URL.revokeObjectURL(url);
   }
 
   estadoLabel(estado: string): string {
