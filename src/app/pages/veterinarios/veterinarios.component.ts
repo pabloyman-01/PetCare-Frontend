@@ -183,6 +183,9 @@ const DAY_MAP: Record<string, string> = {
                   <option [value]="u.id">{{ u.fullName }} ({{ u.email }})</option>
                 }
               </select>
+              @if (submitted && veterinarioForm.get('usuarioId')?.invalid) {
+                <p class="text-error text-body-sm mt-1">Debe seleccionar un usuario veterinario.</p>
+              }
               @if (usuariosDisponibles().length === 0) {
                 <p class="text-body-sm text-on-surface-variant mt-1">No hay usuarios veterinarios disponibles. Cree uno en Usuarios primero.</p>
               }
@@ -370,7 +373,7 @@ export class VeterinariosComponent implements OnInit {
   errorMsg = signal('');
 
   veterinarioForm = this.fb.group({
-    usuarioId: [null as number | null],
+    usuarioId: [null as number | null, Validators.required],
     nombres: [''],
     apellidos: [''],
     numeroColegiatura: ['', Validators.required],
