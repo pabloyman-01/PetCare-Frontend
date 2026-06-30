@@ -1,0 +1,7 @@
+node_modules
+.git
+.github
+android
+ios
+*.md
+.DS_Store
