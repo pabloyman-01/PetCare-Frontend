@@ -109,9 +109,9 @@ interface MedicationRow {
             </div>
           } @else {
             <!-- Patient Summary Card -->
-            <section class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm p-6 flex items-center justify-between">
-              <div class="flex items-center gap-6">
-                <div class="relative">
+            <section class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex items-center gap-6 min-w-0">
+                <div class="relative flex-shrink-0">
                   <div class="w-20 h-20 rounded-full bg-surface-container-highest flex items-center justify-center text-primary">
                     <span class="material-symbols-outlined text-4xl">pets</span>
                   </div>
@@ -119,13 +119,13 @@ interface MedicationRow {
                     <span class="material-symbols-outlined text-white text-[12px]" style="font-variation-settings:'FILL' 1">check</span>
                   </span>
                 </div>
-                <div>
-                  <div class="flex items-center gap-3">
-                    <h3 class="text-headline-md font-bold text-on-surface">{{ selectedCita()!.mascotaNombre }}</h3>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-3 flex-wrap">
+                    <h3 class="text-headline-md font-bold text-on-surface truncate">{{ selectedCita()!.mascotaNombre }}</h3>
                     <span class="px-2 py-0.5 bg-secondary-container text-on-secondary-container text-label-sm font-semibold rounded-full">Estable</span>
                   </div>
-                  <p class="text-on-surface-variant font-body-sm">Mascota &bull; {{ selectedCita()!.duenioNombreCompleto }}</p>
-                  <div class="flex gap-4 mt-2">
+                  <p class="text-on-surface-variant font-body-sm truncate">Mascota &bull; {{ selectedCita()!.duenioNombreCompleto }}</p>
+                  <div class="flex gap-4 mt-2 flex-wrap">
                     <span class="flex items-center gap-1 text-on-surface-variant text-label-sm">
                       <span class="material-symbols-outlined text-[16px]">person</span>
                       Due&ntilde;o: {{ selectedCita()!.duenioNombreCompleto }}
@@ -138,7 +138,7 @@ interface MedicationRow {
                 </div>
               </div>
               <a [routerLink]="'/mascotas/' + selectedCita()!.mascotaId"
-                 class="px-4 py-2 bg-surface-container text-primary font-label-md rounded-lg border border-primary/20 hover:bg-primary-container hover:text-on-primary-container transition-all flex items-center gap-2">
+                 class="flex-shrink-0 self-start sm:self-auto px-4 py-2 bg-surface-container text-primary font-label-md rounded-lg border border-primary/20 hover:bg-primary-container hover:text-on-primary-container transition-all flex items-center gap-2">
                 <span class="material-symbols-outlined text-[20px]">visibility</span>
                 Ver Ficha Completa
               </a>
