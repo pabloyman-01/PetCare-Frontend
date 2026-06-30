@@ -29,4 +29,8 @@ export class UsuarioService {
   updateRoles(id: number, req: UpdateUserRolesRequest): Observable<UsuarioResponse> {
     return this.http.put<UsuarioResponse>(`${this.base}/${id}/roles`, req);
   }
+
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}`);
+  }
 }

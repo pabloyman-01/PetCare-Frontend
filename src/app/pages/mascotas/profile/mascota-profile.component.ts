@@ -78,7 +78,7 @@ type TabType = 'historial' | 'vacunas' | 'citas' | 'observaciones';
               <p class="text-body-md font-semibold text-on-surface">{{ m.createdAt | date:'dd/MM/yyyy' }}</p>
             </div>
           </div>
-          @if (!auth.isDuenioOnly()) {
+          @if (!auth.isDuenioOnly() && !auth.isAsistente()) {
             <div class="flex items-center gap-2">
               <button class="btn btn-primary btn-sm">
                 <span class="material-symbols-outlined text-[18px]">add</span>

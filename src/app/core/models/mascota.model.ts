@@ -1,5 +1,7 @@
 export type SexoMascota = 'MACHO' | 'HEMBRA';
 
+export type EstadoMascota = 'PENDIENTE' | 'SALUDABLE' | 'EN_OBSERVACION' | 'EN_TRATAMIENTO' | 'CRITICO';
+
 export interface MascotaRequest {
   duenioId: number;
   nombre: string;
@@ -28,6 +30,9 @@ export interface MascotaResponse {
   observaciones: string | null;
   fotoUrl: string | null;
   active: boolean;
+  estado: EstadoMascota;
+  fechaEstado: string | null;
+  veterinarioEstado: string | null;
   createdAt: string;
   updatedAt: string;
 }

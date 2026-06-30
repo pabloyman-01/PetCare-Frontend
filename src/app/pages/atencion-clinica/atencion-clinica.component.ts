@@ -8,6 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { CitaResponse } from '../../core/models/cita.model';
 import { AtencionClinicaRequest, AtencionClinicaResponse, HistoriaClinicaResponse } from '../../core/models/atencion-clinica.model';
+import { EstadoMascota } from '../../core/models/mascota.model';
 import { catchError, EMPTY } from 'rxjs';
 
 interface MedicationRow {
@@ -108,9 +109,9 @@ interface MedicationRow {
             </div>
           } @else {
             <!-- Patient Summary Card -->
-            <section class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm p-6 flex items-center justify-between">
-              <div class="flex items-center gap-6">
-                <div class="relative">
+            <section class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex items-center gap-6 min-w-0">
+                <div class="relative flex-shrink-0">
                   <div class="w-20 h-20 rounded-full bg-surface-container-highest flex items-center justify-center text-primary">
                     <span class="material-symbols-outlined text-4xl">pets</span>
                   </div>
@@ -118,13 +119,13 @@ interface MedicationRow {
                     <span class="material-symbols-outlined text-white text-[12px]" style="font-variation-settings:'FILL' 1">check</span>
                   </span>
                 </div>
-                <div>
-                  <div class="flex items-center gap-3">
-                    <h3 class="text-headline-md font-bold text-on-surface">{{ selectedCita()!.mascotaNombre }}</h3>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-3 flex-wrap">
+                    <h3 class="text-headline-md font-bold text-on-surface truncate">{{ selectedCita()!.mascotaNombre }}</h3>
                     <span class="px-2 py-0.5 bg-secondary-container text-on-secondary-container text-label-sm font-semibold rounded-full">Estable</span>
                   </div>
-                  <p class="text-on-surface-variant font-body-sm">Mascota &bull; {{ selectedCita()!.duenioNombreCompleto }}</p>
-                  <div class="flex gap-4 mt-2">
+                  <p class="text-on-surface-variant font-body-sm truncate">Mascota &bull; {{ selectedCita()!.duenioNombreCompleto }}</p>
+                  <div class="flex gap-4 mt-2 flex-wrap">
                     <span class="flex items-center gap-1 text-on-surface-variant text-label-sm">
                       <span class="material-symbols-outlined text-[16px]">person</span>
                       Due&ntilde;o: {{ selectedCita()!.duenioNombreCompleto }}
@@ -137,7 +138,7 @@ interface MedicationRow {
                 </div>
               </div>
               <a [routerLink]="'/mascotas/' + selectedCita()!.mascotaId"
-                 class="px-4 py-2 bg-surface-container text-primary font-label-md rounded-lg border border-primary/20 hover:bg-primary-container hover:text-on-primary-container transition-all flex items-center gap-2">
+                 class="flex-shrink-0 self-start sm:self-auto px-4 py-2 bg-surface-container text-primary font-label-md rounded-lg border border-primary/20 hover:bg-primary-container hover:text-on-primary-container transition-all flex items-center gap-2">
                 <span class="material-symbols-outlined text-[20px]">visibility</span>
                 Ver Ficha Completa
               </a>
@@ -319,10 +320,10 @@ interface MedicationRow {
                 </div>
 
                 <!-- History Timeline -->
-                <div class="bg-surface-container border border-outline-variant rounded-xl p-6">
+                <div class="bg-surface-container border border-outline-variant rounded-xl p-6 flex flex-col">
                   <h4 class="font-label-md text-label-md text-on-surface mb-4">Resumen de Historial</h4>
                   @if (historiaClinica() && historiaClinica()!.atenciones.length > 0) {
-                    <div class="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                    <div class="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2 flex-1">
                       @for (a of historiaClinica()!.atenciones; track a.id) {
                         <div class="relative pl-6 border-l-2 border-primary-fixed-dim">
                           <span class="absolute left-[-5px] top-0 w-2 h-2 rounded-full bg-primary"></span>
@@ -332,18 +333,35 @@ interface MedicationRow {
                       }
                     </div>
                   } @else {
-                    <div class="flex flex-col items-center justify-center py-6 text-center">
+                    <div class="flex flex-col items-center justify-center py-6 text-center flex-1">
                       <span class="material-symbols-outlined text-3xl text-outline-variant">history</span>
                       <p class="mt-2 text-body-sm text-on-surface-variant">Sin historial previo</p>
                     </div>
                   }
-                  <a *ngIf="selectedCita()" [routerLink]="'/mascotas/' + selectedCita()!.mascotaId"
-                     class="w-full mt-4 py-2 text-primary font-label-md hover:underline flex items-center justify-center gap-1">
-                    Ver todo el historial <span class="material-symbols-outlined text-sm">arrow_forward</span>
-                  </a>
+                  @if (selectedCita()) {
+                    <a [routerLink]="'/mascotas/' + selectedCita()!.mascotaId"
+                       class="mt-4 pt-3 border-t border-outline-variant/20 text-primary font-label-md hover:underline flex items-center justify-center gap-1">
+                      Ver todo el historial <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                    </a>
+                  }
                 </div>
 
               </div>
+            </div>
+
+            <!-- Estado Mascota -->
+            <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
+              <h4 class="font-label-md text-label-md text-on-surface mb-4">Estado actual de la mascota</h4>
+              <select [formControl]="atencionForm.controls.estadoMascota" class="input input-bordered w-full">
+                <option value="">Seleccionar estado...</option>
+                <option value="SALUDABLE">Saludable</option>
+                <option value="EN_OBSERVACION">En observaci&oacute;n</option>
+                <option value="EN_TRATAMIENTO">En tratamiento</option>
+                <option value="CRITICO">Cr&iacute;tico</option>
+              </select>
+              @if (submitted && atencionForm.controls.estadoMascota.invalid) {
+                <p class="text-error text-body-sm mt-1">Debe seleccionar el estado actual de la mascota.</p>
+              }
             </div>
 
             <!-- Bottom Action Bar -->
@@ -401,6 +419,7 @@ export class AtencionClinicaComponent implements OnInit {
     pesoKg: [null as number | null],
     temperatura: [null as number | null],
     frecuenciaCardiaca: [null as number | null],
+    estadoMascota: ['', Validators.required],
   });
 
   citasPendientes = computed(() =>
@@ -500,6 +519,7 @@ export class AtencionClinicaComponent implements OnInit {
       recomendaciones: formValue.recomendaciones || undefined,
       observacionesClinicas: formValue.observacionesClinicas || undefined,
       notasInternas: formValue.notasInternas || undefined,
+      estadoMascota: formValue.estadoMascota as EstadoMascota,
     };
 
     this.atencionClinicaService.register(cita.id, req).subscribe({

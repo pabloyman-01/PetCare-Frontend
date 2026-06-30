@@ -18,18 +18,24 @@
             "browser": "src/main.ts",
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
-            "assets": ["src/favicon.ico"],
+            "assets": ["src/favicon.ico", "src/assets", "src/404.html", "src/manifest.webmanifest"],
             "styles": ["src/styles.css"],
             "scripts": []
           },
-          "configurations": {
-            "production": {
-              "budgets": [
-                { "type": "initial", "maximumWarning": "500kb", "maximumError": "1mb" },
-                { "type": "anyComponentStyle", "maximumWarning": "4kb", "maximumError": "8kb" }
-              ],
-              "outputHashing": "all"
-            },
+            "configurations": {
+                "production": {
+                    "fileReplacements": [
+                        {
+                            "replace": "src/environments/environment.ts",
+                            "with": "src/environments/environment.prod.ts"
+                        }
+                    ],
+                    "budgets": [
+                        { "type": "initial", "maximumWarning": "500kb", "maximumError": "1mb" },
+                        { "type": "anyComponentStyle", "maximumWarning": "4kb", "maximumError": "8kb" }
+                    ],
+                    "outputHashing": "all"
+                },
             "development": {
               "optimization": false,
               "extractLicenses": false,
@@ -51,7 +57,7 @@
           "options": {
             "polyfills": ["zone.js", "zone.js/testing"],
             "tsConfig": "tsconfig.spec.json",
-            "assets": ["src/favicon.ico"],
+            "assets": ["src/favicon.ico", "src/assets", "src/404.html"],
             "styles": ["src/styles.css"],
             "scripts": []
           }

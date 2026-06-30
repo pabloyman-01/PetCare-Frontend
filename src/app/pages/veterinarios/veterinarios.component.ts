@@ -4,11 +4,13 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, Validators, FormArray } 
 import { RouterLink } from '@angular/router';
 import { CitaService } from '../../core/services/cita.service';
 import { VeterinarioService } from '../../core/services/veterinario.service';
+import { UsuarioService } from '../../core/services/usuario.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { CitaResponse } from '../../core/models/cita.model';
+import { UsuarioResponse } from '../../core/models/usuario.model';
 import { VeterinarioResponse, VeterinarioRequest, HorarioVeterinarioRequest } from '../../core/models/veterinario.model';
 import { catchError, EMPTY } from 'rxjs';
 
@@ -94,7 +96,7 @@ const DAY_MAP: Record<string, string> = {
         <button (click)="openCreate()"
                 class="px-4 py-2 bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:bg-on-primary-fixed-variant transition-colors shadow-sm flex items-center gap-2 w-full sm:w-auto justify-center">
           <span class="material-symbols-outlined text-[18px]">person_add</span>
-          A&ntilde;adir Profesional
+          A&ntilde;adir datos
         </button>
       }
     </div>
@@ -164,7 +166,7 @@ const DAY_MAP: Record<string, string> = {
         <div class="bg-surface-container-lowest rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar" (click)="$event.stopPropagation()">
           <div class="flex items-center justify-between p-6 border-b border-outline-variant/20">
             <h3 class="text-headline-md font-bold text-on-surface">
-              {{ editingVeterinario() ? 'Editar Veterinario' : 'Nuevo Veterinario' }}
+              {{ editingVeterinario() ? 'Editar Veterinario' : 'A&ntilde;adir datos' }}
             </h3>
             <button (click)="closeForm()" class="btn btn-ghost btn-square btn-sm">
               <span class="material-symbols-outlined">close</span>
@@ -172,17 +174,24 @@ const DAY_MAP: Record<string, string> = {
           </div>
 
           <form [formGroup]="veterinarioForm" (ngSubmit)="onSubmit()" class="p-6 space-y-5">
+            <!-- Select Usuario -->
+            <div class="space-y-1.5">
+              <label class="text-label-sm font-semibold text-on-surface-variant">Usuario</label>
+              <select formControlName="usuarioId" class="input input-bordered w-full">
+                <option value="">Seleccionar usuario veterinario...</option>
+                @for (u of usuariosDisponibles(); track u.id) {
+                  <option [value]="u.id">{{ u.fullName }} ({{ u.email }})</option>
+                }
+              </select>
+              @if (submitted && veterinarioForm.get('usuarioId')?.invalid) {
+                <p class="text-error text-body-sm mt-1">Debe seleccionar un usuario veterinario.</p>
+              }
+              @if (usuariosDisponibles().length === 0) {
+                <p class="text-body-sm text-on-surface-variant mt-1">No hay usuarios veterinarios disponibles. Cree uno en Usuarios primero.</p>
+              }
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div class="space-y-1.5">
-                <label class="text-label-sm font-semibold text-on-surface-variant">Nombres</label>
-                <input type="text" formControlName="nombres" placeholder="Ingrese nombres"
-                       class="input input-bordered w-full" />
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-label-sm font-semibold text-on-surface-variant">Apellidos</label>
-                <input type="text" formControlName="apellidos" placeholder="Ingrese apellidos"
-                       class="input input-bordered w-full" />
-              </div>
               <div class="space-y-1.5">
                 <label class="text-label-sm font-semibold text-on-surface-variant">N&uacute;mero Colegiatura</label>
                 <input type="text" formControlName="numeroColegiatura" placeholder="Ej: CMP-12345"
@@ -191,16 +200,6 @@ const DAY_MAP: Record<string, string> = {
               <div class="space-y-1.5">
                 <label class="text-label-sm font-semibold text-on-surface-variant">Especialidad</label>
                 <input type="text" formControlName="especialidad" placeholder="Ej: Cirug&iacute;a"
-                       class="input input-bordered w-full" />
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-label-sm font-semibold text-on-surface-variant">Tel&eacute;fono</label>
-                <input type="text" formControlName="telefono" placeholder="Ingrese tel&eacute;fono"
-                       class="input input-bordered w-full" />
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-label-sm font-semibold text-on-surface-variant">Email</label>
-                <input type="email" formControlName="email" placeholder="Ingrese email"
                        class="input input-bordered w-full" />
               </div>
             </div>
@@ -262,7 +261,7 @@ const DAY_MAP: Record<string, string> = {
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                   </svg>
                 }
-                {{ editingVeterinario() ? 'Guardar Cambios' : 'Crear Veterinario' }}
+                {{ editingVeterinario() ? 'Guardar Cambios' : 'Guardar cambios' }}
               </button>
             </div>
           </form>
@@ -352,6 +351,7 @@ const DAY_MAP: Record<string, string> = {
 })
 export class VeterinariosComponent implements OnInit {
   private veterinarioService = inject(VeterinarioService);
+  private usuarioService = inject(UsuarioService);
   private citaService = inject(CitaService);
   protected auth = inject(AuthService);
   private fb = inject(FormBuilder);
@@ -359,6 +359,7 @@ export class VeterinariosComponent implements OnInit {
   protected diasSemana = DIAS_SEMANA;
 
   veterinarios = signal<VeterinarioResponse[]>([]);
+  usuariosDisponibles = signal<{ id: number; fullName: string; email: string }[]>([]);
   loading = signal(true);
   searchTerm = signal('');
   showForm = signal(false);
@@ -372,12 +373,13 @@ export class VeterinariosComponent implements OnInit {
   errorMsg = signal('');
 
   veterinarioForm = this.fb.group({
-    nombres: ['', Validators.required],
-    apellidos: ['', Validators.required],
+    usuarioId: [null as number | null, Validators.required],
+    nombres: [''],
+    apellidos: [''],
     numeroColegiatura: ['', Validators.required],
     especialidad: ['', Validators.required],
-    telefono: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
+    telefono: [''],
+    email: [''],
     horarios: this.fb.array<ReturnType<typeof this.createHorarioGroup>>([]),
   });
 
@@ -419,12 +421,26 @@ export class VeterinariosComponent implements OnInit {
   ngOnInit(): void {
     this.loadVeterinarios();
     this.loadCitasHoy();
+    this.loadUsuariosDisponibles();
   }
 
   private loadCitasHoy(): void {
     const today = new Date().toISOString().split('T')[0];
     this.citaService.findAll({ fecha: today }).pipe(catchError(() => EMPTY)).subscribe({
       next: (data) => this.citasHoy.set(data),
+    });
+  }
+
+  private loadUsuariosDisponibles(): void {
+    this.usuarioService.findAll().pipe(catchError(() => EMPTY)).subscribe({
+      next: (data) => {
+        const vetUserIds = new Set(this.veterinarios().filter(v => v.usuarioId).map(v => v.usuarioId));
+        this.usuariosDisponibles.set(
+          data
+            .filter(u => u.roles.includes('ROLE_VETERINARIO') && !vetUserIds.has(u.id))
+            .map(u => ({ id: u.id, fullName: u.fullName, email: u.email }))
+        );
+      },
     });
   }
 
@@ -495,6 +511,18 @@ export class VeterinariosComponent implements OnInit {
     this.submitted = false;
     this.errorMsg.set('');
     this.showForm.set(true);
+    this.veterinarioForm.get('usuarioId')?.valueChanges.subscribe(id => {
+      if (!id) return;
+      const user = this.usuariosDisponibles().find(u => u.id === id);
+      if (!user) return;
+      const parts = user.fullName.split(/\s+/);
+      this.veterinarioForm.patchValue({
+        nombres: parts[0] || '',
+        apellidos: parts.slice(1).join(' ') || '',
+        email: user.email,
+        telefono: '',
+      });
+    });
   }
 
   openEdit(v: VeterinarioResponse): void {
@@ -553,12 +581,9 @@ export class VeterinariosComponent implements OnInit {
       }));
 
     const req: VeterinarioRequest = {
-      nombres: formValue.nombres!,
-      apellidos: formValue.apellidos!,
+      usuarioId: formValue.usuarioId || undefined,
       numeroColegiatura: formValue.numeroColegiatura!,
       especialidad: formValue.especialidad!,
-      telefono: formValue.telefono!,
-      email: formValue.email!,
       horarios: horarios.length > 0 ? horarios : undefined,
     };
 

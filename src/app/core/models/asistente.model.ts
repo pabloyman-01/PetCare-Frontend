@@ -1,11 +1,11 @@
 export interface AsistenteRequest {
   usuarioId?: number;
-  nombres: string;
-  apellidos: string;
+  nombres?: string;
+  apellidos?: string;
   tipoDocumento: string;
   numeroDocumento: string;
-  telefono: string;
-  email: string;
+  telefono?: string;
+  email?: string;
   funciones: string;
   password?: string;
 }

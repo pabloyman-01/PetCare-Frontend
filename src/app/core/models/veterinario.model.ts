@@ -7,12 +7,12 @@ export interface HorarioVeterinarioRequest {
 
 export interface VeterinarioRequest {
   usuarioId?: number;
-  nombres: string;
-  apellidos: string;
+  nombres?: string;
+  apellidos?: string;
   numeroColegiatura: string;
   especialidad: string;
-  telefono: string;
-  email: string;
+  telefono?: string;
+  email?: string;
   horarios?: HorarioVeterinarioRequest[];
 }
 

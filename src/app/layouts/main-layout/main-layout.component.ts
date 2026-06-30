@@ -1,6 +1,7 @@
-import { Component, computed } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, computed, OnInit } from '@angular/core';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificacionService } from '../../core/services/notificacion.service';
 
 interface NavItem {
   label: string;
@@ -14,7 +15,7 @@ interface NavItem {
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
   template: `
-  <div class="flex h-screen w-full overflow-hidden bg-surface">
+  <div class="flex h-screen w-full overflow-hidden bg-surface safe-pt">
     <!-- Sidebar -->
     <aside class="hidden md:flex flex-col h-full w-[280px] bg-surface border-r border-outline-variant shadow-sm flex-shrink-0">
       <div class="flex items-center gap-3 px-6 py-5">
@@ -63,11 +64,39 @@ interface NavItem {
             <span class="material-symbols-outlined">menu</span>
           </button>
         </div>
-        <div class="flex items-center gap-4">
-          <button class="w-9 h-9 rounded-lg hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant relative">
+        <div class="flex items-center gap-4 relative">
+          <button (click)="toggleNotificaciones()" class="w-9 h-9 rounded-lg hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant relative">
             <span class="material-symbols-outlined">notifications</span>
-            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full border-2 border-surface"></span>
+            @if (notifSvc.noLeidas() > 0) {
+              <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-error text-[9px] text-white font-bold rounded-full flex items-center justify-center border-2 border-surface">{{ notifSvc.noLeidas() }}</span>
+            }
           </button>
+          @if (mostrarNotificaciones) {
+            <div class="absolute top-full right-0 mt-2 w-80 max-h-96 overflow-y-auto bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl z-50" (click)="mostrarNotificaciones = false">
+              <div class="p-3 border-b border-outline-variant/20 flex items-center justify-between">
+                <span class="text-label-md font-bold text-on-surface">Notificaciones</span>
+                <span class="text-label-sm text-on-surface-variant">{{ notifSvc.notificaciones().length }} pendientes</span>
+              </div>
+              @if (notifSvc.notificaciones().length === 0) {
+                <div class="p-6 text-center text-body-sm text-on-surface-variant">Sin notificaciones</div>
+              }
+              @for (n of notifSvc.notificaciones(); track n.id) {
+                <a [routerLink]="n.ruta" (click)="notifSvc.marcarLeidas()"
+                   class="flex items-start gap-3 p-3 hover:bg-surface-container-high transition-colors border-b border-outline-variant/10 last:border-0">
+                  <span class="material-symbols-outlined text-[20px] mt-0.5"
+                        [class.text-primary]="n.tipo === 'CITA_PROXIMA'"
+                        [class.text-error]="n.tipo === 'CITA_CONFIRMAR'"
+                        [class.text-secondary]="n.tipo === 'VACUNA'"
+                        [class.text-tertiary]="n.tipo === 'RECORDATORIO'"
+                        [class.text-warning]="n.tipo === 'ATENCION_PENDIENTE'">{{ n.icono }}</span>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-body-sm text-on-surface font-medium truncate">{{ n.mensaje }}</p>
+                    <p class="text-label-sm text-on-surface-variant">{{ n.fecha }}</p>
+                  </div>
+                </a>
+              }
+            </div>
+          }
           <div class="h-6 w-px bg-outline-variant/30"></div>
           <div class="flex items-center gap-3">
             <div class="text-right hidden sm:block">
@@ -117,8 +146,9 @@ interface NavItem {
   </div>
   `
 })
-export class MainLayoutComponent {
+export class MainLayoutComponent implements OnInit {
   mobileSidebarOpen = false;
+  mostrarNotificaciones = false;
 
   navItems: NavItem[] = [
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard', roles: ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_ASISTENTE'] },
@@ -137,7 +167,17 @@ export class MainLayoutComponent {
     { label: 'Reportes', icon: 'analytics', route: '/reportes', roles: [] }
   ];
 
-  constructor(public auth: AuthService) {}
+  constructor(public auth: AuthService, public notifSvc: NotificacionService, private router: Router) {}
+
+  ngOnInit(): void {
+    this.notifSvc.cargar();
+    setInterval(() => this.notifSvc.cargar(), 60000);
+  }
+
+  toggleNotificaciones(): void {
+    this.mostrarNotificaciones = !this.mostrarNotificaciones;
+    if (this.mostrarNotificaciones) this.notifSvc.cargar();
+  }
 
   filteredNavItems = computed(() => {
     if (this.auth.isDuenioOnly()) {

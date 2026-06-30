@@ -4,13 +4,17 @@ import { RouterLink, NavigationEnd, Router } from '@angular/router';
 import { AlertaService } from '../../core/services/alerta.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MascotaService } from '../../core/services/mascota.service';
+import { CitaService } from '../../core/services/cita.service';
+import { VacunaService } from '../../core/services/vacuna.service';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { ServicioService } from '../../core/services/servicio.service';
 import { VeterinarioService } from '../../core/services/veterinario.service';
 import { AsistenteService } from '../../core/services/asistente.service';
 import { PanelAlertasDiaResponse, AlertaCitaResponse } from '../../core/models/alerta.model';
 import { MascotaResponse } from '../../core/models/mascota.model';
-import { catchError, EMPTY, filter } from 'rxjs';
+import { CitaResponse } from '../../core/models/cita.model';
+import { VacunaMascotaResponse } from '../../core/models/vacuna.model';
+import { finalize, filter, catchError, EMPTY } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -140,104 +144,168 @@ import { catchError, EMPTY, filter } from 'rxjs';
         <!-- Welcome Section -->
         <section class="mb-8">
           <h2 class="text-headline-lg font-extrabold text-on-surface mb-2">&iexcl;Hola, {{ auth.user()?.fullName || 'Carlos' }}!</h2>
-          <p class="text-body-lg text-on-surface-variant">As&iacute; est&aacute;n tus compa&ntilde;eros hoy.</p>
+          <p class="text-body-lg text-on-surface-variant">{{ uniquePets().length === 0 ? 'Estamos listos para ayudarte a cuidar de tu mascota.' : 'As&iacute; est&aacute;n tus compa&ntilde;eros hoy.' }}</p>
         </section>
 
-        <!-- Bento Dashboard Grid -->
-        <div class="grid grid-cols-12 gap-6">
-          <!-- Próxima Cita -->
-          <div class="col-span-12 lg:col-span-5 bg-primary rounded-3xl p-8 text-on-primary shadow-xl shadow-primary/20 flex flex-col justify-between min-h-[320px] relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-8 opacity-20 pointer-events-none">
-              <span class="material-symbols-outlined text-[120px]" style="font-variation-settings:'FILL' 1">calendar_month</span>
-            </div>
-            <div>
-              <span class="px-4 py-1.5 bg-white/20 backdrop-blur-md rounded-full font-label-sm text-label-sm mb-6 inline-block uppercase tracking-widest">Siguiente Cita</span>
-              <h3 class="text-display-lg text-[40px] leading-tight mb-2">{{ nextAppointmentDate() }}</h3>
-              <p class="text-headline-md opacity-90">{{ nextAppointmentTime() }}</p>
-            </div>
-            <div class="flex items-end justify-between">
-              <div>
-                <p class="text-body-md opacity-80">{{ nextAppointmentReason() }}</p>
-                <p class="text-headline-md font-bold">{{ nextAppointmentPet() }} <span class="font-normal opacity-70">con {{ nextAppointmentVet() }}</span></p>
+        @if (uniquePets().length === 0) {
+          <!-- EMPTY STATE - Sin mascotas registradas -->
+          <div class="grid grid-cols-12 gap-6">
+            <!-- Mascotas Empty State -->
+            <div class="col-span-12 lg:col-span-7 bg-surface-container-lowest border border-outline-variant rounded-3xl p-10 flex flex-col items-center justify-center text-center min-h-[320px]">
+              <div class="w-20 h-20 rounded-full bg-primary-container/20 flex items-center justify-center mb-6">
+                <span class="material-symbols-outlined text-5xl text-primary" style="font-variation-settings:'FILL' 1">pets</span>
               </div>
-              <button (click)="router.navigate(['/citas'])"
-                      class="w-12 h-12 bg-white text-primary rounded-2xl flex items-center justify-center hover:scale-105 transition-transform">
-                <span class="material-symbols-outlined">arrow_forward</span>
+              <h3 class="text-headline-md font-bold text-on-surface mb-2">A&uacute;n no tienes mascotas registradas</h3>
+              <p class="text-body-sm text-on-surface-variant max-w-sm mb-8">
+                Registra tu primera mascota para comenzar a gestionar sus citas, vacunas e historial m&eacute;dico.
+              </p>
+              <button (click)="router.navigate(['/mascotas'])"
+                      class="inline-flex items-center gap-2 px-8 py-3 bg-primary text-on-primary rounded-xl font-label-md text-label-md hover:opacity-90 active:scale-[0.98] transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[20px]">add</span>
+                Registrar Mascota
               </button>
             </div>
-          </div>
 
-          <!-- Mis Mascotas -->
-          <div class="col-span-12 lg:col-span-7 space-y-6">
-            <div class="flex items-center justify-between">
-              <h3 class="text-headline-md font-bold text-on-surface">Mis Mascotas</h3>
-              <a [routerLink]="['/mascotas']" class="text-primary font-label-md hover:underline">Ver todas</a>
+            <!-- Citas Empty State -->
+            <div class="col-span-12 lg:col-span-5 bg-surface-container-lowest border border-outline-variant rounded-3xl p-10 flex flex-col items-center justify-center text-center min-h-[320px]">
+              <div class="w-20 h-20 rounded-full bg-secondary-container/20 flex items-center justify-center mb-6">
+                <span class="material-symbols-outlined text-5xl text-secondary" style="font-variation-settings:'FILL' 1">calendar_month</span>
+              </div>
+              <h3 class="text-headline-md font-bold text-on-surface mb-2">No tienes citas programadas</h3>
+              <p class="text-body-sm text-on-surface-variant max-w-sm mb-8">
+                Cuando registres una mascota podr&aacute;s agendar y visualizar sus pr&oacute;ximas citas.
+              </p>
+              <button (click)="router.navigate(['/mascotas'])"
+                      class="inline-flex items-center gap-2 px-8 py-3 bg-primary text-on-primary rounded-xl font-label-md text-label-md hover:opacity-90 active:scale-[0.98] transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[20px]">add</span>
+                Registrar Mascota
+              </button>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              @for (m of uniquePets(); track m.id) {
-                <a [routerLink]="['/mascotas', m.id]"
-                   class="bg-surface-container-lowest border border-outline-variant p-5 rounded-2xl flex items-center gap-4 hover:shadow-lg transition-shadow">
-                  <div class="w-20 h-20 rounded-2xl bg-primary-container/20 flex items-center justify-center text-primary flex-shrink-0">
-                    <span class="material-symbols-outlined text-4xl">pets</span>
-                  </div>
+
+            <!-- Vacunas Empty State -->
+            <div class="col-span-12 bg-surface-container-lowest border border-outline-variant rounded-3xl p-10 flex flex-col items-center justify-center text-center">
+              <div class="w-20 h-20 rounded-full bg-tertiary-fixed/20 flex items-center justify-center mb-6">
+                <span class="material-symbols-outlined text-5xl text-tertiary" style="font-variation-settings:'FILL' 1">vaccines</span>
+              </div>
+              <h3 class="text-headline-md font-bold text-on-surface mb-2">Sin informaci&oacute;n de vacunas</h3>
+              <p class="text-body-sm text-on-surface-variant max-w-sm">
+                Agrega una mascota para visualizar y administrar su esquema de vacunaci&oacute;n.
+              </p>
+            </div>
+          </div>
+        } @else {
+          <!-- Bento Dashboard Grid -->
+          <div class="grid grid-cols-12 gap-6">
+            <!-- Próxima Cita -->
+            @if (nextAppointment(); as cita) {
+              <div class="col-span-12 lg:col-span-5 bg-primary rounded-3xl p-8 text-on-primary shadow-xl shadow-primary/20 flex flex-col justify-between min-h-[320px] relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-8 opacity-20 pointer-events-none">
+                  <span class="material-symbols-outlined text-[120px]" style="font-variation-settings:'FILL' 1">calendar_month</span>
+                </div>
+                <div>
+                  <span class="px-4 py-1.5 bg-white/20 backdrop-blur-md rounded-full font-label-sm text-label-sm mb-6 inline-block uppercase tracking-widest">Siguiente Cita</span>
+                  <h3 class="text-display-lg text-[40px] leading-tight mb-2">{{ cita.fecha | date:'d MMM' }}</h3>
+                  <p class="text-headline-md opacity-90">{{ cita.horaInicio | slice:0:5 }}</p>
+                </div>
+                <div class="flex items-end justify-between">
                   <div>
-                    <h4 class="text-headline-md font-bold">{{ m.nombre }}</h4>
-                    <div class="flex items-center gap-2 mt-1">
-                      <span class="w-2 h-2 rounded-full" [class]="cardStatus(m.id).dot + ' mr-1'"></span>
-                      <p class="font-body-sm text-body-sm" [class.text-on-secondary-container]="cardStatus(m.id).label === 'Saludable'">{{ cardStatus(m.id).label }}</p>
+                    <p class="text-body-md opacity-80">{{ cita.motivo }}</p>
+                    <p class="text-headline-md font-bold">{{ cita.mascotaNombre }} <span class="font-normal opacity-70">con {{ cita.veterinarioNombreCompleto }}</span></p>
+                  </div>
+                  <button (click)="router.navigate(['/citas'])"
+                          class="w-12 h-12 bg-white text-primary rounded-2xl flex items-center justify-center hover:scale-105 transition-transform">
+                    <span class="material-symbols-outlined">arrow_forward</span>
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <div class="col-span-12 lg:col-span-5 bg-surface-container-lowest border border-outline-variant rounded-3xl p-8 flex flex-col items-center justify-center text-center min-h-[320px]">
+                <div class="w-16 h-16 rounded-full bg-secondary-container/20 flex items-center justify-center mb-4">
+                  <span class="material-symbols-outlined text-4xl text-secondary" style="font-variation-settings:'FILL' 1">calendar_month</span>
+                </div>
+                <h3 class="text-headline-md font-bold text-on-surface mb-2">No tienes citas programadas</h3>
+                <p class="text-body-sm text-on-surface-variant max-w-xs">
+                  Las pr&oacute;ximas citas de tus mascotas aparecer&aacute;n aqu&iacute; cuando sean programadas.
+                </p>
+              </div>
+            }
+
+            <!-- Mis Mascotas -->
+            <div class="col-span-12 lg:col-span-7 space-y-6">
+              <div class="flex items-center justify-between">
+                <h3 class="text-headline-md font-bold text-on-surface">Mis Mascotas</h3>
+                <a [routerLink]="['/mascotas']" class="text-primary font-label-md hover:underline">Ver todas</a>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                @for (m of uniquePets(); track m.id) {
+                  <a [routerLink]="['/mascotas', m.id]"
+                     class="bg-surface-container-lowest border border-outline-variant p-5 rounded-2xl flex items-center gap-4 hover:shadow-lg transition-shadow">
+                    <div class="w-20 h-20 rounded-2xl bg-primary-container/20 flex items-center justify-center text-primary flex-shrink-0">
+                      <span class="material-symbols-outlined text-4xl">pets</span>
                     </div>
-                    <p class="text-outline font-label-sm mt-1">{{ especieLabel(m.especie) }} &bull; {{ m.edadAnios }} {{ m.edadAnios === 1 ? 'a&ntilde;o' : 'a&ntilde;os' }}</p>
-                  </div>
-                </a>
-              }
+                    <div>
+                      <h4 class="text-headline-md font-bold">{{ m.nombre }}</h4>
+                      <div class="flex items-center gap-2 mt-1">
+                        <span class="w-2 h-2 rounded-full" [class]="cardStatus(m.id).dot + ' mr-1'"></span>
+                        <p class="font-body-sm text-body-sm" [class.text-on-secondary-container]="cardStatus(m.id).label === 'Saludable'">{{ cardStatus(m.id).label }}</p>
+                      </div>
+                      <p class="text-outline font-label-sm mt-1">{{ especieLabel(m.especie) }} &bull; {{ m.edadAnios }} {{ m.edadAnios === 1 ? 'a&ntilde;o' : 'a&ntilde;os' }}</p>
+                    </div>
+                  </a>
+                }
+              </div>
             </div>
-          </div>
 
-          <!-- Estado de Vacunas -->
-          <div class="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-3xl p-8 flex flex-col md:flex-row gap-8">
-            <div class="md:w-1/3 flex flex-col items-center justify-center text-center">
-              <div class="relative w-40 h-40 mb-4">
-                <svg class="w-full h-full transform -rotate-90">
-                  <circle class="text-surface-container" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" stroke-width="12"></circle>
-                  <circle class="text-primary" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" stroke-dasharray="440" stroke-dashoffset="110" stroke-width="12"></circle>
-                </svg>
-                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                  <span class="text-headline-lg font-extrabold text-primary">75%</span>
-                  <span class="font-label-sm text-label-sm text-outline">Al d&iacute;a</span>
+            <!-- Estado de Vacunas -->
+            @if (vacunaRecords().length > 0) {
+              <div class="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-3xl p-8 flex flex-col md:flex-row gap-8">
+                <div class="md:w-1/3 flex flex-col items-center justify-center text-center">
+                  <div class="relative w-40 h-40 mb-4">
+                    <svg class="w-full h-full transform -rotate-90">
+                      <circle class="text-surface-container" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" stroke-width="12"></circle>
+                      <circle class="text-primary" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" [attr.stroke-dasharray]="'440'" [attr.stroke-dashoffset]="440 - (440 * vacunacionPct() / 100)" stroke-width="12"></circle>
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                      <span class="text-headline-lg font-extrabold text-primary">{{ vacunacionPct() }}%</span>
+                      <span class="font-label-sm text-label-sm text-outline">Al d&iacute;a</span>
+                    </div>
+                  </div>
+                  <h4 class="text-headline-md font-bold">Estado de Vacunas</h4>
+                </div>
+                <div class="flex-1 space-y-4">
+                  <h5 class="font-label-md text-label-md text-outline uppercase tracking-wider mb-2">Pr&oacute;ximas Dosis</h5>
+                  @for (v of upcomingVaccines(); track v.id) {
+                    <div class="flex items-center justify-between p-4 bg-surface rounded-2xl">
+                      <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-tertiary-fixed text-tertiary rounded-lg flex items-center justify-center">
+                          <span class="material-symbols-outlined">vaccines</span>
+                        </div>
+                        <div>
+                          <p class="font-label-md text-label-md">{{ v.vacunaNombre }}</p>
+                          <p class="text-outline font-body-sm">{{ v.mascotaNombre }} &bull; {{ daysUntil(v.fechaProximaDosis) }}</p>
+                        </div>
+                      </div>
+                      <span class="px-3 py-1 bg-tertiary-container text-on-tertiary-container rounded-lg font-label-sm">En {{ daysUntilNumber(v.fechaProximaDosis) }} d&iacute;as</span>
+                    </div>
+                  }
+                  @if (upcomingVaccines().length === 0) {
+                    <p class="text-body-sm text-on-surface-variant text-center py-4">No hay pr&oacute;ximas dosis pendientes.</p>
+                  }
                 </div>
               </div>
-              <h4 class="text-headline-md font-bold">Estado de Vacunas</h4>
-            </div>
-            <div class="flex-1 space-y-4">
-              <h5 class="font-label-md text-label-md text-outline uppercase tracking-wider mb-2">Pr&oacute;ximas Dosis</h5>
-              <div class="flex items-center justify-between p-4 bg-surface rounded-2xl">
-                <div class="flex items-center gap-4">
-                  <div class="w-10 h-10 bg-tertiary-fixed text-tertiary rounded-lg flex items-center justify-center">
-                    <span class="material-symbols-outlined">vaccines</span>
-                  </div>
-                  <div>
-                    <p class="font-label-md text-label-md">Rabia</p>
-                    <p class="text-outline font-body-sm">Refuerzo anual</p>
-                  </div>
+            } @else {
+              <div class="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-3xl p-10 flex flex-col items-center justify-center text-center">
+                <div class="w-16 h-16 rounded-full bg-tertiary-fixed/20 flex items-center justify-center mb-4">
+                  <span class="material-symbols-outlined text-4xl text-tertiary" style="font-variation-settings:'FILL' 1">vaccines</span>
                 </div>
-                <span class="px-3 py-1 bg-tertiary-container text-on-tertiary-container rounded-lg font-label-sm">En 15 d&iacute;as</span>
+                <h3 class="text-headline-md font-bold text-on-surface mb-2">Sin informaci&oacute;n de vacunaci&oacute;n</h3>
+                <p class="text-body-sm text-on-surface-variant max-w-sm">
+                  Cuando se registren vacunas para tus mascotas, aparecer&aacute;n aqu&iacute;.
+                </p>
               </div>
-              <div class="flex items-center justify-between p-4 bg-surface rounded-2xl">
-                <div class="flex items-center gap-4">
-                  <div class="w-10 h-10 bg-secondary-fixed text-on-secondary-fixed-variant rounded-lg flex items-center justify-center">
-                    <span class="material-symbols-outlined">health_and_safety</span>
-                  </div>
-                  <div>
-                    <p class="font-label-md text-label-md">Leucemia Felina</p>
-                    <p class="text-outline font-body-sm">Dosis completa</p>
-                  </div>
-                </div>
-                <span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-lg font-label-sm">Completada</span>
-              </div>
-            </div>
+            }
           </div>
-
-        </div>
+        }
       } @else if (auth.isAsistente()) {
         <!-- ASSISTANT DASHBOARD -->
         <!-- Header & Quick Actions -->
@@ -366,7 +434,7 @@ import { catchError, EMPTY, filter } from 'rxjs';
                           </span>
                         </td>
                         <td class="px-6 py-4">
-                          <button (click)="router.navigate(['/atencion-clinica'])"
+                          <button (click)="router.navigate(['/atencion-clinica'], { queryParams: { citaId: cita.citaId } })"
                                   class="text-primary font-bold text-body-sm hover:underline">Pasar a Sala</button>
                         </td>
                       </tr>
@@ -539,23 +607,20 @@ import { catchError, EMPTY, filter } from 'rxjs';
               } @else {
                 <div class="space-y-3 mb-6">
                   @for (cita of todayPanel()?.citasConfirmadasPendientesAtencion; track cita.citaId) {
-                    <div class="flex items-center gap-3 p-3 bg-white/10 rounded-lg border border-white/20">
-                      <span class="w-3 h-3 rounded-full animate-pulse"
+                    <div class="flex items-center gap-2 p-3 bg-white/10 rounded-lg border border-white/20 hover:bg-white/20 transition-colors cursor-pointer"
+                         (click)="router.navigate(['/atencion-clinica'], { queryParams: { citaId: cita.citaId } })">
+                      <span class="w-3 h-3 rounded-full animate-pulse shrink-0"
                             [class.bg-error]="$first"
                             [class.bg-secondary-fixed]="!$first"></span>
-                      <div>
-                        <p class="font-bold text-white">{{ cita.mascotaNombre }} &mdash; {{ cita.motivo }}</p>
-                        <p class="text-body-sm text-on-primary/80">Due&ntilde;o: {{ cita.duenioNombreCompleto }} &bull; {{ cita.horaInicio | slice:0:5 }}</p>
+                      <div class="flex-1 min-w-0">
+                        <p class="font-bold text-white truncate">{{ cita.mascotaNombre }} &mdash; {{ cita.motivo }}</p>
+                        <p class="text-body-sm text-on-primary/80 truncate">Due&ntilde;o: {{ cita.duenioNombreCompleto }} &bull; {{ cita.horaInicio | slice:0:5 }}</p>
                       </div>
+                      <span class="material-symbols-outlined text-on-primary/60 text-lg shrink-0">launch</span>
                     </div>
                   }
                 </div>
               }
-
-              <button (click)="router.navigate(['/atencion-clinica'])"
-                      class="w-full py-3 bg-white text-primary font-bold rounded-lg hover:bg-surface-container-low transition-colors flex justify-center items-center gap-2">
-                Entrar al M&oacute;dulo Cl&iacute;nico <span class="material-symbols-outlined">launch</span>
-              </button>
             </div>
 
             <!-- Gestión Vacunas -->
@@ -628,6 +693,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   });
 
   private mascotaService = inject(MascotaService);
+  private citaService = inject(CitaService);
+  private vacunaService = inject(VacunaService);
   private usuarioService = inject(UsuarioService);
   private servicioService = inject(ServicioService);
   private veterinarioService = inject(VeterinarioService);
@@ -636,6 +703,39 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   adminCounts = signal({ usuarios: 0, servicios: 0, veterinarios: 0, asistentes: 0 });
   myPets = signal<MascotaResponse[]>([]);
+  nextAppointment = signal<CitaResponse | null>(null);
+  vacunaRecords = signal<VacunaMascotaResponse[]>([]);
+
+  vacunacionPct = computed(() => {
+    const all = this.vacunaRecords();
+    if (all.length === 0) return 0;
+    const today = new Date();
+    const alDia = all.filter(v => {
+      if (!v.fechaProximaDosis) return true;
+      return new Date(v.fechaProximaDosis) >= today;
+    });
+    return Math.round((alDia.length / all.length) * 100);
+  });
+
+  upcomingVaccines = computed(() => {
+    const today = new Date();
+    return this.vacunaRecords()
+      .filter(v => v.fechaProximaDosis && new Date(v.fechaProximaDosis) >= today)
+      .sort((a, b) => new Date(a.fechaProximaDosis!).getTime() - new Date(b.fechaProximaDosis!).getTime());
+  });
+
+  daysUntil(dateStr: string | null): string {
+    if (!dateStr) return 'Sin fecha';
+    const diff = Math.ceil((new Date(dateStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    if (diff <= 0) return 'Vencida';
+    if (diff === 1) return 'Mañana';
+    return `En ${diff} días`;
+  }
+
+  daysUntilNumber(dateStr: string | null): number {
+    if (!dateStr) return 999;
+    return Math.ceil((new Date(dateStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  }
   uniquePets = computed(() => {
     const seen = new Set<string>();
     return this.myPets().filter(p => {
@@ -655,12 +755,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     ];
     return statuses[id % statuses.length];
   }
-
-  nextAppointmentDate = () => '12 de Octubre';
-  nextAppointmentTime = () => '10:30 AM';
-  nextAppointmentReason = () => 'Chequeo Anual';
-  nextAppointmentPet = () => 'Luna';
-  nextAppointmentVet = () => 'Dr. Méndez';
 
   especieLabel(especie: string): string {
     const map: Record<string, string> = { CANINO: 'Canino', FELINO: 'Felino', EXOTICO: 'Exótico' };
@@ -693,17 +787,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (this.auth.isDuenioOnly()) {
       this.loading.set(false);
       this.loadDuenioPets();
+      this.loadDuenioCitas();
+      this.loadDuenioVacunas();
       this.routerSub = this.router.events.pipe(
         filter(e => e instanceof NavigationEnd)
-      ).subscribe(() => this.loadDuenioPets());
+      ).subscribe(() => {
+        this.loadDuenioPets();
+        this.loadDuenioCitas();
+        this.loadDuenioVacunas();
+      });
       return;
     }
-    this.alertaService.getDailyPanel().pipe(catchError(() => EMPTY)).subscribe({
-      next: (panel) => {
-        this.todayPanel.set(panel);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
+    this.alertaService.getDailyPanel().pipe(finalize(() => this.loading.set(false))).subscribe({
+      next: (panel) => this.todayPanel.set(panel),
     });
   }
 
@@ -712,9 +808,48 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadDuenioPets(): void {
-    this.mascotaService.findAll(undefined, undefined, true).pipe(catchError(() => EMPTY)).subscribe({
+    this.mascotaService.findAll(undefined, undefined, true).subscribe({
       next: (data) => this.myPets.set(data),
     });
+  }
+
+  private loadDuenioCitas(): void {
+    this.citaService.findAll().subscribe({
+      next: (data) => {
+        const today = new Date().toISOString().split('T')[0];
+        const upcoming = data
+          .filter(c => c.fecha >= today && c.estado !== 'CANCELADA' && c.estado !== 'ATENDIDA' && c.estado !== 'NO_ASISTIO')
+          .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.horaInicio.localeCompare(b.horaInicio));
+        this.nextAppointment.set(upcoming.length > 0 ? upcoming[0] : null);
+      },
+    });
+  }
+
+  private loadDuenioVacunas(): void {
+    const pets = this.myPets();
+    if (pets.length === 0) {
+      this.vacunaRecords.set([]);
+      return;
+    }
+    const results: VacunaMascotaResponse[] = [];
+    let completed = 0;
+    for (const pet of pets) {
+      this.vacunaService.findByMascota(pet.id).subscribe({
+        next: (data) => {
+          results.push(...data);
+          completed++;
+          if (completed === pets.length) {
+            this.vacunaRecords.set(results);
+          }
+        },
+        error: () => {
+          completed++;
+          if (completed === pets.length) {
+            this.vacunaRecords.set(results);
+          }
+        },
+      });
+    }
   }
 
   upcomingCitas = (): AlertaCitaResponse[] => {
