@@ -1,0 +1,10 @@
+node_modules/
+dist/
+
+# Local Netlify folder
+.netlify
+.vercel
+
+# Capacitor native platforms
+android/
+ios/
