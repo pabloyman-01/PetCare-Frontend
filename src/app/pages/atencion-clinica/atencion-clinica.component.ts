@@ -349,6 +349,21 @@ interface MedicationRow {
               </div>
             </div>
 
+            <!-- Estado Mascota -->
+            <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
+              <h4 class="font-label-md text-label-md text-on-surface mb-4">Estado actual de la mascota</h4>
+              <select [formControl]="atencionForm.controls.estadoMascota" class="input input-bordered w-full">
+                <option value="">Seleccionar estado...</option>
+                <option value="SALUDABLE">Saludable</option>
+                <option value="EN_OBSERVACION">En observaci&oacute;n</option>
+                <option value="EN_TRATAMIENTO">En tratamiento</option>
+                <option value="CRITICO">Cr&iacute;tico</option>
+              </select>
+              @if (submitted && atencionForm.controls.estadoMascota.invalid) {
+                <p class="text-error text-body-sm mt-1">Debe seleccionar el estado actual de la mascota.</p>
+              }
+            </div>
+
             <!-- Bottom Action Bar -->
             <div class="sticky bottom-0 bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant p-4 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-4 z-30">
               <div class="flex gap-3">
