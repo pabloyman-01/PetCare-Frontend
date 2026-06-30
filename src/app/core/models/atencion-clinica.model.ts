@@ -1,3 +1,5 @@
+import { EstadoMascota } from './mascota.model';
+
 export interface AtencionClinicaRequest {
   motivo: string;
   diagnostico: string;
@@ -5,6 +7,7 @@ export interface AtencionClinicaRequest {
   recomendaciones?: string;
   observacionesClinicas?: string;
   notasInternas?: string;
+  estadoMascota: EstadoMascota;
 }
 
 export interface AtencionClinicaResponse {
@@ -28,6 +31,9 @@ export interface HistoriaClinicaResponse {
   mascotaNombre: string;
   duenioId: number;
   duenioNombreCompleto: string;
+  estado: string;
+  fechaEstado: string | null;
+  veterinarioEstado: string | null;
   atenciones: AtencionClinicaResponse[];
   controlesMensuales: ControlMensualMascotaResponse[];
 }
