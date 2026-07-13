@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://petcare-backend-o9go.onrender.com/api'
+  apiUrl: 'https://d1eq863qpgnni5.cloudfront.net/api'
 };
