@@ -22,7 +22,7 @@ export const passwordMatchValidator: ValidatorFn = (control: AbstractControl): V
   standalone: true,
   imports: [ReactiveFormsModule, RouterLink],
   template: `
-    <div class="min-h-screen w-full flex items-center justify-center relative overflow-hidden py-8">
+    <div class="min-h-screen w-full flex items-center justify-center relative overflow-auto py-8">
       <div class="absolute inset-0 bg-gradient-to-br from-secondary-fixed/20 via-surface to-primary-container/20"></div>
       <div class="absolute inset-0 opacity-40" style="
         background-image: 

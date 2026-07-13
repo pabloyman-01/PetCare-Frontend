@@ -9,7 +9,7 @@ import { HttpErrorResponse } from '@angular/common/http';
   standalone: true,
   imports: [ReactiveFormsModule, FormsModule, RouterLink],
   template: `
-    <div class="min-h-screen w-full flex items-center justify-center relative overflow-hidden">
+    <div class="min-h-screen w-full flex items-center justify-center relative overflow-auto">
       <div class="absolute inset-0 bg-gradient-to-br from-primary-container/20 via-surface to-secondary-fixed/30"></div>
       <div class="absolute inset-0 opacity-40" style="
         background-image: 
