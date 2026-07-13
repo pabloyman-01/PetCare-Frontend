@@ -10,13 +10,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = auth.getAccessToken();
 
   let authReq = req;
-  if (token && !req.url.includes('/auth/')) {
+  const skipAuth = req.url.includes('/auth/login') || req.url.includes('/auth/register') || req.url.includes('/auth/refresh');
+  if (token && !skipAuth) {
     authReq = req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
   }
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && !req.url.includes('/auth/')) {
+      if (error.status === 401 && !skipAuth) {
         try {
           return auth.refreshToken().pipe(
             switchMap(resp => {
