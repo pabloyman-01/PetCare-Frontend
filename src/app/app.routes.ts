@@ -22,6 +22,11 @@ export const routes: Routes = [
     path: 'activate-account',
     loadComponent: () => import('./pages/auth/activate/activate.component').then(m => m.ActivateComponent)
   },
+  {
+    path: 'change-password',
+    loadComponent: () => import('./pages/change-password/change-password.component').then(m => m.ChangePasswordComponent),
+    canActivate: [AuthGuard]
+  },
 
   // Protected routes
   {

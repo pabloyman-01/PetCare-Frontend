@@ -20,6 +20,7 @@ export interface UserResponse {
   email: string;
   telefono: string;
   active: boolean;
+  forcePasswordChange: boolean;
   roles: string[];
 }
 

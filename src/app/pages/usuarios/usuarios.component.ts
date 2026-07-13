@@ -265,26 +265,27 @@ const ALL_ROLES = ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_ASISTENTE', 'ROLE_DUE
             </button>
           </div>
 
-          @if (activationToken()) {
+          @if (temporaryPassword()) {
             <div class="p-6 space-y-5">
               <div class="p-4 rounded-xl bg-secondary-container/20 border border-secondary/20 flex items-center gap-3">
                 <span class="material-symbols-outlined text-secondary">check_circle</span>
                 <div>
                   <p class="text-label-md font-bold text-on-surface">Usuario creado exitosamente</p>
-                  <p class="text-body-sm text-on-surface-variant mt-1">El usuario recibir&aacute; un correo para activar su cuenta.</p>
+                  <p class="text-body-sm text-on-surface-variant mt-1">El usuario deber&aacute; cambiar su contrase&ntilde;a en el primer inicio de sesi&oacute;n.</p>
                 </div>
               </div>
-              @if (showActivationLink()) {
-                <div class="p-4 rounded-xl bg-surface-container-high border border-outline-variant space-y-2">
-                  <p class="text-label-sm font-semibold text-on-surface">Enlace de activaci&oacute;n (modo desarrollo):</p>
-                  <div class="flex items-center gap-2">
-                    <input [value]="activationLink()" readonly
-                           class="flex-1 px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm font-mono text-on-surface" />
-                    <button (click)="copyLink()"
-                            class="px-3 py-2 bg-primary text-on-primary rounded-lg text-label-sm hover:opacity-90 transition-all">Copiar</button>
-                  </div>
+              <div class="p-4 rounded-xl bg-surface-container-high border border-outline-variant space-y-2">
+                <p class="text-label-sm font-semibold text-on-surface">Contrase&ntilde;a temporal:</p>
+                <div class="flex items-center gap-2">
+                  <input [value]="temporaryPassword()" readonly
+                         class="flex-1 px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm font-mono text-on-surface" />
+                  <button (click)="copyPassword()"
+                          class="px-3 py-2 bg-primary text-on-primary rounded-lg text-label-sm hover:opacity-90 transition-all">
+                    {{ copiedPassword ? 'Copiado!' : 'Copiar' }}
+                  </button>
                 </div>
-              }
+                <p class="text-body-sm text-error mt-1">Guarda esta contrase&ntilde;a. No se mostrar&aacute; nuevamente.</p>
+              </div>
               <div class="flex justify-end">
                 <button type="button" (click)="closeForm()" class="btn btn-primary">Cerrar</button>
               </div>
@@ -397,7 +398,7 @@ export class UsuariosComponent implements OnInit {
   private fb = inject(FormBuilder);
 
   protected allRoles = ALL_ROLES;
-  protected internalRoles = ['ROLE_VETERINARIO', 'ROLE_ASISTENTE'];
+  protected internalRoles = ['ROLE_VETERINARIO', 'ROLE_ASISTENTE', 'ROLE_DUENIO'];
   protected roleLabel = (role: string) => ROLE_LABELS[role] || role;
   protected roleCount = (role: string) => this.usuarios().filter(u => u.roles.includes(role)).length;
 
@@ -421,12 +422,8 @@ export class UsuariosComponent implements OnInit {
   saving = signal(false);
   submitted = false;
 
-  activationToken = signal('');
-  showActivationLink = signal(true);
-  activationLink = computed(() => {
-    const base = window.location.origin;
-    return `${base}/auth/activate/${this.activationToken()}`;
-  });
+  temporaryPassword = signal('');
+  copiedPassword = false;
 
   showRolesEditor = signal(false);
   editRolesUser = signal<UsuarioResponse | null>(null);
@@ -544,7 +541,7 @@ export class UsuariosComponent implements OnInit {
     this.editingUser.set(null);
     this.userForm.reset({ nombres: '', apellidos: '', email: '' });
     this.formRole.set('');
-    this.activationToken.set('');
+    this.temporaryPassword.set('');
     this.submitError.set('');
     this.submitted = false;
     this.showForm.set(true);
@@ -567,11 +564,13 @@ export class UsuariosComponent implements OnInit {
     this.editingUser.set(null);
     this.submitted = false;
     this.submitError.set('');
-    this.activationToken.set('');
+    this.temporaryPassword.set('');
   }
 
-  copyLink(): void {
-    navigator.clipboard.writeText(this.activationLink());
+  copyPassword(): void {
+    navigator.clipboard.writeText(this.temporaryPassword());
+    this.copiedPassword = true;
+    setTimeout(() => this.copiedPassword = false, 2000);
   }
 
   onSubmit(): void {
@@ -612,7 +611,7 @@ export class UsuariosComponent implements OnInit {
         error: () => this.saving.set(false),
       });
     } else {
-      const roleStr = role === 'ROLE_VETERINARIO' ? 'VETERINARIO' : 'ASISTENTE';
+      const roleStr = role.replace('ROLE_', '');
       this.auth.createInternalUser({
         nombres: formValue.nombres!,
         apellidos: formValue.apellidos!,
@@ -621,7 +620,7 @@ export class UsuariosComponent implements OnInit {
       }).subscribe({
         next: (resp) => {
           this.saving.set(false);
-          this.activationToken.set(resp.activationToken);
+          this.temporaryPassword.set(resp.temporaryPassword);
         },
         error: (err) => {
           this.saving.set(false);

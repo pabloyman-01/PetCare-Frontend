@@ -31,6 +31,7 @@ export class AuthService {
   isAsistente = computed(() => this.roles().includes('ROLE_ASISTENTE'));
   isDuenio = computed(() => this.roles().includes('ROLE_DUENIO'));
   isDuenioOnly = computed(() => this.isDuenio() && !this.isAdmin() && !this.isVeterinario() && !this.isAsistente());
+  mustChangePassword = computed(() => this._session()?.user?.forcePasswordChange ?? false);
 
   constructor(private http: HttpClient, private router: Router) {
     this.loadSession();
@@ -87,8 +88,20 @@ export class AuthService {
     });
   }
 
-  createInternalUser(data: { nombres: string; apellidos: string; email: string; rol: string }): Observable<{ message: string; activationToken: string }> {
-    return this.http.post<{ message: string; activationToken: string }>(`${API_URL}/usuarios/internal`, data);
+  createInternalUser(data: { nombres: string; apellidos: string; email: string; rol: string }): Observable<{ message: string; temporaryPassword: string }> {
+    return this.http.post<{ message: string; temporaryPassword: string }>(`${API_URL}/usuarios/internal`, data);
+  }
+
+  changePassword(currentPassword: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${API_URL}/auth/change-password`, { currentPassword, newPassword });
+  }
+
+  updateSessionUser(user: UserResponse): void {
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    const session = this._session();
+    if (session) {
+      this._session.set({ ...session, user });
+    }
   }
 
   private loadSession(): void {

@@ -146,7 +146,11 @@ export class LoginComponent {
 
     this.auth.login({ email, password }).subscribe({
       next: () => {
-        this.router.navigate(['/dashboard']);
+        if (this.auth.mustChangePassword()) {
+          this.router.navigate(['/change-password']);
+        } else {
+          this.router.navigate(['/dashboard']);
+        }
       },
       error: (err: HttpErrorResponse) => {
         this.isLoading = false;

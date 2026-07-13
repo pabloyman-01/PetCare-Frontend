@@ -3,6 +3,7 @@ export interface UsuarioResponse {
   fullName: string;
   email: string;
   active: boolean;
+  forcePasswordChange: boolean;
   roles: string[];
 }
 
