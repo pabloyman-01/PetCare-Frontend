@@ -460,6 +460,12 @@ interface ServicioSeleccionado {
         </div>
       </div>
     } @else {
+      @if (submitError) {
+        <div class="p-4 rounded-xl bg-error-container/20 border border-error/20 flex items-center gap-3">
+          <span class="material-symbols-outlined text-error">error</span>
+          <p class="text-label-sm text-error font-semibold">{{ submitError }}</p>
+        </div>
+      }
       <div class="flex items-center justify-between">
         <button (click)="prevStep()"
                 class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-label-md font-semibold text-on-surface-variant hover:bg-surface-container-high transition-all">
@@ -494,6 +500,7 @@ export class CitaCreateComponent implements OnInit {
 
   currentStep = signal(1);
   saving = signal(false);
+  submitError = '';
 
   duenios = signal<DuenioResponse[]>([]);
   loadingDuenios = signal(true);
@@ -665,6 +672,7 @@ export class CitaCreateComponent implements OnInit {
   submitCita(): void {
     if (this.saving()) return;
     this.saving.set(true);
+    this.submitError = '';
     const servicios: CostoCitaServicioRequest[] = this.selectedServicios().map(s => ({ servicioId: s.servicioId, cantidad: s.cantidad }));
     const req: CitaRequest = {
       duenioId: this.selectedDuenio()!.id,
@@ -673,13 +681,17 @@ export class CitaCreateComponent implements OnInit {
       fecha: this.selectedFecha(),
       horaInicio: this.selectedHora(),
       duracionMinutos: this.duracion,
-      motivo: this.motivo,
+      motivo: this.motivo || 'Consulta general',
       servicios,
-      descuento: this.descuento > 0 ? this.descuento : undefined,
+      descuento: this.descuento > 0 ? this.descuento : 0,
     };
-    this.citaService.create(req).pipe(catchError(() => EMPTY)).subscribe({
+    this.citaService.create(req).subscribe({
       next: () => { this.saving.set(false); this.router.navigate(['/citas']); },
-      error: () => this.saving.set(false),
+      error: (err) => {
+        this.saving.set(false);
+        this.submitError = err.error?.message || err.error?.error || 'Error al crear la cita. Intenta nuevamente.';
+        console.error('[PetCare] Cita create error:', err.status, err.error);
+      },
     });
   }
 }
