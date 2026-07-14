@@ -11,6 +11,8 @@ const config: CapacitorConfig = {
       '*.onrender.com',
       '*.github.io',
       '*.netlify.app',
+      '*.cloudfront.net',
+      '*.elasticbeanstalk.com',
     ],
   },
 };
