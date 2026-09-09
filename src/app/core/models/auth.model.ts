@@ -1,3 +1,5 @@
+import { Clinica } from './clinica.model';
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -8,6 +10,7 @@ export interface RegisterRequest {
   email: string;
   telefono: string;
   password: string;
+  clinicaSlug?: string;
 }
 
 export interface RefreshTokenRequest {
@@ -22,6 +25,7 @@ export interface UserResponse {
   active: boolean;
   forcePasswordChange: boolean;
   roles: string[];
+  clinica?: Clinica | null;
 }
 
 export interface AuthResponse {

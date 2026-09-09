@@ -27,6 +27,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/change-password/change-password.component').then(m => m.ChangePasswordComponent),
     canActivate: [AuthGuard]
   },
+  {
+    path: 'register-clinic',
+    loadComponent: () => import('./pages/register-clinic/register-clinic.component').then(m => m.RegisterClinicComponent)
+  },
+  {
+    path: 'c/:slug',
+    loadComponent: () => import('./pages/public/clinic/clinic.component').then(m => m.ClinicComponent)
+  },
 
   // Protected routes
   {
@@ -53,6 +61,7 @@ export const routes: Routes = [
       { path: 'controles-mensuales', loadComponent: () => import('./pages/controles-mensuales/controles-mensuales.component').then(m => m.ControlesMensualesComponent), canActivate: [RoleGuard], data: { roles: ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_ASISTENTE'] } },
       { path: 'inasistencias', loadComponent: () => import('./pages/inasistencias/inasistencias.component').then(m => m.InasistenciasComponent), canActivate: [RoleGuard], data: { roles: ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_ASISTENTE'] } },
       { path: 'reportes', loadComponent: () => import('./pages/reportes/reportes.component').then(m => m.ReportesComponent), canActivate: [RoleGuard], data: { roles: ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_ASISTENTE'] } },
+      { path: 'mi-clinica', loadComponent: () => import('./pages/mi-clinica/mi-clinica.component').then(m => m.MiClinicaComponent), canActivate: [RoleGuard], data: { roles: ['ROLE_ADMIN'] } },
       { path: 'profile', loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent) }
     ]
   },

@@ -102,6 +102,9 @@ interface NavItem {
             <div class="text-right hidden sm:block">
               <p class="text-label-md text-on-surface leading-tight">{{ auth.user()?.fullName }}</p>
               <p class="text-[11px] text-on-surface-variant font-medium uppercase tracking-wider">{{ displayRole() }}</p>
+              @if (auth.user()?.clinica?.nombre) {
+                <p class="text-[10px] text-on-surface-variant/70 truncate max-w-[160px]">{{ auth.user()?.clinica?.nombre }}</p>
+              }
             </div>
             <div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container text-label-md font-bold">
               {{ initials() }}
@@ -164,7 +167,8 @@ export class MainLayoutComponent implements OnInit {
     { label: 'Vacunas', icon: 'vaccines', route: '/vacunas', roles: ['ROLE_VETERINARIO'] },
     { label: 'Control Mensual', icon: 'query_stats', route: '/controles-mensuales', roles: ['ROLE_VETERINARIO'] },
     { label: 'Inasistencias', icon: 'event_busy', route: '/inasistencias', roles: [] },
-    { label: 'Reportes', icon: 'analytics', route: '/reportes', roles: [] }
+    { label: 'Reportes', icon: 'analytics', route: '/reportes', roles: [] },
+    { label: 'Mi Clínica', icon: 'storefront', route: '/mi-clinica', roles: ['ROLE_ADMIN'] }
   ];
 
   constructor(public auth: AuthService, public notifSvc: NotificacionService, private router: Router) {}

@@ -11,6 +11,7 @@ import {
   UserSession,
   UserResponse
 } from '../models/auth.model';
+import { RegisterClinicRequest } from '../models/clinica.model';
 
 export const API_URL = environment.apiUrl;
 
@@ -45,6 +46,12 @@ export class AuthService {
 
   register(req: RegisterRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${API_URL}/auth/register`, req).pipe(
+      tap(resp => this.setSession(resp))
+    );
+  }
+
+  registerClinic(req: RegisterClinicRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${API_URL}/auth/register-clinic`, req).pipe(
       tap(resp => this.setSession(resp))
     );
   }

@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { ClinicaService } from '../../../core/services/clinica.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
 export const passwordMatchValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
@@ -43,6 +44,13 @@ export const passwordMatchValidator: ValidatorFn = (control: AbstractControl): V
 
         <div class="glass_card rounded-3xl shadow-xl shadow-on-surface/5 p-8">
           <h2 class="text-headline-md font-bold text-on-surface mb-6">Crear Cuenta</h2>
+
+          @if (clinicName) {
+            <div class="alert alert-info mb-4">
+              <span class="material-symbols-outlined text-[20px] flex-shrink-0">local_hospital</span>
+              <span>Te est&aacute;s registrando en <strong>{{ clinicName }}</strong></span>
+            </div>
+          }
 
           <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
             @if (errorMessage) {
@@ -174,6 +182,12 @@ export const passwordMatchValidator: ValidatorFn = (control: AbstractControl): V
                 Inicia sesi&oacute;n
               </a>
             </p>
+            <p class="text-center text-body-sm text-on-surface-variant/70 mt-3">
+              &iquest;Eres una veterinaria?
+              <a routerLink="/register-clinic" class="text-primary font-semibold hover:text-primary/80 transition-colors">
+                Registra tu negocio
+              </a>
+            </p>
           </div>
         </div>
 
@@ -191,11 +205,15 @@ export class RegisterComponent {
   showConfirmPassword = false;
   errorMessage = '';
   successMessage = '';
+  clinicSlug?: string;
+  clinicName?: string | null = null;
 
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute,
+    private clinica: ClinicaService
   ) {
     this.registerForm = this.fb.group({
       fullName: ['', [Validators.required, Validators.minLength(3)]],
@@ -204,6 +222,17 @@ export class RegisterComponent {
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]]
     }, { validators: passwordMatchValidator });
+
+    this.route.queryParams.subscribe(params => {
+      const slug = params['clinica'];
+      if (slug) {
+        this.clinicSlug = slug;
+        this.clinica.getPublicClinic(slug).subscribe({
+          next: c => this.clinicName = c?.nombre || null,
+          error: () => this.clinicName = null
+        });
+      }
+    });
   }
 
   onSubmit(): void {
@@ -217,7 +246,7 @@ export class RegisterComponent {
     this.errorMessage = '';
     this.successMessage = '';
 
-    this.auth.register({ fullName, email, telefono, password }).subscribe({
+    this.auth.register({ fullName, email, telefono, password, clinicaSlug: this.clinicSlug }).subscribe({
       next: () => {
         this.successMessage = 'Cuenta creada exitosamente. Redirigiendo...';
         setTimeout(() => {

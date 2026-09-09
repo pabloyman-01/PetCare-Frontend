@@ -172,6 +172,9 @@ a, button, [role="button"], input[type="submit"], input[type="button"], input[ty
   .alert-error {
     @apply bg-error/10 text-error border border-error/20;
   }
+  .alert-info {
+    @apply bg-secondary/10 text-on-secondary border border-secondary/20;
+  }
 
   /* ---- Table replacements ---- */
   .table {
