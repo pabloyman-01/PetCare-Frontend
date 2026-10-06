@@ -12,19 +12,25 @@ import { HttpErrorResponse } from '@angular/common/http';
   <div class="min-h-screen w-full flex flex-col">
     <!-- Header -->
     <header class="px-6 py-4 flex items-center justify-between border-b border-outline-variant/20 bg-surface/80 backdrop-blur-md">
-      <div class="flex items-center gap-3">
+      <a routerLink="/clinicas" class="flex items-center gap-3" aria-label="PetCare, directorio de cl&iacute;nicas">
         <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
           <span class="material-symbols-outlined text-on-primary fill">pets</span>
         </div>
         <h1 class="text-headline-md font-extrabold text-primary">PetCare</h1>
-      </div>
-      <a routerLink="/auth" class="btn btn-primary btn-sm">
-        <span class="material-symbols-outlined text-[18px]">login</span>
+      </a>
+      <a routerLink="/auth" [queryParams]="{ clinica: clinic()?.slug }" class="btn btn-primary btn-sm">
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">login</span>
         Iniciar Sesi&oacute;n
       </a>
     </header>
 
     <main class="flex-1">
+      <div class="max-w-4xl mx-auto px-4 pt-6">
+        <a routerLink="/clinicas" class="inline-flex items-center gap-2 text-body-sm text-primary font-semibold">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_back</span>
+          Volver al directorio
+        </a>
+      </div>
       @if (loading()) {
         <div class="flex items-center justify-center py-24">
           <div class="flex flex-col items-center gap-4">
@@ -90,7 +96,7 @@ import { HttpErrorResponse } from '@angular/common/http';
                   <span class="material-symbols-outlined">person_add</span>
                   Registrarme en {{ clinic()?.nombre }}
                 </a>
-                <a routerLink="/auth" class="btn btn-ghost">Ya soy cliente, iniciar sesi&oacute;n</a>
+                <a routerLink="/auth" [queryParams]="{ clinica: clinic()?.slug }" class="btn btn-ghost">Ya soy cliente, iniciar sesi&oacute;n</a>
               </div>
             </div>
           </div>

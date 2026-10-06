@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Clinica, ClinicaRequest, ClinicaPublic, ServicioPublic } from '../models/clinica.model';
+import { Clinica, ClinicaRequest, ClinicaPublic, ServicioPublic, ClinicDirectoryPage } from '../models/clinica.model';
 import { API_URL } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
@@ -21,6 +21,11 @@ export class ClinicaService {
 
   getPublicClinic(slug: string): Observable<ClinicaPublic> {
     return this.http.get<ClinicaPublic>(`${this.publicBase}/${slug}`);
+  }
+
+  getDirectory(query: string, page: number): Observable<ClinicDirectoryPage> {
+    const params = new HttpParams().set('q', query).set('page', page).set('size', 12);
+    return this.http.get<ClinicDirectoryPage>(this.publicBase, { params });
   }
 
   getPublicServices(slug: string): Observable<ServicioPublic[]> {

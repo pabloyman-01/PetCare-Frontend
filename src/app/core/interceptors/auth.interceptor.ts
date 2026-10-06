@@ -10,7 +10,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = auth.getAccessToken();
 
   let authReq = req;
-  const skipAuth = req.url.includes('/auth/login') || req.url.includes('/auth/register') || req.url.includes('/auth/refresh') || req.url.includes('/auth/activate');
+  const skipAuth = req.url.includes('/auth/login') || req.url.includes('/auth/register') || req.url.includes('/auth/refresh') || req.url.includes('/auth/activate') || req.url.includes('/public/clinicas');
   if (token && !skipAuth) {
     authReq = req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
   }

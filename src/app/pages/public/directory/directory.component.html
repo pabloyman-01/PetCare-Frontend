@@ -1,0 +1,108 @@
+<div class="directory-page">
+  <header class="directory-header">
+    <div class="header-content">
+      <a routerLink="/clinicas" class="brand" aria-label="PetCare, directorio de cl&iacute;nicas">
+        <span class="brand-mark"><span class="material-symbols-outlined fill" aria-hidden="true">pets</span></span>
+        <span>PetCare<small>Directorio de cl&iacute;nicas</small></span>
+      </a>
+      <nav aria-label="Acceso a PetCare">
+        <a routerLink="/auth" class="access-link">Iniciar sesi&oacute;n</a>
+        <a routerLink="/register-clinic" class="register-link"><span class="material-symbols-outlined" aria-hidden="true">add</span>Registrar mi cl&iacute;nica</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="directory-main">
+    <section class="search-hero" aria-labelledby="directory-title">
+      <div class="hero-copy">
+        <span class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>CUIDADO VETERINARIO, A TU ALCANCE</span>
+        <h1 id="directory-title">Encuentra una cl&iacute;nica.<br><span>Conoce c&oacute;mo puede ayudar.</span></h1>
+        <p>Explora las veterinarias registradas en PetCare, sus servicios y datos de contacto. Sin crear una cuenta.</p>
+      </div>
+      <div class="hidden lg:grid absolute right-16 top-16 w-24 h-24 place-items-center bg-white/50 text-primary rounded-[30px] -rotate-12 border border-white" aria-hidden="true"><span class="material-symbols-outlined fill text-[58px]">pets</span><span class="absolute -right-3 -bottom-3 bg-secondary text-white rounded-xl w-9 h-9 text-center text-[26px]">+</span></div>
+
+      <form class="search-form" (submit)="$event.preventDefault(); searchClinics()" role="search" aria-label="Buscar cl&iacute;nicas">
+        <div class="search-input">
+          <span class="material-symbols-outlined" aria-hidden="true">search</span>
+          <div><label for="directory-search">Nombre, direcci&oacute;n o servicio</label>
+            <input id="directory-search" type="search" name="q" [formControl]="search" maxlength="100"
+              placeholder="Ej. consulta, vacunaci&oacute;n o nombre de cl&iacute;nica" autocomplete="off">
+          </div>
+        </div>
+        <button class="search-button" type="submit"><span>Buscar cl&iacute;nicas</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
+      </form>
+      <div class="hero-note"><span class="material-symbols-outlined" aria-hidden="true">info</span>La consulta de informaci&oacute;n es p&uacute;blica. Para gestionar tus citas, inicia sesi&oacute;n.</div>
+    </section>
+
+    <section class="results" aria-labelledby="results-title" [attr.aria-busy]="loading()">
+      <div class="results-heading">
+        <div><span class="section-label">EXPLORA PETCARE</span><h2 id="results-title">{{ query() ? 'Resultados de tu búsqueda' : 'Clínicas para conocer' }}</h2></div>
+        @if (result(); as data) {
+          <p class="result-count" role="status">{{ data.totalElements }} {{ data.totalElements === 1 ? 'clínica' : 'clínicas' }}</p>
+        }
+      </div>
+      @if (query()) {
+        <div class="query-summary"><span>Buscando: <strong>{{ query() }}</strong></span><button type="button" (click)="searchClinics('')" class="clear-search">Limpiar b&uacute;squeda<span class="material-symbols-outlined" aria-hidden="true">close</span></button></div>
+      }
+
+      @if (loading()) {
+        <div class="state-panel" role="status"><span class="loading loading-spinner loading-lg" aria-hidden="true"></span><h3>Buscando opciones para tu mascota...</h3><p>Estamos cargando la informaci&oacute;n de las cl&iacute;nicas.</p></div>
+      } @else if (error()) {
+        <div class="state-panel" role="alert"><span class="state-icon material-symbols-outlined" aria-hidden="true">cloud_off</span><h3>No pudimos cargar el directorio</h3><p>Revisa tu conexi&oacute;n e intenta nuevamente.</p><button class="search-button" type="button" (click)="retryLoad()">Volver a intentar</button></div>
+      } @else {
+        @if (result(); as data) {
+        @if (data.items.length === 0) {
+          <div class="state-panel"><span class="state-icon material-symbols-outlined" aria-hidden="true">search_off</span><h3>{{ query() ? 'No encontramos coincidencias' : 'Todavía no hay clínicas para mostrar' }}</h3><p>{{ query() ? 'Prueba con otro nombre o servicio, o consulta todas las clínicas.' : 'Las clínicas aparecerán aquí cuando estén disponibles.' }}</p>
+            @if (query() || data.page > 0) { <button type="button" class="search-button" (click)="searchClinics('')">Ver todas las cl&iacute;nicas</button> }
+          </div>
+        } @else {
+          @if (!query() && serviceSuggestions().length) {
+            <div class="service-suggestions"><span>Explora por servicio:</span>@for (service of serviceSuggestions(); track service) { <button type="button" (click)="searchClinics(service)">{{ service }}<span class="material-symbols-outlined" aria-hidden="true">north_east</span></button> }</div>
+          }
+          <div class="clinic-grid">
+            @for (clinic of data.items; track clinic.id) {
+              <article class="clinic-card" [attr.aria-labelledby]="'clinic-' + clinic.id">
+                <div class="clinic-identity">
+                  <div class="clinic-logo">
+                    @if (clinic.logoUrl && !brokenLogos().has(clinic.id)) {
+                      <img [src]="clinic.logoUrl" [alt]="'Logo de ' + clinic.nombre" loading="lazy" referrerpolicy="no-referrer" (error)="logoFailed(clinic.id)">
+                    } @else { <span class="material-symbols-outlined" aria-hidden="true">storefront</span> }
+                  </div>
+                  <div><span class="clinic-label">VETERINARIA EN PETCARE</span><h3 [id]="'clinic-' + clinic.id"><a [routerLink]="['/c', clinic.slug]">{{ clinic.nombre }}</a></h3></div>
+                </div>
+                @if (clinic.descripcion) { <p class="clinic-description">{{ clinic.descripcion }}</p> }
+                <div class="clinic-details">
+                  <p><span class="material-symbols-outlined" aria-hidden="true">location_on</span><span>{{ clinic.direccion || 'Dirección no publicada' }}</span></p>
+                  <p><span class="material-symbols-outlined" aria-hidden="true">schedule</span><span>{{ clinic.horarioAtencion || 'Consulta los horarios con la clínica' }}</span></p>
+                </div>
+                <div class="clinic-services">
+                  <h4>Servicios publicados</h4>
+                  @if (clinic.servicios.length) {
+                    <ul>@for (service of clinic.servicios.slice(0, 4); track service) { <li>{{ service }}</li> }
+                      @if (clinic.servicios.length > 4) { <li class="more-services">+{{ clinic.servicios.length - 4 }} m&aacute;s</li> }
+                    </ul>
+                  } @else { <p class="no-services">Esta cl&iacute;nica a&uacute;n no ha publicado sus servicios.</p> }
+                </div>
+                <div class="clinic-actions">
+                  @if (phoneLink(clinic.telefono); as phone) { <a [href]="phone" class="call-link" [attr.aria-label]="'Llamar a ' + clinic.nombre"><span class="material-symbols-outlined" aria-hidden="true">call</span>Llamar</a> }
+                  <a [routerLink]="['/c', clinic.slug]" class="profile-link" [attr.aria-label]="'Ver clínica ' + clinic.nombre">Ver cl&iacute;nica<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+                </div>
+              </article>
+            }
+          </div>
+        }
+        @if (data.totalPages > 1) {
+          <nav class="pagination" aria-label="Paginaci&oacute;n de cl&iacute;nicas">
+            <button type="button" (click)="changePage(data.page - 1)" [disabled]="data.page === 0"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>Anterior</button>
+            <span>P&aacute;gina {{ data.page + 1 }} de {{ data.totalPages }}</span>
+            <button type="button" (click)="changePage(data.page + 1)" [disabled]="data.page + 1 >= data.totalPages">Siguiente<span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
+          </nav>
+        }
+        }
+      }
+    </section>
+
+    <section class="join-banner" aria-labelledby="join-title"><div><span class="section-label">PARA PROFESIONALES</span><h2 id="join-title">Tu cl&iacute;nica tambi&eacute;n tiene un lugar aqu&iacute;.</h2><p>Publica tus servicios y organiza tu equipo, agenda e historias cl&iacute;nicas con PetCare.</p></div><a routerLink="/register-clinic">Registrar mi cl&iacute;nica<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a></section>
+  </main>
+  <footer class="directory-footer"><a routerLink="/clinicas">PetCare</a><span>&copy; 2026 PetCare. La gesti&oacute;n y el cuidado, conectados.</span><a routerLink="/auth">Acceder a mi cuenta</a></footer>
+</div>

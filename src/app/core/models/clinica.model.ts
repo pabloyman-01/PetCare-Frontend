@@ -40,6 +40,17 @@ export interface ServicioPublic {
   costoBase: number;
 }
 
+export interface ClinicaDirectory extends ClinicaPublic {
+  servicios: string[];
+}
+
+export interface ClinicDirectoryPage {
+  items: ClinicaDirectory[];
+  page: number;
+  totalPages: number;
+  totalElements: number;
+}
+
 export interface RegisterClinicRequest {
   fullName: string;
   email: string;

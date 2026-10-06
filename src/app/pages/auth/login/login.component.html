@@ -1,0 +1,111 @@
+<div class="login-page">
+  <header class="login-header">
+    <a routerLink="/auth" class="brand" aria-label="PetCare, inicio de sesi&oacute;n">
+      <span class="brand-mark"><span class="material-symbols-outlined fill" aria-hidden="true">pets</span></span>
+      <span>PetCare<span class="brand-caption">Cuidado que conecta</span></span>
+    </a>
+    <a class="public-link" [routerLink]="clinicSlug ? ['/c', clinicSlug] : ['/clinicas']">
+      <span>{{ clinicSlug ? 'Ver clínica' : 'Explorar clínicas' }}</span>
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_outward</span>
+    </a>
+  </header>
+
+  <main class="login-main">
+    <section class="access-panel" aria-labelledby="login-title">
+      <div class="login-card">
+        <div class="card-heading">
+          <span class="eyebrow">TU ESPACIO PETCARE</span>
+          <span class="access-icon"><span class="material-symbols-outlined" aria-hidden="true">key</span></span>
+        </div>
+        <h1 id="login-title">Qu&eacute; bueno verte.</h1>
+        <p class="card-intro">Inicia sesi&oacute;n para continuar con el cuidado de tus mascotas o la gesti&oacute;n de tu veterinaria.</p>
+
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate [attr.aria-busy]="isLoading">
+          @if (errorMessage) {
+            <div class="login-error" role="alert">
+              <span class="material-symbols-outlined" aria-hidden="true">error</span>
+              <span>{{ errorMessage }}</span>
+            </div>
+          }
+          <div class="field">
+            <label for="login-email">Correo electr&oacute;nico</label>
+            <div class="input-wrap">
+              <span class="material-symbols-outlined field-icon" aria-hidden="true">mail</span>
+              <input id="login-email" name="email" type="email" formControlName="email" autocomplete="username"
+                inputmode="email" autocapitalize="none" spellcheck="false" placeholder="tu@correo.com" required
+                [attr.aria-invalid]="loginForm.get('email')?.touched && loginForm.get('email')?.invalid"
+                [attr.aria-describedby]="loginForm.get('email')?.touched && loginForm.get('email')?.invalid ? 'login-email-error' : null">
+            </div>
+            @if (loginForm.get('email')?.touched && loginForm.get('email')?.invalid) {
+              <p id="login-email-error" class="field-error" role="alert">Ingresa un correo electr&oacute;nico v&aacute;lido.</p>
+            }
+          </div>
+          <div class="field">
+            <label for="login-password">Contrase&ntilde;a</label>
+            <div class="input-wrap">
+              <span class="material-symbols-outlined field-icon" aria-hidden="true">lock</span>
+              <input id="login-password" name="password" [type]="showPassword ? 'text' : 'password'"
+                formControlName="password" autocomplete="current-password" placeholder="Tu contrase&ntilde;a" required
+                class="password-input"
+                [attr.aria-invalid]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid"
+                [attr.aria-describedby]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid ? 'login-password-error' : null">
+              <button type="button" class="password-toggle" (click)="showPassword = !showPassword"
+                [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                [attr.aria-pressed]="showPassword" aria-controls="login-password">
+                <span class="material-symbols-outlined" aria-hidden="true">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+              </button>
+            </div>
+            @if (loginForm.get('password')?.touched && loginForm.get('password')?.invalid) {
+              <p id="login-password-error" class="field-error" role="alert">Ingresa tu contrase&ntilde;a.</p>
+            }
+          </div>
+
+          <button type="submit" class="submit-button" [disabled]="isLoading">
+            @if (isLoading) {
+              <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+              <span>Ingresando...</span>
+            } @else {
+              <span>Iniciar sesi&oacute;n</span>
+              <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            }
+          </button>
+          <span class="sr-only" role="status">{{ isLoading ? 'Verificando tus credenciales.' : '' }}</span>
+          <p class="account-note"><span class="material-symbols-outlined" aria-hidden="true">shield</span>Tu cuenta te lleva al espacio que te corresponde.</p>
+        </form>
+
+        <div class="registration-link">
+          <p>&iquest;Eres due&ntilde;o y a&uacute;n no tienes cuenta?</p>
+          <a routerLink="/auth/register" [queryParams]="clinicSlug ? { clinica: clinicSlug } : {}">
+            Crear mi cuenta<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+      <div class="clinic-invite">
+        <span class="material-symbols-outlined" aria-hidden="true">storefront</span>
+        <div><p>&iquest;Tienes una veterinaria?</p><a routerLink="/register-clinic">Registra tu cl&iacute;nica en PetCare</a></div>
+        <span class="material-symbols-outlined invite-arrow" aria-hidden="true">north_east</span>
+      </div>
+    </section>
+
+    <section class="welcome-panel" aria-labelledby="welcome-title">
+      <span class="welcome-label"><span class="label-dot" aria-hidden="true"></span>PARA VETERINARIAS Y FAMILIAS</span>
+      <h2 id="welcome-title">M&aacute;s cerca de ellos.<br><span>M&aacute;s simple para ti.</span></h2>
+      <p class="welcome-intro">Un mismo lugar para organizar la atenci&oacute;n veterinaria y acompa&ntilde;ar cada etapa de tu mascota.</p>
+
+      <div class="care-illustration" aria-hidden="true">
+        <div class="illustration-orbit"></div>
+        <div class="pet-emblem"><span class="material-symbols-outlined fill">pets</span></div>
+        <div class="care-tag appointment-tag"><span class="tag-icon"><span class="material-symbols-outlined">calendar_month</span></span><span>Citas organizadas<small>Cada visita, en su lugar</small></span></div>
+        <div class="care-tag history-tag"><span class="tag-icon"><span class="material-symbols-outlined">favorite</span></span><span>Su historia, contigo<small>Salud y seguimiento</small></span></div>
+        <span class="illustration-spark spark-one">+</span><span class="illustration-spark spark-two">+</span>
+      </div>
+
+      <div class="audience-grid">
+        <div class="audience-item"><span class="material-symbols-outlined" aria-hidden="true">medical_services</span><h3>Para tu cl&iacute;nica</h3><p>Equipo, agenda e historias cl&iacute;nicas en un espacio de trabajo propio.</p></div>
+        <div class="audience-item owner-item"><span class="material-symbols-outlined" aria-hidden="true">pets</span><h3>Para tu mascota</h3><p>Consulta sus citas, vacunas e historial desde tu cuenta.</p></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="login-footer"><span>&copy; 2026 PetCare</span><span>La gesti&oacute;n y el cuidado, conectados.</span></footer>
+</div>
