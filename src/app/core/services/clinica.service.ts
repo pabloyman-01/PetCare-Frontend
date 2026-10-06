@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Clinica, ClinicaRequest, ClinicaPublic, ServicioPublic, ClinicDirectoryPage } from '../models/clinica.model';
+import { Clinica, ClinicaPlan, ClinicaRequest, ClinicaPublic, ServicioPublic, ClinicDirectoryPage } from '../models/clinica.model';
 import { API_URL } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
@@ -13,6 +13,10 @@ export class ClinicaService {
 
   getMyClinic(): Observable<Clinica> {
     return this.http.get<Clinica>(`${this.base}/me`);
+  }
+
+  getMyPlan(): Observable<ClinicaPlan> {
+    return this.http.get<ClinicaPlan>(`${this.base}/me/plan`);
   }
 
   updateMyClinic(req: ClinicaRequest): Observable<Clinica> {

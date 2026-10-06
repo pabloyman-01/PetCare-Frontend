@@ -70,6 +70,7 @@ export const routes: Routes = [
       { path: 'inasistencias', loadComponent: () => import('./pages/inasistencias/inasistencias.component').then(m => m.InasistenciasComponent), canActivate: [RoleGuard], data: { roles: ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_ASISTENTE'] } },
       { path: 'reportes', loadComponent: () => import('./pages/reportes/reportes.component').then(m => m.ReportesComponent), canActivate: [RoleGuard], data: { roles: ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_ASISTENTE'] } },
       { path: 'mi-clinica', loadComponent: () => import('./pages/mi-clinica/mi-clinica.component').then(m => m.MiClinicaComponent), canActivate: [RoleGuard], data: { roles: ['ROLE_ADMIN'] } },
+      { path: 'mi-plan', loadComponent: () => import('./pages/mi-plan/mi-plan.component').then(m => m.MiPlanComponent), canActivate: [RoleGuard], data: { roles: ['ROLE_ADMIN'] } },
       { path: 'profile', loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent) }
     ]
   },

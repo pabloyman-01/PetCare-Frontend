@@ -5,6 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/services/auth.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Clinica } from '../../core/models/clinica.model';
+import { formatPlanDate } from '../mi-plan/plan-date';
 
 @Component({
   selector: 'app-register-clinic',
@@ -30,6 +31,7 @@ export class RegisterClinicComponent {
   errorMessage = '';
   registered = false;
   createdClinic: Clinica | null = null;
+  readonly formatPlanDate = formatPlanDate;
 
   constructor(private fb: FormBuilder, private auth: AuthService) {
     this.registerForm = this.fb.group({

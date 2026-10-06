@@ -1,4 +1,7 @@
-import { Component, computed, OnInit } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { catchError, EMPTY, exhaustMap, timer } from 'rxjs';
+import { formatPlanDate } from '../../pages/mi-plan/plan-date';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificacionService } from '../../core/services/notificacion.service';
@@ -115,6 +118,29 @@ interface NavItem {
 
       <!-- Page content -->
       <div class="flex-1 overflow-y-auto p-6 scrollbar-hide">
+        @if (auth.user()?.clinica?.readOnly) {
+          <div class="alert bg-error/10 text-on-surface border border-error/20 mb-6" role="status">
+            <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+            <div class="flex-1"><p class="font-bold">Cl&iacute;nica en modo solo lectura</p>
+              <p>El historial se conserva. Puedes consultar, buscar y filtrar, pero no crear, editar ni eliminar registros.</p>
+              @if (auth.isAdmin()) {
+                <a routerLink="/mi-plan" class="underline font-semibold">Ver Mi plan</a>
+              } @else {
+                <p>Contacta al administrador de tu cl&iacute;nica para conocer el estado del plan.</p>
+              }
+            </div>
+          </div>
+        } @else if (auth.isAdmin() && auth.user()?.clinica?.plan === 'TRIAL') {
+          <div class="alert bg-primary-container/20 text-on-surface border border-primary/20 mb-6" role="status">
+            <div class="flex-1"><p class="font-bold">Prueba PRO de 14 d&iacute;as</p>
+              <p>Finaliza: {{ formatPlanDate(auth.user()?.clinica?.trialEndsAt) }} (hora de Lima).</p>
+              <a routerLink="/mi-plan" class="underline font-semibold">Ver estado y capacidad en Mi plan</a>
+            </div>
+          </div>
+        }
+        @if (sessionRefreshError()) {
+          <p class="text-body-sm text-error mb-4" role="status">No se pudo actualizar el estado de la cl&iacute;nica. Se intentar&aacute; de nuevo autom&aacute;ticamente.</p>
+        }
         <router-outlet />
       </div>
     </main>
@@ -150,6 +176,9 @@ interface NavItem {
   `
 })
 export class MainLayoutComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+  readonly sessionRefreshError = signal(false);
+  readonly formatPlanDate = formatPlanDate;
   mobileSidebarOpen = false;
   mostrarNotificaciones = false;
 
@@ -168,14 +197,29 @@ export class MainLayoutComponent implements OnInit {
     { label: 'Control Mensual', icon: 'query_stats', route: '/controles-mensuales', roles: ['ROLE_VETERINARIO'] },
     { label: 'Inasistencias', icon: 'event_busy', route: '/inasistencias', roles: [] },
     { label: 'Reportes', icon: 'analytics', route: '/reportes', roles: [] },
-    { label: 'Mi Clínica', icon: 'storefront', route: '/mi-clinica', roles: ['ROLE_ADMIN'] }
+    { label: 'Mi Clínica', icon: 'storefront', route: '/mi-clinica', roles: ['ROLE_ADMIN'] },
+    { label: 'Mi plan', icon: 'workspace_premium', route: '/mi-plan', roles: ['ROLE_ADMIN'] }
   ];
 
   constructor(public auth: AuthService, public notifSvc: NotificacionService, private router: Router) {}
 
   ngOnInit(): void {
-    this.notifSvc.cargar();
-    setInterval(() => this.notifSvc.cargar(), 60000);
+    timer(0, 60000).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.notifSvc.cargar());
+    timer(0, 60000).pipe(
+      exhaustMap(() => this.auth.me().pipe(catchError(() => {
+        this.sessionRefreshError.set(true);
+        return EMPTY;
+      }))),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(user => {
+      const current = this.auth.user();
+      if (!current || current.id !== user.id) return;
+      this.auth.updateSessionUser({
+        ...current, ...user,
+        forcePasswordChange: user.forcePasswordChange ?? current.forcePasswordChange
+      });
+      this.sessionRefreshError.set(false);
+    });
   }
 
   toggleNotificaciones(): void {

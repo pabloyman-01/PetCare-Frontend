@@ -10,6 +10,26 @@ export interface Clinica {
   descripcion?: string | null;
   logoUrl?: string | null;
   createdAt: string;
+  trialStartedAt: string | null;
+  trialEndsAt: string | null;
+  readOnly: boolean;
+}
+
+export interface ClinicaPlan {
+  plan: 'TRIAL' | 'FREE' | 'PRO' | 'CONSULTORIO';
+  tier: 'PRO' | 'FREE' | 'CONSULTORIO';
+  status: 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'READ_ONLY' | 'SUSPENDED';
+  readOnly: boolean;
+  trialStartedAt: string | null;
+  trialEndsAt: string | null;
+  daysRemaining: number;
+  staffUsed: number;
+  staffLimit: number;
+  petsUsed: number;
+  petsLimit: number;
+  monthlyPrice: number;
+  annualPrice: number;
+  currency: 'PEN';
 }
 
 export interface ClinicaRequest {
