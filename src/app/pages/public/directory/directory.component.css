@@ -79,7 +79,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid #004ac6; outline-offs
 @media (max-width: 700px) {
   .header-content, .directory-main, .directory-footer { padding-inline: 18px; }
   .header-content { min-height: 80px; gap: 10px; }
-  .header-content nav { gap: 12px; }
+  .header-content nav { gap: 12px; font-size: 11px; }
   .register-link { display: none; }
   .directory-main { padding-top: 20px; }
   .search-hero { padding: 26px 20px; border-radius: 18px; }

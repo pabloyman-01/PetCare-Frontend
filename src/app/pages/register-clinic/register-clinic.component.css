@@ -1,0 +1,99 @@
+:host { display: block; }
+.registration-page { min-height: 100vh; background: radial-gradient(ellipse at 95% 10%, #e5eeff 0, transparent 42%), #f8f9ff; color: #0b1c30; }
+.registration-header, .registration-main, .registration-footer { max-width: 1180px; margin-inline: auto; padding-inline: 32px; }
+.registration-header { min-height: 88px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.brand { display: flex; align-items: center; gap: 11px; color: #004ac6; font-size: 25px; font-weight: 800; letter-spacing: -.8px; }
+.brand small { display: block; color: #434655; font-size: 10px; font-weight: 500; letter-spacing: .3px; }
+.brand-mark { width: 42px; height: 42px; border-radius: 13px; background: #004ac6; color: white; display: grid; place-items: center; }
+.login-link { display: flex; align-items: center; gap: 9px; color: #004ac6; font-size: 13px; font-weight: 700; }
+.login-link > span:first-child { color: #434655; font-weight: 500; }
+.registration-main { padding-top: 32px; padding-bottom: 50px; }
+.eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: #006c49; }
+h1 { margin: 17px 0 15px; font-size: 42px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.17; }
+h1 span { color: #004ac6; }
+.page-heading { max-width: 620px; margin-bottom: 30px; }
+.page-heading > p { color: #434655; font-size: 15px; line-height: 1.8; margin: 0; }
+.registration-layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 30px; align-items: start; }
+.form-section { min-width: 0; padding: 25px 28px 28px; background: #fff; border: 1px solid #dce5f7; border-radius: 18px; margin: 0 0 22px; }
+legend { float: left; width: 100%; display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 800; margin-bottom: 8px; }
+.section-number { font-size: 11px; color: #004ac6; padding: 7px; border-radius: 7px; background: #eff4ff; }
+.section-description { clear: both; font-size: 12px; line-height: 1.8; color: #434655; margin: 0 0 21px; }
+.field { margin-bottom: 21px; min-width: 0; }
+.field:last-child { margin-bottom: 0; }
+.field label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+.field input { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid #c3c6d7; border-radius: 10px; font-size: 16px; color: #0b1c30; background: #fbfcff; outline: none; }
+.field input::placeholder { color: #737686; font-size: 13px; }
+.field input:focus { border-color: #004ac6; box-shadow: 0 0 0 3px #004ac61a; }
+.field input[aria-invalid="true"] { border-color: #ba1a1a; }
+.field input[readonly] { color: #434655; background: #eff4ff; }
+.field-hint, .field-error { font-size: 11px; line-height: 1.7; margin: 7px 0 0; color: #434655; }
+.field-error { color: #ba1a1a; }
+.password-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.password-grid .field { margin: 0; }
+.password-wrap { position: relative; }
+.password-wrap input { padding-right: 46px; }
+.password-wrap button { position: absolute; top: 2px; right: 2px; width: 44px; height: 44px; display: grid; place-items: center; background: transparent; border-radius: 8px; color: #434655; }
+.password-wrap button:hover { background: #eff4ff; }
+.submit-section { padding: 0 8px; }
+.submit-section > p:first-child { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 1.8; color: #434655; margin: 0 0 16px; }
+.submit-section > p:first-child .material-symbols-outlined { flex-shrink: 0; color: #004ac6; margin-top: 2px; }
+.submit-button, .primary-link, .secondary-link { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 13px 20px; min-height: 50px; border-radius: 10px; font-size: 14px; font-weight: 700; background: #004ac6; color: white; }
+.submit-button { width: 100%; border: 0; }
+.submit-button:disabled { opacity: .65; cursor: wait; }
+.required-note { text-align: center; margin: 12px 0 0; font-size: 10px; color: #434655; }
+.registration-error { display: flex; align-items: flex-start; gap: 12px; border: 1px solid #ba1a1a30; border-radius: 12px; padding: 16px; background: #fff3f2; color: #932020; margin-bottom: 20px; font-size: 13px; line-height: 1.7; }
+.registration-error > .material-symbols-outlined { flex-shrink: 0; font-size: 21px; }
+.registration-error p { margin: 0 0 5px; }
+.registration-error a { text-decoration: underline; font-weight: 700; }
+.onboarding-aside { position: sticky; top: 24px; }
+.onboarding-card { padding: 28px; background: #eff4ff; border: 1px solid #dce5f7; border-radius: 18px; }
+.aside-icon { display: grid; place-items: center; width: 45px; height: 45px; background: #fff; color: #004ac6; border-radius: 13px; margin-bottom: 20px; }
+.onboarding-card h2 { font-size: 26px; line-height: 1.25; font-weight: 800; letter-spacing: -.7px; margin: 15px 0 13px; }
+.onboarding-card > p { color: #434655; font-size: 13px; line-height: 1.8; margin: 0; }
+.next-steps { display: grid; gap: 23px; padding: 22px 0 0; margin: 23px 0 0; list-style: none; border-top: 1px solid #c3c6d780; }
+.next-steps li { display: flex; align-items: flex-start; gap: 12px; }
+.next-steps .material-symbols-outlined { color: #004ac6; font-size: 21px; flex-shrink: 0; }
+.next-steps h3, .plans-note h3 { font-size: 13px; font-weight: 800; margin: 0 0 5px; }
+.next-steps p, .plans-note p { color: #434655; font-size: 12px; line-height: 1.8; margin: 0; }
+.plans-note { padding: 22px 8px 0; }
+.plans-note a { display: inline-flex; align-items: center; gap: 5px; color: #004ac6; font-size: 12px; font-weight: 700; margin-top: 12px; }
+.success-card { max-width: 700px; margin: 24px auto; padding: 40px; border: 1px solid #dce5f7; border-radius: 22px; background: #fff; text-align: center; }
+.success-icon { display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto 20px; border-radius: 20px; background: #eaf5ef; color: #006c49; }
+.success-icon .material-symbols-outlined { font-size: 34px; }
+.success-card h1 { font-size: 32px; letter-spacing: -1px; overflow-wrap: anywhere; }
+.success-card > p { font-size: 14px; line-height: 1.8; color: #434655; margin: 0; }
+.success-next { display: flex; align-items: flex-start; gap: 13px; text-align: left; padding: 20px; margin: 26px 0; border-radius: 12px; background: #eff4ff; }
+.success-next > .material-symbols-outlined { color: #004ac6; }
+.success-next h2 { font-size: 14px; font-weight: 800; margin: 0 0 7px; }
+.success-next p { font-size: 12px; line-height: 1.8; color: #434655; margin: 0; }
+.success-actions { display: flex; justify-content: center; gap: 12px; }
+.secondary-link { background: #eff4ff; color: #004ac6; }
+.public-profile { display: inline-flex; align-items: center; gap: 6px; color: #004ac6; font-size: 12px; margin-top: 22px; overflow-wrap: anywhere; }
+.success-card .success-note { font-size: 11px; margin-top: 20px; }
+.registration-footer { display: flex; justify-content: space-between; gap: 20px; border-top: 1px solid #e0e6f0; padding-block: 24px; color: #434655; font-size: 11px; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, .registration-error:focus, .success-card h1:focus { outline: 3px solid #004ac6; outline-offset: 4px; }
+@media (max-width: 800px) {
+  .registration-layout { grid-template-columns: minmax(0, 1fr); }
+  .onboarding-aside { position: static; }
+  .onboarding-card { padding: 24px; }
+  .next-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 500px) {
+  .registration-header, .registration-main, .registration-footer { padding-inline: 18px; }
+  .registration-header { min-height: 78px; gap: 12px; }
+  .brand { font-size: 23px; gap: 8px; }
+  .brand-mark { width: 36px; height: 36px; border-radius: 11px; }
+  .login-link { font-size: 12px; gap: 5px; }
+  .login-link > span:first-child { display: none; }
+  .registration-main { padding-top: 20px; }
+  h1 { font-size: 33px; letter-spacing: -1px; }
+  .eyebrow { font-size: 8px; letter-spacing: 1px; }
+  .form-section { padding: 22px 18px; }
+  legend { font-size: 15px; gap: 8px; }
+  .password-grid, .next-steps { grid-template-columns: minmax(0, 1fr); }
+  .success-card { padding: 25px 20px; }
+  .success-card h1 { font-size: 28px; }
+  .success-actions { flex-direction: column; }
+  .registration-footer { flex-wrap: wrap; justify-content: center; }
+}

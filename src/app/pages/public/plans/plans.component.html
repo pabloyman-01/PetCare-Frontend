@@ -1,0 +1,69 @@
+<div class="plans-page">
+  <header class="plans-header">
+    <div class="header-inner">
+      <a routerLink="/clinicas" class="brand" aria-label="PetCare, directorio p&uacute;blico"><span class="brand-mark"><span class="material-symbols-outlined fill" aria-hidden="true">pets</span></span><span>PetCare<small>Cuidado que conecta</small></span></a>
+      <nav aria-label="Navegaci&oacute;n p&uacute;blica"><a routerLink="/clinicas">Directorio</a><a routerLink="/planes" aria-current="page">Planes</a><a routerLink="/auth">Iniciar sesi&oacute;n</a></nav>
+    </div>
+  </header>
+
+  <main class="plans-main">
+    <section class="plans-hero" aria-labelledby="plans-title">
+      <span class="eyebrow"><span class="w-[7px] h-[7px] rounded-full bg-secondary" aria-hidden="true"></span>PARA VETERINARIAS EN PER&Uacute;</span>
+      <h1 id="plans-title">Tu cuidado es &uacute;nico.<br><span>Tu gesti&oacute;n puede ser simple.</span></h1>
+      <p>Dos propuestas en soles para organizar tu veterinaria. Lo esencial del cuidado en ambas, con capacidad para distintos equipos.</p>
+      <div class="billing-switch" role="group" aria-label="Comparar propuesta mensual o anual">
+        <button type="button" [attr.aria-pressed]="!annual()" (click)="annual.set(false)">Mensual</button>
+        <button type="button" [attr.aria-pressed]="annual()" (click)="annual.set(true)">Anual<span>2 meses de ahorro</span></button>
+      </div>
+      <p class="billing-explanation" aria-live="polite">{{ annual() ? 'Propuesta anual: pagas 10 meses y recibes 12. Ahorro aproximado de 16.7%.' : 'Compara el precio mensual sin un compromiso anual.' }}</p>
+    </section>
+
+    <aside class="preview-notice" aria-label="Estado de la propuesta comercial"><span class="material-symbols-outlined" aria-hidden="true">info</span><p><strong>Propuesta comercial, a&uacute;n sin cobros.</strong> Los precios y cupos son referenciales; las suscripciones y sus l&iacute;mites todav&iacute;a no est&aacute;n habilitados. Registrarte no activa un plan de pago.</p></aside>
+
+    <section class="pricing-grid" aria-label="Planes propuestos">
+      @for (plan of plans; track plan.name) {
+        <article class="plan-card" [class.recommended]="plan.recommended" [attr.aria-label]="plan.name">
+          @if (plan.recommended) { <span class="recommendation">RECOMENDADO PARA EQUIPOS</span> }
+          <div class="plan-heading"><span class="plan-icon"><span class="material-symbols-outlined" aria-hidden="true">{{ plan.icon }}</span></span><span class="plan-audience">{{ plan.audience }}</span></div>
+          <h2>{{ plan.name }}</h2><p class="plan-description">{{ plan.description }}</p>
+          <div class="price-block" aria-live="polite" aria-atomic="true">
+            <div class="price"><span class="currency">S/</span><strong>{{ money(annual() ? plan.monthly * 10 : plan.monthly) }}</strong><span>{{ annual() ? '/ año' : '/ mes' }}</span></div>
+            @if (annual()) { <p>Equivale a <strong>S/ {{ money(plan.monthly * 10 / 12) }} al mes.</strong><br>Pago anual por adelantado, cuando est&eacute; disponible.</p> }
+            @else { <p>Precio mensual propuesto.<br>Suscripci&oacute;n de una sola cl&iacute;nica.</p> }
+          </div>
+          <a routerLink="/register-clinic" class="plan-button" [attr.aria-label]="'Registrar mi clínica, desde la propuesta ' + plan.name">Registrar mi cl&iacute;nica<span class="material-symbols-outlined text-[19px]" aria-hidden="true">arrow_forward</span></a>
+          <p class="button-note">Crea tu cuenta actual. Sin seleccionar ni pagar un plan.</p>
+          <div class="capacity"><h3>Capacidad propuesta</h3><ul><li><span class="material-symbols-outlined" aria-hidden="true">group</span><span>Hasta <strong>{{ plan.staff }} cuentas de personal</strong></span></li><li><span class="material-symbols-outlined" aria-hidden="true">pets</span><span>Hasta <strong>{{ money(plan.pets) }} mascotas activas</strong></span></li><li><span class="material-symbols-outlined" aria-hidden="true">storefront</span><span><strong>Una cl&iacute;nica</strong> con su espacio propio</span></li></ul><p>Cupos por implementar. Las cuentas de due&ntilde;os no consumen cupos de personal.</p></div>
+          <div class="included-note"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span>La misma base de cuidado en ambos planes.</div>
+        </article>
+      }
+    </section>
+    <p class="price-disclosure">Importes referenciales en soles peruanos. La propuesta contempla precios finales; el tratamiento del IGV, las condiciones de facturaci&oacute;n y la renovaci&oacute;n se confirmar&aacute;n antes de habilitar la contrataci&oacute;n. Actualmente no se procesa ning&uacute;n pago.</p>
+
+    <section class="shared-features" aria-labelledby="features-title">
+      <div class="section-heading"><span class="eyebrow">LO ESENCIAL, SIN DIVIDIR EL CUIDADO</span><h2 id="features-title">Un mismo lugar para cada visita.</h2><p>Estas funciones ya forman parte de PetCare. La propuesta las mantiene en ambos planes.</p></div>
+      <div class="features-grid">@for (feature of features; track feature.name) { <div class="feature"><span class="material-symbols-outlined text-primary" aria-hidden="true">{{ feature.icon }}</span><h3>{{ feature.name }}</h3><p>{{ feature.description }}</p></div> }</div>
+    </section>
+
+    <section class="comparison" aria-labelledby="comparison-title">
+      <div class="section-heading"><span class="eyebrow">ELIGE POR CAPACIDAD</span><h2 id="comparison-title">La diferencia est&aacute; en tu equipo.</h2><p>Comparaci&oacute;n de la propuesta, no de restricciones aplicadas actualmente.</p></div>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Tabla comparativa de planes, desplazable horizontalmente">
+        <table><caption class="sr-only">Capacidades propuestas y funciones compartidas de Consultorio y Cl&iacute;nica Pro</caption><thead><tr><th scope="col">Caracter&iacute;stica</th><th scope="col">Consultorio</th><th scope="col">Cl&iacute;nica Pro</th></tr></thead><tbody>
+          <tr><th scope="row">Personal <span class="table-hint">Propuesto</span></th><td>2 cuentas</td><td>5 cuentas</td></tr>
+          <tr><th scope="row">Mascotas activas <span class="table-hint">Propuesto</span></th><td>500</td><td>2,500</td></tr>
+          <tr><th scope="row">Cl&iacute;nicas por suscripci&oacute;n <span class="table-hint">Propuesto</span></th><td>1</td><td>1</td></tr>
+          <tr><th scope="row">Historias, citas, vacunas y controles</th><td>Incluido</td><td>Incluido</td></tr>
+          <tr><th scope="row">Portal de due&ntilde;os y perfil p&uacute;blico</th><td>Incluido</td><td>Incluido</td></tr>
+          <tr><th scope="row">Acceso por roles</th><td>Incluido</td><td>Incluido</td></tr>
+          <tr><th scope="row">WhatsApp autom&aacute;tico, inventario y multi-sede</th><td>No disponible</td><td>No disponible</td></tr>
+        </tbody></table>
+      </div>
+      <div class="larger-team"><span class="material-symbols-outlined" aria-hidden="true">domain</span><div><h3>&iquest;Tu equipo necesita m&aacute;s capacidad?</h3><p>Una propuesta para equipos mayores podr&aacute; evaluarse en una etapa posterior. Todav&iacute;a no ofrecemos un plan hospitalario ni gesti&oacute;n centralizada de varias sedes.</p></div></div>
+    </section>
+
+    <section class="faq-section" aria-labelledby="faq-title"><div class="section-heading"><span class="eyebrow">ANTES DE EMPEZAR</span><h2 id="faq-title">Todo claro, desde el principio.</h2></div><div class="faq-list">@for (faq of faqs; track faq.question) { <details><summary>{{ faq.question }}<span class="material-symbols-outlined" aria-hidden="true">expand_more</span></summary><p>{{ faq.answer }}</p></details> }</div></section>
+
+    <section class="final-cta" aria-labelledby="start-title"><div><span class="eyebrow">CONOCE PETCARE HOY</span><h2 id="start-title">Empieza por organizar tu cl&iacute;nica.</h2><p>Puedes crear la cuenta de tu veterinaria con el registro actual. Los planes de pago llegar&aacute;n cuando sus condiciones y funcionalidades est&eacute;n listas.</p></div><div class="cta-actions"><a routerLink="/register-clinic">Registrar mi cl&iacute;nica<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a><a routerLink="/clinicas" class="secondary-cta">Explorar el directorio</a></div></section>
+  </main>
+  <footer class="plans-footer"><a routerLink="/clinicas">PetCare</a><span>&copy; 2026 PetCare. La gesti&oacute;n y el cuidado, conectados.</span><a routerLink="/auth">Acceder a mi cuenta</a></footer>
+</div>

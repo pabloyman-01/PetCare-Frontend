@@ -1,0 +1,63 @@
+<div class="registration-page">
+  <header class="registration-header">
+    <a routerLink="/clinicas" class="brand" aria-label="PetCare, directorio p&uacute;blico"><span class="brand-mark"><span class="material-symbols-outlined fill" aria-hidden="true">pets</span></span><span>PetCare<small>Cuidado que conecta</small></span></a>
+    <a routerLink="/auth" class="login-link"><span>&iquest;Ya tienes cuenta?</span> Iniciar sesi&oacute;n<span class="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_forward</span></a>
+  </header>
+
+  <main class="registration-main">
+    @if (registered) {
+      <section class="success-card" aria-labelledby="registration-success-title">
+        <span class="success-icon"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span></span>
+        <span class="eyebrow">TU ESPACIO YA EST&Aacute; CREADO</span>
+        <h1 id="registration-success-title" #successTitle tabindex="-1">Bienvenida a PetCare,<br>{{ createdClinic?.nombre || 'tu clínica' }}.</h1>
+        <p>Tu cuenta de administrador est&aacute; lista. El siguiente paso es completar el perfil p&uacute;blico de tu veterinaria.</p>
+        <div class="success-next"><span class="material-symbols-outlined" aria-hidden="true">storefront</span><div><h2>Haz que puedan conocerte</h2><p>En &ldquo;Mi Cl&iacute;nica&rdquo; puedes a&ntilde;adir direcci&oacute;n, horario, tel&eacute;fono p&uacute;blico, descripci&oacute;n y logo.</p></div></div>
+        <div class="success-actions"><a routerLink="/mi-clinica" class="primary-link">Completar perfil de mi cl&iacute;nica<span class="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_forward</span></a><a routerLink="/dashboard" class="secondary-link">Ir al panel</a></div>
+        @if (createdClinic?.slug) { <a class="public-profile" [routerLink]="['/c', createdClinic?.slug]">Ver p&aacute;gina p&uacute;blica de {{ createdClinic?.nombre }}<span class="material-symbols-outlined text-[17px]" aria-hidden="true">north_east</span></a> }
+        <p class="success-note">No se ha activado una suscripci&oacute;n de pago ni generado ning&uacute;n cobro.</p>
+      </section>
+    } @else {
+      <div class="page-heading"><span class="eyebrow"><span class="w-[7px] h-[7px] rounded-full bg-secondary" aria-hidden="true"></span>EL PRIMER PASO PARA TU VETERINARIA</span><h1>Crea el espacio<br>de <span>tu veterinaria.</span></h1><p>Registra tu cl&iacute;nica y tu cuenta de administrador. Los datos de tu perfil p&uacute;blico y el equipo los completar&aacute;s despu&eacute;s.</p></div>
+      <div class="registration-layout">
+        <form #registrationForm [formGroup]="registerForm" (ngSubmit)="onSubmit()" novalidate [attr.aria-busy]="isLoading" aria-label="Crear cl&iacute;nica y administrador">
+          @if (errorMessage) { <div class="registration-error" #errorBox role="alert" tabindex="-1"><span class="material-symbols-outlined" aria-hidden="true">error</span><div><p>{{ errorMessage }}</p><a routerLink="/auth">Ya tengo cuenta, iniciar sesi&oacute;n</a></div></div> }
+
+          <fieldset class="form-section"><legend><span class="section-number" aria-hidden="true">01</span>Tu cl&iacute;nica</legend><p class="section-description">Empezamos con su nombre. La direcci&oacute;n y los datos p&uacute;blicos pueden esperar.</p>
+            <div class="field"><label for="clinic-name">Nombre comercial de la cl&iacute;nica</label><input id="clinic-name" name="clinicaNombre" formControlName="clinicaNombre" type="text" autocomplete="organization" placeholder="Ej. Veterinaria San Miguel" maxlength="120" required [readOnly]="isLoading" [attr.aria-invalid]="invalid('clinicaNombre')" [attr.aria-describedby]="invalid('clinicaNombre') ? 'clinic-name-error' : 'clinic-name-hint'">
+              @if (invalid('clinicaNombre')) { <p id="clinic-name-error" class="field-error">Ingresa un nombre de entre 3 y 120 caracteres.</p> }
+              <p id="clinic-name-hint" class="field-hint">Este nombre aparecer&aacute; en tu p&aacute;gina p&uacute;blica. Podr&aacute;s editarlo desde tu panel.</p>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-section"><legend><span class="section-number" aria-hidden="true">02</span>Tu cuenta de administrador</legend><p class="section-description">Ser&aacute;s el administrador de esta cl&iacute;nica. Despu&eacute;s podr&aacute;s incorporar a tu equipo.</p>
+            <div class="field"><label for="admin-name">Nombre completo</label><input id="admin-name" name="fullName" formControlName="fullName" type="text" autocomplete="name" placeholder="Ej. Mar&iacute;a Garc&iacute;a L&oacute;pez" maxlength="120" required [readOnly]="isLoading" [attr.aria-invalid]="invalid('fullName')" [attr.aria-describedby]="invalid('fullName') ? 'admin-name-error' : null">
+              @if (invalid('fullName')) { <p id="admin-name-error" class="field-error">Ingresa tu nombre de entre 3 y 120 caracteres.</p> }
+            </div>
+            <div class="field"><label for="admin-email">Correo electr&oacute;nico</label><input id="admin-email" name="email" formControlName="email" type="email" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="tu@correo.com" maxlength="120" required [readOnly]="isLoading" [attr.aria-invalid]="invalid('email')" [attr.aria-describedby]="invalid('email') ? 'admin-email-error' : 'admin-email-hint'">
+              @if (invalid('email')) { <p id="admin-email-error" class="field-error">Ingresa un correo electr&oacute;nico v&aacute;lido.</p> }
+              <p id="admin-email-hint" class="field-hint">Usar&aacute;s este correo para iniciar sesi&oacute;n. Puede ser personal o de tu veterinaria.</p>
+            </div>
+            <div class="field"><label for="admin-phone">Tel&eacute;fono de contacto del administrador</label><input id="admin-phone" name="telefono" formControlName="telefono" type="tel" autocomplete="tel" placeholder="Ej. +51 999 123 456" maxlength="20" required [readOnly]="isLoading" [attr.aria-invalid]="invalid('telefono')" [attr.aria-describedby]="invalid('telefono') ? 'admin-phone-error' : 'admin-phone-hint'">
+              @if (invalid('telefono')) { <p id="admin-phone-error" class="field-error">Ingresa al menos 8 d&iacute;gitos. Puedes usar el prefijo +51, espacios y guiones.</p> }
+              <p id="admin-phone-hint" class="field-hint">No se publicar&aacute; como tel&eacute;fono de la cl&iacute;nica. Ese dato se configura por separado.</p>
+            </div>
+            <div class="password-grid">
+              <div class="field"><label for="admin-password">Contrase&ntilde;a</label><div class="password-wrap"><input id="admin-password" name="password" formControlName="password" [type]="showPassword ? 'text' : 'password'" autocomplete="new-password" placeholder="Al menos 8 caracteres" maxlength="100" required [readOnly]="isLoading" [attr.aria-invalid]="invalid('password')" [attr.aria-describedby]="invalid('password') ? 'admin-password-error' : 'admin-password-hint'"><button type="button" (click)="showPassword = !showPassword" [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'" [attr.aria-pressed]="showPassword" aria-controls="admin-password"><span class="material-symbols-outlined text-[20px]" aria-hidden="true">{{ showPassword ? 'visibility_off' : 'visibility' }}</span></button></div>
+                @if (invalid('password')) { <p id="admin-password-error" class="field-error">Usa entre 8 y 100 caracteres.</p> }
+                <p id="admin-password-hint" class="field-hint">Usa una contrase&ntilde;a &uacute;nica y evita datos f&aacute;ciles de adivinar.</p>
+              </div>
+              <div class="field"><label for="admin-password-confirm">Confirmar contrase&ntilde;a</label><div class="password-wrap"><input id="admin-password-confirm" name="confirmPassword" formControlName="confirmPassword" [type]="showConfirmPassword ? 'text' : 'password'" autocomplete="new-password" placeholder="Repite tu contrase&ntilde;a" required [readOnly]="isLoading" [attr.aria-invalid]="invalid('confirmPassword')" [attr.aria-describedby]="invalid('confirmPassword') ? 'admin-confirm-error' : null"><button type="button" (click)="showConfirmPassword = !showConfirmPassword" [attr.aria-label]="showConfirmPassword ? 'Ocultar confirmación de contraseña' : 'Mostrar confirmación de contraseña'" [attr.aria-pressed]="showConfirmPassword" aria-controls="admin-password-confirm"><span class="material-symbols-outlined text-[20px]" aria-hidden="true">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</span></button></div>
+                @if (invalid('confirmPassword')) { <p id="admin-confirm-error" class="field-error">{{ registerForm.get('confirmPassword')?.hasError('required') ? 'Repite tu contraseña.' : 'Las contraseñas no coinciden.' }}</p> }
+              </div>
+            </div>
+          </fieldset>
+
+          <div class="submit-section"><p><span class="material-symbols-outlined text-[18px]" aria-hidden="true">info</span>Crear tu cuenta no activa un plan de pago ni genera un cobro. No necesitas ingresar una tarjeta.</p><button type="submit" class="submit-button" [disabled]="isLoading">@if (isLoading) { <span class="loading loading-spinner loading-sm" aria-hidden="true"></span><span>Creando tu cl&iacute;nica...</span> } @else { <span>Crear mi cl&iacute;nica</span><span class="material-symbols-outlined text-[20px]" aria-hidden="true">arrow_forward</span> }</button><span class="sr-only" role="status">{{ isLoading ? 'Creando tu clínica. Espera un momento.' : '' }}</span><p class="required-note">Todos los campos son obligatorios.</p></div>
+        </form>
+
+        <aside class="onboarding-aside" aria-labelledby="next-steps-title"><div class="onboarding-card"><span class="aside-icon"><span class="material-symbols-outlined" aria-hidden="true">storefront</span></span><span class="eyebrow">DESPU&Eacute;S DEL REGISTRO</span><h2 id="next-steps-title">Un espacio propio.<br>Un inicio sencillo.</h2><p>Se crear&aacute;n tu cl&iacute;nica y tu cuenta de administrador. Tu equipo y tus clientes se incorporar&aacute;n despu&eacute;s.</p><ol class="next-steps"><li><span class="material-symbols-outlined" aria-hidden="true">edit_note</span><div><h3>Completa &ldquo;Mi Cl&iacute;nica&rdquo;</h3><p>A&ntilde;ade direcci&oacute;n, horario, tel&eacute;fono p&uacute;blico, descripci&oacute;n y logo.</p></div></li><li><span class="material-symbols-outlined" aria-hidden="true">medical_services</span><div><h3>Crea tus cat&aacute;logos</h3><p>Registra tus servicios y vacunas. Tu nueva cl&iacute;nica empieza con cat&aacute;logos propios vac&iacute;os.</p></div></li><li><span class="material-symbols-outlined" aria-hidden="true">group</span><div><h3>Incorpora a tu equipo</h3><p>Crea las cuentas del personal y asigna sus roles desde el panel.</p></div></li><li><span class="material-symbols-outlined" aria-hidden="true">share</span><div><h3>Comparte tu p&aacute;gina</h3><p>Tu enlace p&uacute;blico se genera al crear la cl&iacute;nica. Podr&aacute;s consultarlo desde tu panel.</p></div></li></ol></div><div class="plans-note"><h3>&iquest;Quieres conocer los planes?</h3><p>Los precios y capacidades son una propuesta comercial. Las suscripciones a&uacute;n no est&aacute;n habilitadas.</p><a routerLink="/planes">Consultar propuesta de planes<span class="material-symbols-outlined text-[16px]" aria-hidden="true">north_east</span></a></div></aside>
+      </div>
+    }
+  </main>
+  <footer class="registration-footer"><span>&copy; 2026 PetCare</span><a routerLink="/clinicas">Explorar el directorio p&uacute;blico</a></footer>
+</div>

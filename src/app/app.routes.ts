@@ -39,6 +39,10 @@ export const routes: Routes = [
     path: 'clinicas',
     loadComponent: () => import('./pages/public/directory/directory.component').then(m => m.DirectoryComponent)
   },
+  {
+    path: 'planes',
+    loadComponent: () => import('./pages/public/plans/plans.component').then(m => m.PlansComponent)
+  },
 
   // Protected routes
   {
