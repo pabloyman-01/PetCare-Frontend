@@ -1,157 +1,166 @@
-<div class="operator-shell min-h-screen bg-surface text-on-surface safe-pt safe-pb">
-  <header class="border-b border-outline-variant/30 bg-white/80">
-    <div class="max-w-[1500px] mx-auto px-4 sm:px-8 py-4 flex flex-wrap items-center justify-between gap-4">
-      <a routerLink="/saas/clinicas" class="flex items-center gap-3" aria-label="PetCare, panel de operaciones">
-        <span class="rounded-2xl bg-primary text-on-primary p-2.5 material-symbols-outlined" aria-hidden="true">pets</span>
-        <div><span class="font-extrabold text-title-lg text-primary">PetCare</span><p class="text-label-sm text-on-surface-variant">Operaciones SaaS</p></div>
+<div class="operator-shell min-h-screen bg-slate-50 font-sans text-sm leading-relaxed text-slate-700 safe-pt safe-pb">
+  <header class="border-b border-slate-200 bg-white">
+    <div class="mx-auto flex min-h-[76px] max-w-[1680px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+      <a routerLink="/saas/clinicas" class="flex shrink-0 items-center gap-2.5" aria-label="PetCare, panel de operaciones">
+        <span class="material-symbols-outlined rounded-xl bg-blue-600 p-2 text-white" aria-hidden="true">pets</span>
+        <span class="text-lg font-extrabold tracking-tight text-slate-900">PetCare<span class="mt-0.5 hidden text-[10px] font-bold uppercase tracking-[.16em] text-slate-500 sm:block">Operaciones SaaS</span></span>
       </a>
-      <div class="flex flex-wrap items-center gap-2 sm:gap-4">
+      <div class="hidden items-center gap-2 border-l border-slate-200 pl-6 text-[13px] text-slate-500 lg:flex"><span class="material-symbols-outlined text-xl text-blue-600" aria-hidden="true">admin_panel_settings</span>Acceso de operador <span class="mx-2 text-slate-300">/</span> Sin acceso a datos cl&iacute;nicos</div>
+      <div class="flex min-w-0 items-center gap-1 sm:gap-3">
+        <button type="button" class="console-button" (click)="auth.logout()" aria-label="Cerrar sesi&oacute;n"><span class="material-symbols-outlined text-xl" aria-hidden="true">logout</span><span class="hidden sm:inline">Salir</span></button>
         <details class="relative">
-          <summary class="btn btn-ghost"><span class="material-symbols-outlined" aria-hidden="true">account_circle</span>Mi perfil</summary>
-          <div class="profile-card glass-card rounded-2xl p-5 space-y-2">
-            <p class="font-bold break-words">{{ auth.user()?.fullName }}</p>
-            <p class="text-body-sm break-all">{{ auth.user()?.email }}</p>
-            <span class="badge badge-primary">Operador SaaS</span>
-            <p class="text-body-sm text-on-surface-variant">Espacio global, sin contexto cl&iacute;nico.</p>
-            <button type="button" class="btn btn-ghost w-full" [disabled]="profileRefreshing()" (click)="retryProfile()">{{ profileRefreshing() ? 'Actualizando...' : 'Actualizar perfil' }}</button>
+          <summary class="profile-trigger flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-lg p-1.5 hover:bg-slate-50" aria-label="Mi perfil">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-blue-100 bg-blue-50 text-xs font-extrabold text-blue-700" aria-hidden="true">{{ initials(auth.user()?.fullName) }}</span>
+            <span class="hidden min-w-0 text-left sm:block"><span class="block max-w-40 truncate text-[13px] font-bold text-slate-900">{{ auth.user()?.fullName }}</span><span class="block text-[11px] text-slate-500">Operador SaaS</span></span>
+            <span class="material-symbols-outlined hidden text-lg text-slate-400 sm:block" aria-hidden="true">expand_more</span>
+          </summary>
+          <div class="profile-card space-y-3 rounded-2xl border border-slate-200 p-5 shadow-xl shadow-slate-900/10">
+            <div><p class="break-words font-bold text-slate-900">{{ auth.user()?.fullName }}</p><p class="mt-1 break-all text-[13px] text-slate-500">{{ auth.user()?.email }}</p></div>
+            <span class="status-chip bg-blue-50 text-blue-700">Operador SaaS</span>
+            <p class="text-[13px] text-slate-500">Administraci&oacute;n de acceso y planes. Sin acceso a datos cl&iacute;nicos.</p>
+            <button type="button" class="console-button w-full border border-slate-200" [disabled]="profileRefreshing()" (click)="retryProfile()"><span class="material-symbols-outlined text-lg" aria-hidden="true">refresh</span>{{ profileRefreshing() ? 'Actualizando...' : 'Actualizar perfil' }}</button>
           </div>
         </details>
-        <button type="button" class="btn btn-ghost" (click)="auth.logout()"><span class="material-symbols-outlined" aria-hidden="true">logout</span>Salir</button>
       </div>
     </div>
   </header>
 
-  <main class="max-w-[1500px] mx-auto px-4 sm:px-8 py-6 sm:py-10 space-y-6">
+  <main class="mx-auto max-w-[1680px] space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
     <div class="flex flex-wrap items-end justify-between gap-4">
-      <div class="space-y-2">
-        <p class="text-label-sm uppercase tracking-[.18em] text-primary font-bold">Administraci&oacute;n de la plataforma</p>
-        <h1 class="text-headline-lg sm:text-display-lg font-extrabold">Cl&iacute;nicas</h1>
-        <p class="text-body-md text-on-surface-variant max-w-2xl">Supervisa el acceso y la capacidad de cada cl&iacute;nica. Cada cambio requiere un motivo y queda registrado en la auditor&iacute;a.</p>
-      </div>
-      <span class="badge badge-outline text-primary"><span class="material-symbols-outlined text-[18px]" aria-hidden="true">admin_panel_settings</span>Acceso de operador</span>
+      <div><p class="eyebrow text-blue-600">Administraci&oacute;n de la plataforma</p><h1 class="mt-1 text-3xl font-extrabold tracking-tight text-slate-900">Cl&iacute;nicas</h1><p class="mt-2 max-w-2xl text-[13px] text-slate-500 sm:text-sm">Gestiona planes, capacidad y acceso desde un solo lugar. Cada cambio queda registrado.</p></div>
+      @if (clinics(); as page) {
+        <div class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5"><span class="material-symbols-outlined text-2xl text-blue-600" aria-hidden="true">domain</span><div><p class="text-xl font-extrabold leading-tight text-slate-900">{{ page.totalElements }}</p><p class="text-xs text-slate-500">@if (query) { Resultados de b&uacute;squeda } @else { Cl&iacute;nicas registradas }</p></div></div>
+      }
     </div>
 
     @if (profileError()) {
-      <div class="alert alert-error flex-wrap" role="alert">No se pudo actualizar tu perfil. La sesi&oacute;n mostrada puede estar desactualizada.<button class="btn btn-sm btn-ghost" type="button" [disabled]="profileRefreshing()" (click)="retryProfile()">Reintentar</button></div>
+      <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800" role="alert"><p>No se pudo actualizar tu perfil. La sesi&oacute;n mostrada puede estar desactualizada.</p><button class="console-button" type="button" [disabled]="profileRefreshing()" (click)="retryProfile()">Reintentar</button></div>
     }
 
-    <div class="workspace-grid">
-      <section class="glass-card rounded-3xl overflow-hidden min-w-0 self-start" aria-labelledby="directory-title" [attr.aria-busy]="listLoading()">
-        <div class="p-5 sm:p-6 space-y-4 border-b border-outline-variant/30">
-          <div class="flex items-center justify-between gap-3">
-            <h2 id="directory-title" class="text-title-lg font-bold">Directorio global</h2>
-            <button type="button" class="btn btn-ghost btn-sm" [disabled]="listLoading() || saving()" (click)="loadList()"><span class="material-symbols-outlined text-[20px]" aria-hidden="true">refresh</span>Actualizar</button>
-          </div>
-          <label class="block text-label-md" for="clinic-search">Buscar cl&iacute;nica</label>
-          <div class="relative">
-            <span class="absolute left-3 top-3 material-symbols-outlined text-on-surface-variant" aria-hidden="true">search</span>
-            <input id="clinic-search" type="search" class="input w-full pl-11" placeholder="Nombre o slug..." autocomplete="off" [value]="query" [disabled]="saving()" (input)="search($any($event.target).value)">
-          </div>
-          <p class="text-body-sm text-on-surface-variant">@if (clinics(); as page) { {{ page.totalElements }} cl&iacute;nicas encontradas } @else { Consulta global de cl&iacute;nicas }</p>
+    <div class="grid min-w-0 grid-cols-1 items-start gap-6 lg:grid-cols-12">
+      <section class="console-card min-w-0 lg:col-span-4" aria-labelledby="directory-title" [attr.aria-busy]="listLoading()">
+        <div class="space-y-4 border-b border-slate-100 p-4 sm:p-5">
+          <div class="flex items-center justify-between gap-2"><div><p class="eyebrow text-slate-500">Explorar</p><h2 id="directory-title" class="mt-1 text-base font-extrabold text-slate-900">Directorio de cl&iacute;nicas</h2></div><button type="button" class="console-button shrink-0" [disabled]="listLoading() || saving()" (click)="loadList()" aria-label="Actualizar directorio"><span class="material-symbols-outlined text-xl" aria-hidden="true">refresh</span></button></div>
+          <div><label class="mb-2 block text-xs font-semibold text-slate-600" for="clinic-search">Buscar por nombre o slug</label><div class="relative"><span class="material-symbols-outlined pointer-events-none absolute left-3 top-3 text-xl text-slate-400" aria-hidden="true">search</span><input id="clinic-search" type="search" maxlength="100" class="w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-3 text-[13px] placeholder:text-slate-500" placeholder="Nombre o slug de la cl&iacute;nica" autocomplete="off" [value]="query" [disabled]="saving()" (input)="search($any($event.target).value)"></div></div>
         </div>
-
         @if (listLoading()) {
-          <div class="p-10 text-center text-on-surface-variant" role="status"><span class="loading loading-spinner loading-md mr-2"></span>Cargando cl&iacute;nicas...</div>
+          <div class="flex items-center justify-center gap-3 px-5 py-12 text-slate-500" role="status"><span class="loading loading-spinner loading-md text-blue-600" aria-hidden="true"></span>Cargando cl&iacute;nicas...</div>
         } @else if (listError()) {
-          <div class="p-6 space-y-3"><p class="text-error" role="alert">{{ listError() }}</p><button class="btn btn-ghost" type="button" (click)="loadList()">Reintentar</button></div>
+          <div class="space-y-3 p-5"><p class="text-rose-700" role="alert">{{ listError() }}</p><button class="console-button border border-slate-200" type="button" (click)="loadList()">Reintentar</button></div>
         }
         @if (clinics(); as page) {
           <div class="clinic-list">
             @for (clinic of page.items; track clinic.id) {
-              <button type="button" class="clinic-row w-full text-left p-5 sm:px-6 border-b border-outline-variant/20" [class.selected-row]="selected()?.id === clinic.id" [attr.aria-pressed]="selected()?.id === clinic.id" [disabled]="saving()" (click)="selectClinic(clinic)">
-                <div class="flex items-start justify-between gap-3">
-                  <div class="min-w-0"><h3 class="font-bold break-words">{{ clinic.nombre }}</h3><p class="text-body-sm text-on-surface-variant break-all mt-1">{{ clinic.slug }} <span class="mx-1">/</span> #{{ clinic.id }}</p></div>
-                  <span class="badge shrink-0" [class.badge-success]="clinic.estado === 'ACTIVA'" [class.badge-error]="clinic.estado === 'SUSPENDIDA'">{{ clinic.estado === 'ACTIVA' ? 'Activa' : 'Suspendida' }}</span>
-                </div>
-                <div class="flex flex-wrap gap-2 mt-3 text-label-sm"><span class="badge badge-primary">{{ clinic.plan.plan }}</span><span class="badge bg-surface-container-high text-on-surface-variant">{{ statusLabel(clinic.plan.status) }}</span>@if (clinic.plan.readOnly) { <span class="badge badge-warning">Solo lectura</span> }</div>
-                <div class="flex flex-wrap gap-x-5 gap-y-1 mt-3 text-body-sm text-on-surface-variant"><span>Personal {{ clinic.plan.staffUsed }}/{{ clinic.plan.staffLimit }}</span><span>Mascotas {{ clinic.plan.petsUsed }}/{{ clinic.plan.petsLimit }}</span></div>
+              <button type="button" class="clinic-row block w-full border-b border-slate-100 p-4 text-left sm:px-5" [class.selected-row]="selected()?.id === clinic.id" [attr.aria-pressed]="selected()?.id === clinic.id" [disabled]="saving()" (click)="selectClinic(clinic)">
+                <span class="flex items-start gap-3"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-xs font-extrabold text-slate-500" aria-hidden="true">{{ initials(clinic.nombre) }}</span><span class="min-w-0 flex-1"><span class="block break-words text-sm font-bold text-slate-900">{{ clinic.nombre }}</span><span class="mt-0.5 block break-all font-mono text-[11px] text-slate-500">{{ clinic.slug }} <span class="text-slate-300">/</span> #{{ clinic.id }}</span></span><span class="material-symbols-outlined mt-2 text-lg text-slate-400" aria-hidden="true">chevron_right</span></span>
+                <span class="mt-3 flex flex-wrap items-center gap-2"><span class="status-chip border border-slate-200 bg-white font-mono text-slate-600">{{ clinic.plan.plan }}</span><span class="status-chip" [class.bg-emerald-50]="clinic.estado === 'ACTIVA'" [class.text-emerald-700]="clinic.estado === 'ACTIVA'" [class.bg-rose-50]="clinic.estado === 'SUSPENDIDA'" [class.text-rose-700]="clinic.estado === 'SUSPENDIDA'">{{ clinic.estado === 'ACTIVA' ? 'Activa' : 'Suspendida' }}</span></span>
+                <span class="mt-2 block text-xs text-slate-500" [class.text-amber-800]="clinic.plan.readOnly">Acceso: {{ statusLabel(clinic.plan.status) }}@if (clinic.plan.readOnly && clinic.plan.status !== 'READ_ONLY') { &middot; Solo lectura }</span>
+                <span class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500"><span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-base" aria-hidden="true">group</span>Personal <span class="font-semibold text-slate-700">{{ clinic.plan.staffUsed }}/{{ clinic.plan.staffLimit }}</span></span><span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-base" aria-hidden="true">pets</span>Mascotas <span class="font-semibold text-slate-700">{{ clinic.plan.petsUsed }}/{{ clinic.plan.petsLimit }}</span></span></span>
               </button>
             } @empty {
-              <div class="p-10 text-center space-y-2"><span class="material-symbols-outlined text-primary text-[36px]" aria-hidden="true">domain_disabled</span><h3 class="font-bold">Sin resultados</h3><p class="text-body-sm text-on-surface-variant">Prueba con otro nombre o slug.</p></div>
+              <div class="space-y-2 px-5 py-12 text-center"><span class="material-symbols-outlined text-4xl text-slate-300" aria-hidden="true">search_off</span><h3 class="font-bold text-slate-900">Sin resultados</h3><p class="text-[13px] text-slate-500">Prueba con otro nombre o slug.</p>@if (query) { <button type="button" class="console-button text-blue-600" [disabled]="saving()" (click)="search('')">Limpiar b&uacute;squeda</button> }</div>
             }
           </div>
-          <nav class="flex flex-wrap items-center justify-between gap-3 p-4 border-t border-outline-variant/30" aria-label="Paginacion de clinicas">
-            <span class="text-body-sm text-on-surface-variant">P&aacute;gina {{ page.totalPages ? page.page + 1 : 0 }} de {{ page.totalPages }} <span class="block text-label-sm">Hasta {{ pageSize }} por p&aacute;gina</span></span>
-            <div class="flex gap-1"><button type="button" class="btn btn-ghost btn-sm" [disabled]="page.page === 0 || saving()" (click)="loadList(page.page - 1)">Anterior</button><button type="button" class="btn btn-ghost btn-sm" [disabled]="page.page + 1 >= page.totalPages || saving()" (click)="loadList(page.page + 1)">Siguiente</button></div>
-          </nav>
+          <nav class="flex flex-wrap items-center justify-between gap-2 p-4 text-xs" aria-label="Paginacion de clinicas"><span class="text-slate-500">P&aacute;gina <span class="font-semibold text-slate-700">{{ page.totalPages ? page.page + 1 : 0 }}</span> de {{ page.totalPages }}</span><div class="flex gap-1"><button type="button" class="console-button px-2 text-xs" [disabled]="page.page === 0 || saving() || listLoading()" (click)="loadList(page.page - 1)"><span class="material-symbols-outlined text-lg" aria-hidden="true">chevron_left</span>Anterior</button><button type="button" class="console-button px-2 text-xs" [disabled]="page.page + 1 >= page.totalPages || saving() || listLoading()" (click)="loadList(page.page + 1)">Siguiente<span class="material-symbols-outlined text-lg" aria-hidden="true">chevron_right</span></button></div></nav>
         }
       </section>
 
-      <div class="min-w-0 space-y-6">
+      <div class="min-w-0 space-y-5 lg:col-span-8">
         @if (selected(); as clinic) {
-          <section class="glass-card rounded-3xl p-5 sm:p-7 space-y-5" aria-labelledby="clinic-title">
-            <div class="flex justify-between items-start gap-4">
-              <div class="min-w-0"><p class="text-label-sm uppercase tracking-wider text-primary font-bold mb-1">Cl&iacute;nica seleccionada / #{{ clinic.id }}</p><h2 id="clinic-title" class="text-headline-md font-extrabold break-words">{{ clinic.nombre }}</h2><p class="text-body-sm text-on-surface-variant break-all">{{ clinic.slug }}</p></div>
-              <span class="material-symbols-outlined text-[32px] text-primary" aria-hidden="true">storefront</span>
-            </div>
-            <dl class="grid grid-cols-2 gap-4 text-body-sm">
-              <div><dt class="text-on-surface-variant">Estado de la cl&iacute;nica</dt><dd class="font-bold">{{ clinic.estado }}</dd></div>
-              <div><dt class="text-on-surface-variant">Plan / capacidad efectiva</dt><dd class="font-bold">{{ clinic.plan.plan }} / {{ clinic.plan.tier }}</dd></div>
-              <div><dt class="text-on-surface-variant">Estado del plan</dt><dd class="font-bold">{{ statusLabel(clinic.plan.status) }}{{ clinic.plan.readOnly ? ' · Solo lectura' : '' }}</dd></div>
-              <div><dt class="text-on-surface-variant">Fecha de alta</dt><dd>{{ formatDate(clinic.createdAt) }}</dd></div>
+          <section class="console-card p-4 sm:p-6" aria-labelledby="clinic-title">
+            <div class="flex items-start gap-3 sm:gap-4"><span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-base font-extrabold text-blue-600 sm:h-14 sm:w-14" aria-hidden="true">{{ initials(clinic.nombre) }}</span><div class="min-w-0 flex-1"><p class="eyebrow text-slate-500">Cl&iacute;nica seleccionada</p><h2 id="clinic-title" class="mt-1 break-words text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">{{ clinic.nombre }}</h2><p class="mt-1 break-all font-mono text-xs text-slate-500">{{ clinic.slug }} <span class="mx-1 text-slate-300">/</span> ID #{{ clinic.id }}</p></div></div>
+            <dl class="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 border-t border-slate-100 pt-4 sm:grid-cols-4">
+              <div><dt class="mb-1.5 text-xs text-slate-500">Estado administrativo</dt><dd><span class="status-chip" [class.bg-emerald-50]="clinic.estado === 'ACTIVA'" [class.text-emerald-700]="clinic.estado === 'ACTIVA'" [class.bg-rose-50]="clinic.estado === 'SUSPENDIDA'" [class.text-rose-700]="clinic.estado === 'SUSPENDIDA'">{{ clinic.estado }}</span></dd></div>
+              <div><dt class="mb-1.5 text-xs text-slate-500">Plan actual</dt><dd><span class="status-chip bg-blue-50 font-mono text-blue-700">{{ clinic.plan.plan }}</span></dd></div>
+              <div><dt class="mb-1.5 text-xs text-slate-500">Acceso efectivo</dt><dd class="text-[13px] font-semibold text-slate-900">{{ statusLabel(clinic.plan.status) }}<span class="mt-0.5 block text-xs font-normal text-slate-500">Solo lectura: @if (clinic.plan.readOnly) { S&iacute; } @else { No }</span></dd></div>
+              <div><dt class="mb-1.5 text-xs text-slate-500">Fecha de alta</dt><dd class="text-[13px] font-semibold text-slate-900">{{ formatDate(clinic.createdAt) }}<span class="mt-0.5 block text-xs font-normal text-slate-500">Hora de Lima</span></dd></div>
             </dl>
-            <div class="grid sm:grid-cols-2 gap-3">
+          </section>
+
+          <section aria-labelledby="capacity-title">
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-2"><h2 id="capacity-title" class="eyebrow text-slate-500">Uso y capacidad</h2><p class="text-xs text-slate-500">Capacidad efectiva: <span class="font-mono font-semibold">{{ clinic.plan.tier }}</span></p></div>
+            <div class="grid gap-3 sm:grid-cols-2">
               @for (capacity of capacities(clinic.plan); track capacity.label) {
-                <div class="rounded-2xl bg-surface-container-low p-4 space-y-2"><p class="text-label-md text-on-surface-variant">{{ capacity.label }}</p><p class="text-title-lg font-extrabold">{{ capacity.used }} <span class="font-normal text-body-sm text-on-surface-variant">/ {{ capacity.limit }}</span></p><progress class="w-full h-2" [class.over-limit]="capacity.used > capacity.limit" [value]="capacity.used" [max]="capacity.limit || 1" [attr.aria-label]="capacity.label + ': ' + capacity.used + ' de ' + capacity.limit"></progress>@if (capacity.used > capacity.limit) { <p class="text-body-sm text-error">Capacidad excedida; los registros se conservan.</p> }</div>
+                <div class="console-card space-y-3 p-4 sm:p-5"><div class="flex items-center justify-between"><h3 class="text-[13px] font-semibold text-slate-600">{{ capacity.label }} <span class="font-normal">{{ capacity.label === 'Personal' ? 'activo' : 'activas' }}</span></h3><span class="material-symbols-outlined rounded-lg bg-slate-50 p-1.5 text-xl text-blue-600" aria-hidden="true">{{ capacity.label === 'Personal' ? 'group' : 'pets' }}</span></div><p class="text-2xl font-extrabold leading-none text-slate-900">{{ capacity.used }} <span class="text-sm font-normal text-slate-500">/ {{ capacity.limit }}</span></p><progress class="block h-1.5 w-full" [class.over-limit]="capacity.used > capacity.limit" [value]="capacity.used" [max]="capacity.limit || 1" [attr.aria-label]="capacity.label + ': ' + capacity.used + ' de ' + capacity.limit"></progress>@if (capacity.used > capacity.limit) { <p class="text-xs text-rose-700">Capacidad excedida; los registros se conservan.</p> }</div>
               }
-            </div>
-            <div class="rounded-2xl border border-outline-variant/40 p-4 space-y-2">
-              <h3 class="font-bold text-body-md">Historial de la prueba</h3>
-              <p class="text-body-sm text-on-surface-variant">Inicio: {{ formatDate(clinic.plan.trialStartedAt) }}<br>Fin: {{ formatDate(clinic.plan.trialEndsAt) }}</p>
-              @if (clinic.plan.plan === 'TRIAL') { <p class="text-body-sm font-semibold">{{ clinic.plan.daysRemaining }} d&iacute;as restantes, seg&uacute;n el servidor.</p> }
-              <p class="text-label-sm text-on-surface-variant">Hora de Lima. Las fechas hist&oacute;ricas se conservan y no se pueden editar.</p>
             </div>
           </section>
 
-          <section class="glass-card rounded-3xl p-5 sm:p-7 space-y-5" aria-labelledby="change-title" [attr.aria-busy]="saving()">
-            <div><h2 id="change-title" class="text-title-lg font-bold">Aplicar un cambio</h2><p class="text-body-sm text-on-surface-variant">Una operaci&oacute;n a la vez. Seleccionar una opci&oacute;n no guarda cambios.</p></div>
-            <div class="flex gap-2" role="group" aria-label="Tipo de cambio"><button type="button" class="btn flex-1" [class.btn-primary]="operation() === 'plan'" [class.btn-ghost]="operation() !== 'plan'" [attr.aria-pressed]="operation() === 'plan'" [disabled]="saving()" (click)="setOperation('plan')">Cambiar plan</button><button type="button" class="btn flex-1" [class.btn-primary]="operation() === 'estado'" [class.btn-ghost]="operation() !== 'estado'" [attr.aria-pressed]="operation() === 'estado'" [disabled]="saving()" (click)="setOperation('estado')">Cambiar estado</button></div>
+          <section class="console-card p-4 sm:p-6" aria-labelledby="plan-title" [attr.aria-busy]="saving()">
+            <div class="mb-4 flex items-start gap-3"><span class="material-symbols-outlined mt-0.5 text-xl text-blue-600" aria-hidden="true">layers</span><div><p class="eyebrow text-slate-500">Suscripci&oacute;n</p><h2 id="plan-title" class="mt-1 text-base font-extrabold text-slate-900">Administrar plan</h2><p class="mt-1 text-[13px] text-slate-500">Selecciona el plan de destino. La selecci&oacute;n no guarda cambios.</p></div></div>
+            <fieldset class="group min-w-0" [class.plan-mode]="operation() === 'plan'" [disabled]="saving()" aria-describedby="plan-help">
+              <legend class="mb-3 text-xs font-semibold text-slate-600">Plan de destino</legend>
+              <div class="grid gap-3 sm:grid-cols-2">
+                <label class="relative block cursor-pointer">
+                  <input type="radio" name="target-plan" class="peer sr-only" [formControl]="form.controls.plan" value="CONSULTORIO" (change)="setOperation('plan')" (click)="setOperation('plan')">
+                  <span class="block h-full rounded-xl border border-slate-200 p-4 transition-colors hover:border-blue-300 peer-focus-visible:ring-2 peer-focus-visible:ring-blue-600 peer-focus-visible:ring-offset-2">
+                    <span class="flex flex-wrap items-center justify-between gap-2"><span class="text-sm font-extrabold text-slate-900">CONSULTORIO</span>@if (clinic.plan.plan === 'CONSULTORIO') { <span class="status-chip bg-white text-blue-700">Plan actual</span> }</span>
+                    <span class="mt-3 block text-2xl font-extrabold text-slate-900">S/ 59<span class="text-xs font-normal text-slate-500"> / mes</span></span><span class="mt-1 block text-xs text-slate-500">S/ 590 / a&ntilde;o</span>
+                    <span class="mt-4 block space-y-1 border-t border-slate-200/70 pt-3 text-[13px]"><span class="flex items-center gap-2"><span class="material-symbols-outlined text-base text-blue-600" aria-hidden="true">check</span>2 miembros de personal</span><span class="flex items-center gap-2"><span class="material-symbols-outlined text-base text-blue-600" aria-hidden="true">check</span>500 mascotas activas</span></span>
+                    <span class="mt-4 block text-xs font-semibold text-blue-700">{{ operation() === 'plan' && form.controls.plan.value === 'CONSULTORIO' ? 'Seleccionado para confirmar' : 'Seleccionar plan' }}</span>
+                  </span>
+                </label>
+                <label class="relative block cursor-pointer">
+                  <input type="radio" name="target-plan" class="peer sr-only" [formControl]="form.controls.plan" value="PRO" (change)="setOperation('plan')" (click)="setOperation('plan')">
+                  <span class="block h-full rounded-xl border border-slate-200 p-4 transition-colors hover:border-blue-300 peer-focus-visible:ring-2 peer-focus-visible:ring-blue-600 peer-focus-visible:ring-offset-2">
+                    <span class="flex flex-wrap items-center justify-between gap-2"><span class="text-sm font-extrabold text-slate-900">PRO</span>@if (clinic.plan.plan === 'PRO') { <span class="status-chip bg-white text-blue-700">Plan actual</span> }</span>
+                    <span class="mt-3 block text-2xl font-extrabold text-slate-900">S/ 129<span class="text-xs font-normal text-slate-500"> / mes</span></span><span class="mt-1 block text-xs text-slate-500">S/ 1290 / a&ntilde;o</span>
+                    <span class="mt-4 block space-y-1 border-t border-slate-200/70 pt-3 text-[13px]"><span class="flex items-center gap-2"><span class="material-symbols-outlined text-base text-blue-600" aria-hidden="true">check</span>5 miembros de personal</span><span class="flex items-center gap-2"><span class="material-symbols-outlined text-base text-blue-600" aria-hidden="true">check</span>2500 mascotas activas</span></span>
+                    <span class="mt-4 block text-xs font-semibold text-blue-700">{{ operation() === 'plan' && form.controls.plan.value === 'PRO' ? 'Seleccionado para confirmar' : 'Seleccionar plan' }}</span>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+            <div id="plan-help" class="mt-4 space-y-2 text-xs leading-relaxed text-slate-500"><p>Precios de referencia. Esta operaci&oacute;n no genera cobros ni activa facturaci&oacute;n autom&aacute;tica.</p><p>Una reducci&oacute;n se rechaza con 409 si el uso supera el destino. TRIAL &rarr; PRO conserva la capacidad y permite el exceso heredado. No se eliminan registros.</p><p class="font-semibold text-slate-600">El plan es independiente del estado: cambiarlo no suspende ni reactiva la cl&iacute;nica.</p></div>
+            <div class="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-4"><h3 class="text-xs font-bold text-slate-700">Historial de la prueba</h3><dl class="mt-2 grid gap-3 text-xs sm:grid-cols-2"><div><dt class="text-slate-500">Inicio</dt><dd class="mt-0.5 font-medium text-slate-700">{{ formatDate(clinic.plan.trialStartedAt) }}</dd></div><div><dt class="text-slate-500">Fin</dt><dd class="mt-0.5 font-medium text-slate-700">{{ formatDate(clinic.plan.trialEndsAt) }}</dd></div></dl>@if (clinic.plan.plan === 'TRIAL') { <p class="mt-3 text-[13px] font-semibold text-blue-700">{{ clinic.plan.daysRemaining }} d&iacute;as restantes, seg&uacute;n el servidor.</p> }<p class="mt-2 text-xs text-slate-500">Hora de Lima. Fechas hist&oacute;ricas conservadas; no se pueden editar ni renovar desde este panel.</p></div>
+          </section>
+
+          <section class="console-card p-4 sm:p-6" aria-labelledby="state-title" [attr.aria-busy]="saving()">
+            <div><p class="eyebrow text-slate-500">Control de acceso</p><h2 id="state-title" class="mt-1 text-base font-extrabold text-slate-900">Estado administrativo</h2><p class="mt-1 text-[13px] text-slate-500">Seleccionar una acci&oacute;n no la ejecuta. Confirma el cambio al final.</p></div>
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+              <div class="rounded-xl border p-4" [class.border-rose-300]="operation() === 'estado' && form.controls.estado.value === 'SUSPENDIDA'" [class.bg-rose-50]="operation() === 'estado' && form.controls.estado.value === 'SUSPENDIDA'" [class.border-slate-200]="operation() !== 'estado' || form.controls.estado.value !== 'SUSPENDIDA'"><h3 class="flex items-center gap-2 text-[13px] font-bold text-slate-900"><span class="material-symbols-outlined text-lg text-rose-600" aria-hidden="true">pause_circle</span>Suspender cl&iacute;nica</h3><p class="mt-2 text-[13px] text-slate-500">Restringe la escritura sin eliminar datos ni cambiar el plan.</p><button type="button" class="console-button mt-3 w-full border border-rose-200 bg-white text-rose-700" [disabled]="clinic.estado === 'SUSPENDIDA' || saving()" [attr.aria-pressed]="operation() === 'estado' && form.controls.estado.value === 'SUSPENDIDA'" (click)="selectEstado('SUSPENDIDA')">Seleccionar suspensi&oacute;n</button></div>
+              <div class="rounded-xl border p-4" [class.border-blue-300]="operation() === 'estado' && form.controls.estado.value === 'ACTIVA'" [class.bg-blue-50]="operation() === 'estado' && form.controls.estado.value === 'ACTIVA'" [class.border-slate-200]="operation() !== 'estado' || form.controls.estado.value !== 'ACTIVA'"><h3 class="flex items-center gap-2 text-[13px] font-bold text-slate-900"><span class="material-symbols-outlined text-lg text-blue-600" aria-hidden="true">play_circle</span>Reactivar cl&iacute;nica</h3><p class="mt-2 text-[13px] text-slate-500">No cambia el plan ni su vencimiento. Puede seguir en solo lectura.</p><button type="button" class="console-button mt-3 w-full border border-slate-200 bg-white text-blue-700" [disabled]="clinic.estado === 'ACTIVA' || saving()" [attr.aria-pressed]="operation() === 'estado' && form.controls.estado.value === 'ACTIVA'" (click)="selectEstado('ACTIVA')">Seleccionar reactivaci&oacute;n</button></div>
+            </div>
+          </section>
+
+          <section class="console-card p-4 sm:p-6" aria-labelledby="change-title" [attr.aria-busy]="saving()">
+            <div class="mb-4"><p class="eyebrow text-blue-600">Confirmaci&oacute;n requerida</p><h2 id="change-title" class="mt-1 text-base font-extrabold text-slate-900">Revisar y aplicar cambio</h2><p class="mt-1 text-[13px] text-slate-500">Una operaci&oacute;n a la vez, con un motivo obligatorio para la auditor&iacute;a.</p></div>
             <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
-              @if (operation() === 'plan') {
-                <div><label for="target-plan" class="block text-label-md mb-2">Plan de destino</label><select id="target-plan" class="select w-full" formControlName="plan"><option value="CONSULTORIO">CONSULTORIO · 2 personal / 500 mascotas</option><option value="PRO">PRO · 5 personal / 2500 mascotas</option></select></div>
-                <div class="rounded-xl bg-primary-container/30 p-4 text-body-sm space-y-2 text-on-surface-variant"><p>Una reducci&oacute;n de capacidad se rechaza con 409 si el uso supera los l&iacute;mites de destino. No se borran registros.</p><p>TRIAL → PRO conserva la misma capacidad y se permite aunque el uso heredado ya supere los l&iacute;mites (grandfathering).</p><p class="font-semibold text-on-surface">Cambiar el plan no suspende ni reactiva la cl&iacute;nica autom&aacute;ticamente.</p></div>
-              } @else {
-                <div><label for="target-estado" class="block text-label-md mb-2">Estado de destino</label><select id="target-estado" class="select w-full" formControlName="estado"><option value="ACTIVA">ACTIVA</option><option value="SUSPENDIDA">SUSPENDIDA</option></select></div>
-                <p class="text-body-sm text-on-surface-variant">La suspensi&oacute;n restringe la escritura sin eliminar datos. Reactivar no cambia el plan ni su vencimiento; puede seguir en modo solo lectura.</p>
-              }
-              <div><label for="change-reason" class="block text-label-md mb-2">Motivo obligatorio</label><textarea id="change-reason" class="textarea w-full" rows="3" formControlName="reason" placeholder="Describe el motivo de esta operaci&oacute;n..." aria-describedby="reason-help" [attr.aria-invalid]="form.controls.reason.touched && form.controls.reason.invalid"></textarea><p id="reason-help" class="text-label-sm text-on-surface-variant mt-1">{{ form.controls.reason.value.trim().length }}/500 caracteres. Entre 5 y 500, sin espacios al inicio o al final.</p>@if (form.controls.reason.touched && form.controls.reason.invalid) { <p class="text-error text-body-sm mt-1" role="alert">Escribe un motivo de 5 a 500 caracteres &uacute;tiles.</p> }</div>
-              @if (!hasChange()) { <p class="text-body-sm text-on-surface-variant">El destino coincide con el valor actual. Elige uno diferente para continuar.</p> }
-              <div class="rounded-xl border border-outline-variant/30 p-4 text-body-sm"><span class="font-bold">Confirmaci&oacute;n:</span> {{ clinic.nombre }} (#{{ clinic.id }}) · {{ operation() === 'plan' ? clinic.plan.plan + ' → ' + form.controls.plan.value : clinic.estado + ' → ' + form.controls.estado.value }}</div>
-              @if (mutationError()) { <div class="alert alert-error" role="alert">{{ mutationError() }}</div> }
-              @if (success()) { <div class="alert bg-success/10 text-success" role="status">{{ success() }}</div> }
-              <button type="submit" class="btn btn-primary w-full" [disabled]="saving() || form.invalid || !hasChange()">@if (saving()) { <span class="loading loading-spinner loading-sm"></span>Guardando... } @else { <span class="material-symbols-outlined text-[20px]" aria-hidden="true">check</span>Confirmar cambio de {{ operation() === 'plan' ? 'plan' : 'estado' }} }</button>
-              <p class="text-label-sm text-on-surface-variant">Sin pagos, renovaciones de prueba ni edici&oacute;n del vencimiento.</p>
+              <div class="rounded-xl border border-blue-100 bg-blue-50/60 p-4"><p class="break-words text-[13px] font-bold text-slate-900">{{ clinic.nombre }} <span class="font-mono text-xs font-normal text-slate-500">#{{ clinic.id }}</span></p><p class="mt-2 text-xs text-slate-500">{{ operation() === 'plan' ? 'Cambio de plan' : 'Cambio de estado administrativo' }}</p><p class="mt-1 break-words font-mono text-sm font-semibold text-slate-800">{{ operation() === 'plan' ? clinic.plan.plan : clinic.estado }} <span class="mx-2 text-blue-600" aria-label="a">&rarr;</span> {{ operation() === 'plan' ? form.controls.plan.value : form.controls.estado.value }}</p></div>
+              <div><div class="mb-2 flex flex-wrap items-center justify-between gap-2"><label for="change-reason" class="text-[13px] font-semibold text-slate-700">Motivo del cambio <span class="text-rose-600">*</span></label><span class="font-mono text-xs text-slate-500">{{ form.controls.reason.value.trim().length }}/500</span></div><textarea id="change-reason" class="block w-full resize-y rounded-xl border border-slate-200 bg-white p-3 text-sm placeholder:text-slate-500" rows="3" formControlName="reason" placeholder="Describe por qu&eacute; es necesario este cambio..." aria-describedby="reason-help" [attr.aria-invalid]="form.controls.reason.touched && form.controls.reason.invalid"></textarea><p id="reason-help" class="mt-2 text-xs text-slate-500">Entre 5 y 500 caracteres &uacute;tiles, sin contar espacios al inicio o al final.</p>@if (form.controls.reason.touched && form.controls.reason.invalid) { <p class="mt-2 text-[13px] text-rose-700" role="alert">Escribe un motivo de 5 a 500 caracteres &uacute;tiles.</p> }</div>
+              @if (!hasChange()) { <p class="text-[13px] text-slate-500">El destino coincide con el valor actual. Elige uno diferente para continuar.</p> }
+              @if (mutationError()) { <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-[13px] text-rose-800" role="alert">{{ mutationError() }}</div> }
+              @if (success()) { <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-[13px] text-emerald-800" role="status">{{ success() }}</div> }
+              <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4"><p class="max-w-xs text-xs text-slate-500">El cambio se aplicar&aacute; solo a esta cl&iacute;nica y quedar&aacute; registrado.</p><button type="submit" class="console-button w-full bg-blue-600 px-4 text-white hover:bg-blue-700 sm:w-auto" [disabled]="saving() || form.invalid || !hasChange()">@if (saving()) { <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>Guardando... } @else { <span class="material-symbols-outlined text-lg" aria-hidden="true">check</span>Confirmar cambio de {{ operation() === 'plan' ? 'plan' : 'estado' }} }</button></div>
             </form>
           </section>
 
-          <section class="glass-card rounded-3xl p-5 sm:p-7 space-y-4" aria-labelledby="audit-title" [attr.aria-busy]="auditLoading()">
-            <div class="flex items-center justify-between gap-3"><div><h2 id="audit-title" class="text-title-lg font-bold">Auditor&iacute;a</h2><p class="text-body-sm text-on-surface-variant">Historial de cambios de esta cl&iacute;nica</p></div><button type="button" class="btn btn-sm btn-ghost" [disabled]="auditLoading() || saving()" (click)="loadAudit()" aria-label="Actualizar auditor&iacute;a"><span class="material-symbols-outlined" aria-hidden="true">refresh</span></button></div>
-            @if (auditLoading()) { <p class="text-body-sm text-on-surface-variant" role="status">Cargando historial...</p> }
-            @if (auditError()) { <div class="space-y-2"><p class="text-error text-body-sm" role="alert">{{ auditError() }}</p><button type="button" class="btn btn-ghost btn-sm" (click)="loadAudit()">Reintentar</button></div> }
+          <section class="console-card min-w-0" aria-labelledby="audit-title" [attr.aria-busy]="auditLoading()">
+            <div class="flex items-start justify-between gap-3 p-4 sm:p-6"><div><p class="eyebrow text-slate-500">Trazabilidad</p><h2 id="audit-title" class="mt-1 text-base font-extrabold text-slate-900">Auditor&iacute;a de cambios</h2><p class="mt-1 text-[13px] text-slate-500">Historial de esta cl&iacute;nica. Registro protegido contra modificaciones.</p></div><button type="button" class="console-button shrink-0" [disabled]="auditLoading() || saving()" (click)="loadAudit()" aria-label="Actualizar auditor&iacute;a"><span class="material-symbols-outlined text-xl" aria-hidden="true">refresh</span></button></div>
+            @if (auditLoading()) { <p class="flex items-center gap-2 px-5 pb-6 text-[13px] text-slate-500" role="status"><span class="loading loading-spinner loading-sm text-blue-600" aria-hidden="true"></span>Cargando historial...</p> }
+            @if (auditError()) { <div class="space-y-2 px-5 pb-5"><p class="text-[13px] text-rose-700" role="alert">{{ auditError() }}</p><button type="button" class="console-button border border-slate-200" (click)="loadAudit()">Reintentar</button></div> }
             @if (audit(); as history) {
-              <ol class="space-y-3">
-                @for (entry of history.items; track entry.id) {
-                  <li class="rounded-2xl border border-outline-variant/30 p-4 space-y-2 text-body-sm">
-                    <div class="flex flex-wrap justify-between gap-2"><span class="font-bold break-all">{{ entry.action }}</span><span class="text-label-sm text-on-surface-variant">#{{ entry.id }} · {{ formatDate(entry.createdAt) }}</span></div>
-                    <p class="break-all text-on-surface-variant">{{ entry.actorEmail }} · Actor #{{ entry.actorId }}</p>
-                    @if (entry.previousPlan || entry.newPlan) { <p><span class="text-on-surface-variant">Plan:</span> {{ entry.previousPlan || 'No disponible' }} → {{ entry.newPlan || 'No disponible' }}</p> }
-                    @if (entry.previousEstado || entry.newEstado) { <p><span class="text-on-surface-variant">Estado:</span> {{ entry.previousEstado || 'No disponible' }} → {{ entry.newEstado || 'No disponible' }}</p> }
-                    <p class="whitespace-pre-wrap break-words bg-surface-container-low rounded-xl p-3">{{ entry.reason }}</p>
-                  </li>
-                } @empty { <li class="text-body-sm text-on-surface-variant">Esta cl&iacute;nica todav&iacute;a no tiene cambios registrados.</li> }
-              </ol>
-              <nav class="flex flex-wrap items-center justify-between gap-2 pt-2" aria-label="Paginacion de auditoria"><p class="text-body-sm text-on-surface-variant">P&aacute;gina {{ history.totalPages ? history.page + 1 : 0 }} de {{ history.totalPages }} · {{ history.totalElements }} registros</p><div class="flex gap-1"><button type="button" class="btn btn-sm btn-ghost" [disabled]="history.page === 0 || saving()" (click)="loadAudit(history.page - 1)">Anterior</button><button type="button" class="btn btn-sm btn-ghost" [disabled]="history.page + 1 >= history.totalPages || saving()" (click)="loadAudit(history.page + 1)">Siguiente</button></div></nav>
+              <div class="audit-scroll overflow-x-auto" role="region" aria-labelledby="audit-title" tabindex="0">
+                <table class="w-full min-w-[720px] table-fixed text-left text-[13px]">
+                  <caption class="border-t border-slate-100 px-5 py-2 text-left text-xs text-slate-500">Fechas y horas de Lima. Los registros no se pueden editar ni eliminar desde este panel.<span class="mt-1 block sm:hidden">Desliza la tabla para ver todas las columnas.</span></caption>
+                  <thead class="border-y border-slate-200 bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500"><tr><th scope="col" class="w-[20%] px-5 py-3 font-bold">Fecha / ID</th><th scope="col" class="w-[25%] px-4 py-3 font-bold">Operador</th><th scope="col" class="w-[25%] px-4 py-3 font-bold">Cambio</th><th scope="col" class="w-[30%] px-4 py-3 font-bold">Motivo</th></tr></thead>
+                  <tbody class="divide-y divide-slate-100">
+                    @for (entry of history.items; track entry.id) {
+                      <tr class="align-top hover:bg-slate-50/70"><td class="px-5 py-4"><span class="block text-xs font-medium text-slate-700">{{ formatDate(entry.createdAt) }}</span><span class="mt-1 block font-mono text-[11px] text-slate-500">#{{ entry.id }}</span></td><td class="px-4 py-4"><span class="block break-all font-medium text-slate-700">{{ entry.actorEmail }}</span><span class="mt-1 block font-mono text-[11px] text-slate-500">Actor #{{ entry.actorId }}</span></td><td class="px-4 py-4"><span class="block font-semibold text-slate-800">{{ auditLabel(entry) }}</span>@if (entry.previousPlan !== entry.newPlan) { <p class="mt-1 break-words font-mono text-xs text-slate-500">{{ entry.previousPlan || 'No disponible' }} &rarr; {{ entry.newPlan || 'No disponible' }}</p> }@if (entry.previousEstado !== entry.newEstado) { <p class="mt-1 break-words font-mono text-xs text-slate-500">{{ entry.previousEstado || 'No disponible' }} &rarr; {{ entry.newEstado || 'No disponible' }}</p> }</td><td class="whitespace-pre-wrap break-words px-4 py-4 text-slate-600">{{ entry.reason }}</td></tr>
+                    } @empty {
+                      <tr><td colspan="4" class="px-5 py-10 text-center text-slate-500">Esta cl&iacute;nica todav&iacute;a no tiene cambios registrados.</td></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <nav class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 p-4 text-xs sm:px-6" aria-label="Paginacion de auditoria"><p class="text-slate-500">P&aacute;gina <span class="font-semibold text-slate-700">{{ history.totalPages ? history.page + 1 : 0 }}</span> de {{ history.totalPages }} <span class="mx-1 text-slate-300">/</span> {{ history.totalElements }} registros</p><div class="flex gap-1"><button type="button" class="console-button px-2 text-xs" [disabled]="history.page === 0 || saving() || auditLoading()" (click)="loadAudit(history.page - 1)"><span class="material-symbols-outlined text-lg" aria-hidden="true">chevron_left</span>Anterior</button><button type="button" class="console-button px-2 text-xs" [disabled]="history.page + 1 >= history.totalPages || saving() || auditLoading()" (click)="loadAudit(history.page + 1)">Siguiente<span class="material-symbols-outlined text-lg" aria-hidden="true">chevron_right</span></button></div></nav>
             }
           </section>
         } @else {
-          <section class="glass-card rounded-3xl p-8 sm:p-12 space-y-4 text-center">
-            <span class="inline-flex rounded-3xl p-5 bg-primary-container/40 text-primary"><span class="material-symbols-outlined text-[40px]" aria-hidden="true">domain</span></span>
-            <h2 class="text-headline-md font-extrabold">Una vista clara de cada cl&iacute;nica</h2>
-            <p class="text-body-md text-on-surface-variant max-w-md mx-auto">Selecciona una cl&iacute;nica del directorio para consultar su uso, administrar el plan o el estado y revisar su auditor&iacute;a.</p>
-            <p class="text-body-sm text-on-surface-variant max-w-md mx-auto">Este panel no accede a pacientes, citas ni notificaciones cl&iacute;nicas. Los datos existentes y las fechas de prueba se conservan.</p>
-          </section>
+          <section class="console-card flex min-h-[360px] flex-col items-center justify-center p-6 text-center sm:p-12"><span class="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600"><span class="material-symbols-outlined text-3xl" aria-hidden="true">domain</span></span><p class="eyebrow text-blue-600">Vista de la cl&iacute;nica</p><h2 class="mt-2 text-xl font-extrabold tracking-tight text-slate-900">Selecciona una cl&iacute;nica para comenzar</h2><p class="mt-3 max-w-md text-sm text-slate-500">Consulta su capacidad, administra el plan y el estado de acceso o revisa el historial de cambios.</p><p class="mt-6 max-w-md border-t border-slate-100 pt-4 text-xs text-slate-500">Este espacio de operador no accede a pacientes, citas ni notificaciones cl&iacute;nicas.</p></section>
         }
       </div>
     </div>
+    <footer class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-5 text-[11px] text-slate-500"><p><span class="font-bold text-slate-500">PetCare</span> / Operaciones SaaS</p><p class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm" aria-hidden="true">shield</span>Sin acceso a datos cl&iacute;nicos</p></footer>
   </main>
 </div>

@@ -169,9 +169,17 @@ export class SaasClinicasComponent implements OnInit {
 
   setOperation(operation: 'plan' | 'estado'): void {
     if (this.saving()) return;
+    if (operation !== this.operation()) this.form.controls.reason.reset('');
     this.operation.set(operation);
     this.mutationError.set('');
     this.success.set('');
+  }
+
+  selectEstado(estado: ClinicEstado): void {
+    if (this.saving() || this.selected()?.estado === estado) return;
+    if (estado !== this.form.controls.estado.value) this.form.controls.reason.reset('');
+    this.setOperation('estado');
+    this.form.controls.estado.setValue(estado);
   }
 
   hasChange(): boolean {
@@ -219,7 +227,7 @@ export class SaasClinicasComponent implements OnInit {
         if (this.selected()?.id !== clinic.id) return;
         const detail = typeof error.error?.message === 'string' ? error.error.message : '';
         this.mutationError.set(error.status === 409
-          ? `Conflicto (409). No se pudo aplicar el cambio. Una reducci\u00f3n de capacidad se rechaza si el uso supera el destino. ${detail}`.trim()
+          ? `Conflicto (409). ${detail || 'Los datos pueden haber cambiado. Actualiza el directorio antes de reintentar.'}`
           : error.status === 0
             ? 'No se pudo confirmar el cambio por un problema de conexi\u00f3n. Actualiza el directorio y revisa la auditor\u00eda antes de reintentar.'
             : detail || 'No se pudo aplicar el cambio. Revisa los datos e intenta nuevamente.');
@@ -237,6 +245,20 @@ export class SaasClinicasComponent implements OnInit {
 
   statusLabel(status: ClinicaPlan['status']): string {
     return { TRIAL: 'En prueba', ACTIVE: 'Activo', EXPIRED: 'Vencido', READ_ONLY: 'Solo lectura', SUSPENDED: 'Suspendido' }[status];
+  }
+
+  initials(name: string | null | undefined): string {
+    return name?.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(word => word[0]).join('').toUpperCase() || 'PC';
+  }
+
+  auditLabel(entry: SaasAudit): string {
+    if (entry.action === 'PLAN_CHANGED') return 'Cambio de plan';
+    if (entry.action === 'ESTADO_CHANGED') {
+      if (entry.newEstado === 'SUSPENDIDA') return 'Suspensi\u00f3n';
+      if (entry.newEstado === 'ACTIVA') return 'Reactivaci\u00f3n';
+      return 'Cambio de estado';
+    }
+    return entry.action;
   }
 
   capacities(plan: ClinicaPlan) {

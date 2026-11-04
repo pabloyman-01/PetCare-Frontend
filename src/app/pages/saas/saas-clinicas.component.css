@@ -1,18 +1,25 @@
-:host { display: block; }
-.operator-shell { background-image: radial-gradient(ellipse at 85% 0%, #dbe7ff80, transparent 45%); }
-.workspace-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
-.profile-card { position: absolute; right: 0; top: calc(100% + .75rem); width: min(19rem, 85vw); z-index: 20; background: #fff; }
-.clinic-list { max-height: 760px; overflow-y: auto; }
-.clinic-row { transition: background-color .15s; border-left: 3px solid transparent; }
-.clinic-row:hover { background: #edf3ff; }
-.selected-row { background: #e5edff; border-left-color: #004ac6; }
-progress { appearance: none; border: 0; border-radius: 1rem; overflow: hidden; background: #dbe4f5; }
-progress::-webkit-progress-bar { background: #dbe4f5; }
-progress::-webkit-progress-value { background: #004ac6; }
-progress::-moz-progress-bar { background: #004ac6; }
-progress.over-limit::-webkit-progress-value { background: #ba1a1a; }
-progress.over-limit::-moz-progress-bar { background: #ba1a1a; }
-button:disabled { opacity: .5; cursor: not-allowed; }
-button:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid #004ac6; outline-offset: 3px; }
-@media (min-width: 1024px) { .workspace-grid { grid-template-columns: minmax(320px, .85fr) minmax(0, 1.3fr); align-items: start; } }
-@media (max-width: 639px) { .clinic-list { max-height: 440px; } .profile-card { right: -4rem; } }
+:host { display: block; min-width: 0; }
+.console-card { border: 1px solid #e2e8f0; border-radius: 16px; background: #fff; box-shadow: 0 2px 4px #0f172a03; }
+.eyebrow { font-size: 11px; font-weight: 800; line-height: 1.5; letter-spacing: .14em; text-transform: uppercase; }
+.status-chip { display: inline-flex; align-items: center; border-radius: 6px; padding: 3px 7px; font-size: 12px; font-weight: 700; line-height: 1.4; }
+.console-button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; padding: 8px 10px; font-size: 13px; font-weight: 700; line-height: 1.5; transition: background-color .15s; }
+.console-button:hover:not(:disabled) { filter: brightness(.96); }
+.profile-card { position: absolute; right: 0; top: calc(100% + 12px); z-index: 30; width: min(19rem, calc(100vw - 2rem)); background: #fff; }
+.profile-trigger::-webkit-details-marker { display: none; }
+.clinic-list { max-height: 620px; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-width: thin; scroll-padding: 4px; }
+.clinic-row { border-left: 3px solid transparent; transition: background-color .15s; overflow-wrap: anywhere; }
+.clinic-row:hover { background: #f8fafc; }
+.clinic-row.selected-row { border-left-color: #2563eb; background: #eff6ff; }
+.clinic-row:focus-visible { outline-offset: -3px; }
+.plan-mode input:checked + span { border-color: #2563eb; background: #eff6ff; }
+progress { appearance: none; border: 0; border-radius: 8px; overflow: hidden; background: #e2e8f0; }
+progress::-webkit-progress-bar { background: #e2e8f0; }
+progress::-webkit-progress-value { background: #2563eb; border-radius: 8px; }
+progress::-moz-progress-bar { background: #2563eb; border-radius: 8px; }
+progress.over-limit::-webkit-progress-value { background: #e11d48; }
+progress.over-limit::-moz-progress-bar { background: #e11d48; }
+button:disabled, input:disabled, textarea:disabled { opacity: .5; cursor: not-allowed; }
+button:focus-visible, summary:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, .audit-scroll:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
+textarea, td { overflow-wrap: anywhere; }
+@media (max-width: 1023px) { .clinic-list { max-height: 360px; } }
+@media (prefers-reduced-motion: reduce) { .console-button, .clinic-row { transition: none; } }

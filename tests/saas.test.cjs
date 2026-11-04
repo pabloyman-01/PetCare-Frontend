@@ -192,7 +192,7 @@ test('explicit mutation allows grandfathered TRIAL to PRO, preserves history, up
   assert.deepEqual(calls.audit.at(-1).args, [1, 0, 10]);
 });
 
-test('409 keeps selected clinic and reason; a state change is a separate request', async t => {
+test('409 keeps the plan reason; a state change requires a new reason and explicit submission', async t => {
   const { component: c, calls } = fixture(t);
   c.selectClinic(clinic(1));
   c.form.patchValue({ plan: 'CONSULTORIO', reason: 'Capacity review' });
@@ -204,9 +204,49 @@ test('409 keeps selected clinic and reason; a state change is a separate request
   assert.equal(c.form.controls.reason.value, 'Capacity review');
   assert.equal(c.saving(), false);
   assert.equal(c.success(), '');
-  c.setOperation('estado'); c.submit();
+  c.selectEstado('SUSPENDIDA');
+  assert.equal(c.form.controls.reason.value, '');
+  c.submit();
+  assert.equal(calls.mutations.length, 1);
+  c.form.controls.reason.setValue('Operational suspension'); c.submit();
   assert.equal(calls.mutations[1].kind, 'estado');
-  assert.deepEqual(calls.mutations[1].args, [1, 'SUSPENDIDA', 'Capacity review']);
+  assert.deepEqual(calls.mutations[1].args, [1, 'SUSPENDIDA', 'Operational suspension']);
+});
+
+test('state cards only select valid changes and never execute them immediately', t => {
+  const { component: c, calls } = fixture(t);
+  c.selectClinic(clinic(1));
+  c.form.controls.reason.setValue('Plan-only reason');
+  c.selectEstado('ACTIVA');
+  assert.equal(c.operation(), 'plan');
+  assert.equal(c.form.controls.reason.value, 'Plan-only reason');
+  c.selectEstado('SUSPENDIDA');
+  assert.equal(c.operation(), 'estado');
+  assert.equal(c.form.controls.estado.value, 'SUSPENDIDA');
+  assert.equal(c.form.controls.reason.value, '');
+  assert.equal(calls.mutations.length, 0);
+  c.form.controls.reason.setValue('State-only reason');
+  c.setOperation('plan');
+  assert.equal(c.form.controls.reason.value, '');
+  c.form.controls.reason.setValue('Keep while submitting');
+  c.saving.set(true);
+  c.selectEstado('SUSPENDIDA');
+  c.setOperation('estado');
+  assert.equal(c.operation(), 'plan');
+  assert.equal(c.form.controls.reason.value, 'Keep while submitting');
+});
+
+test('display helpers use real identity and translate audit actions without inventing data', t => {
+  const { component: c } = fixture(t);
+  assert.equal(c.initials('  Operador   PetCare  '), 'OP');
+  assert.equal(c.initials('Veterinaria Los Andes'), 'VL');
+  assert.equal(c.initials(null), 'PC');
+  assert.equal(c.initials('   '), 'PC');
+  assert.equal(c.auditLabel({ action: 'PLAN_CHANGED' }), 'Cambio de plan');
+  assert.equal(c.auditLabel({ action: 'ESTADO_CHANGED', newEstado: 'SUSPENDIDA' }), 'Suspensi\u00f3n');
+  assert.equal(c.auditLabel({ action: 'ESTADO_CHANGED', newEstado: 'ACTIVA' }), 'Reactivaci\u00f3n');
+  assert.equal(c.auditLabel({ action: 'ESTADO_CHANGED', newEstado: null }), 'Cambio de estado');
+  assert.equal(c.auditLabel({ action: 'FUTURE_ACTION' }), 'FUTURE_ACTION');
 });
 
 test('list and audit failures can be retried, profile failures remain visible', async t => {
