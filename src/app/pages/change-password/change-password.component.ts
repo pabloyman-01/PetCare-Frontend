@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -176,6 +177,7 @@ export const passwordMatchValidator: ValidatorFn = (control: AbstractControl): V
   `
 })
 export class ChangePasswordComponent {
+  private readonly destroyRef = inject(DestroyRef);
   passwordForm: FormGroup;
   isLoading = false;
   showCurrentPassword = false;
@@ -202,8 +204,8 @@ export class ChangePasswordComponent {
       confirmPassword: ['', [Validators.required]]
     }, { validators: passwordMatchValidator });
 
-    this.passwordForm.get('newPassword')?.valueChanges.subscribe(() => this.checkPasswordRules());
-    this.passwordForm.get('confirmPassword')?.valueChanges.subscribe(() => this.checkPasswordRules());
+    this.passwordForm.get('newPassword')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.checkPasswordRules());
+    this.passwordForm.get('confirmPassword')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.checkPasswordRules());
   }
 
   checkPasswordRules(): void {
@@ -219,6 +221,7 @@ export class ChangePasswordComponent {
   }
 
   onSubmit(): void {
+    if (this.isLoading) return;
     if (this.passwordForm.invalid) {
       this.passwordForm.markAllAsTouched();
       return;
@@ -229,16 +232,14 @@ export class ChangePasswordComponent {
     this.errorMessage = '';
     this.successMessage = '';
 
-    this.auth.changePassword(currentPassword, newPassword).subscribe({
+    this.auth.changePassword(currentPassword, newPassword).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (resp) => {
         this.successMessage = resp.message;
         const user = this.auth.user();
         if (user) {
           this.auth.updateSessionUser({ ...user, forcePasswordChange: false });
         }
-        setTimeout(() => {
-          this.router.navigate(['/dashboard']);
-        }, 1500);
+        this.router.navigateByUrl(this.auth.homeUrl());
       },
       error: (err: HttpErrorResponse) => {
         this.isLoading = false;

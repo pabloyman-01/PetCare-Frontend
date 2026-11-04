@@ -74,6 +74,57 @@ src/
 | **VETERINARIO** | Citas, atención clínica, vacunas, controles mensuales, reportes |
 | **ASISTENTE** | Dueños, mascotas, citas, alertas, inasistencias |
 | **DUENIO** | Dashboard, mascotas propias, citas propias, vacunas |
+| **SAAS_OPERATOR** | Panel global `/saas/clinicas`, sin contexto de clinica ni acceso clinico |
+
+## P4: Operaciones SaaS
+
+`ROLE_SAAS_OPERATOR` utiliza una pantalla independiente de `MainLayout`: no carga
+notificaciones, pacientes ni servicios de una clinica. El rol de operador tiene
+precedencia incluso en cuentas con roles mixtos. Login, cambio de contrasena,
+raiz y rechazos de guards usan el destino de la sesion. Los cambios obligatorios
+de contrasena se atienden antes de entrar al panel. El editor de roles de la
+clinica no permite asignar este rol global.
+
+El panel ofrece busqueda por nombre/slug, paginacion real de 20 clinicas, uso y
+capacidad informados por el servidor, fechas historicas de prueba en hora de
+Lima, cambios de plan/estado y auditoria paginada de 10 registros. El perfil se
+actualiza desde `/auth/me` al entrar, cada 60 segundos y a peticion; permite
+cerrar sesion sin entrar al perfil clinico.
+
+Contrato utilizado (relativo a `environment.apiUrl`):
+
+- `GET /saas/clinicas?q=&page=0&size=20` devuelve `{items,page,totalPages,totalElements}` con `plan: ClinicaPlan` por clinica.
+- `PATCH /saas/clinicas/{id}/plan` envia `{plan: 'CONSULTORIO' | 'PRO', reason}`.
+- `PATCH /saas/clinicas/{id}/estado` envia `{estado: 'ACTIVA' | 'SUSPENDIDA', reason}`.
+- Ambos cambios devuelven el DTO actualizado de la clinica. El motivo se recorta y exige 5 a 500 caracteres; no se guarda al seleccionar una opcion, solo al confirmar.
+- `GET /saas/clinicas/{id}/auditoria?page=0&size=10` devuelve la misma envoltura paginada. Muestra actor, accion, valores previos/nuevos, motivo y fecha; se vuelve a consultar desde la primera pagina despues de cada cambio exitoso.
+
+Reducir capacidad se rechaza con `409` si el uso supera el destino. El paso
+`TRIAL -> PRO` conserva capacidad y permite uso heredado por encima del limite
+(grandfathering); el frontend no lo bloquea por su cuenta. Cambiar el plan no
+suspende ni reactiva automaticamente. Reactivar tampoco cambia el plan ni su
+vencimiento. No hay pagos, renovaciones de prueba ni edicion de fechas.
+
+Las busquedas y consultas de auditoria anteriores se cancelan al cambiar de
+consulta o seleccion. La seleccion se limpia al buscar o paginar. Durante un
+cambio se bloquean el formulario y la navegacion del directorio para evitar
+operaciones duplicadas o aplicadas sobre otra seleccion. Todas las suscripciones
+y el refresco periodico terminan al salir. Cancelar una peticion al salir no
+revierte una operacion que el servidor ya haya recibido; ante una respuesta de
+red incierta, actualizar el directorio y revisar la auditoria antes de reintentar.
+
+Verificacion focalizada, sin modificar la configuracion Karma existente (que
+referencia un `tsconfig.spec.json` ausente):
+
+```bash
+node --test tests/saas.test.cjs  # Node 20.20+; usa las dependencias ya instaladas
+npm run build:render
+```
+
+Las pruebas Node ejercitan las clases TypeScript reales, guards, contrato HTTP,
+validacion, concurrencia y limpieza de suscripciones. No sustituyen una prueba
+de extremo a extremo contra un backend con operador provisionado; la autorizacion,
+los limites y la persistencia de auditoria siempre se validan en el servidor.
 
 ## Instalación y ejecución
 

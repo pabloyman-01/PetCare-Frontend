@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -12,6 +13,7 @@ import { HttpErrorResponse } from '@angular/common/http';
   styleUrl: './login.component.css'
 })
 export class LoginComponent {
+  private readonly destroyRef = inject(DestroyRef);
   loginForm: FormGroup;
   isLoading = false;
   showPassword = false;
@@ -42,13 +44,9 @@ export class LoginComponent {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.auth.login({ email: email.trim(), password }).subscribe({
+    this.auth.login({ email: email.trim(), password }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
-        if (this.auth.mustChangePassword()) {
-          this.router.navigate(['/change-password']);
-        } else {
-          this.router.navigate(['/dashboard']);
-        }
+        this.router.navigateByUrl(this.auth.homeUrl());
       },
       error: (err: HttpErrorResponse) => {
         this.isLoading = false;

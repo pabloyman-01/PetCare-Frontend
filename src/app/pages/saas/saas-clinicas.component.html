@@ -1,0 +1,157 @@
+<div class="operator-shell min-h-screen bg-surface text-on-surface safe-pt safe-pb">
+  <header class="border-b border-outline-variant/30 bg-white/80">
+    <div class="max-w-[1500px] mx-auto px-4 sm:px-8 py-4 flex flex-wrap items-center justify-between gap-4">
+      <a routerLink="/saas/clinicas" class="flex items-center gap-3" aria-label="PetCare, panel de operaciones">
+        <span class="rounded-2xl bg-primary text-on-primary p-2.5 material-symbols-outlined" aria-hidden="true">pets</span>
+        <div><span class="font-extrabold text-title-lg text-primary">PetCare</span><p class="text-label-sm text-on-surface-variant">Operaciones SaaS</p></div>
+      </a>
+      <div class="flex flex-wrap items-center gap-2 sm:gap-4">
+        <details class="relative">
+          <summary class="btn btn-ghost"><span class="material-symbols-outlined" aria-hidden="true">account_circle</span>Mi perfil</summary>
+          <div class="profile-card glass-card rounded-2xl p-5 space-y-2">
+            <p class="font-bold break-words">{{ auth.user()?.fullName }}</p>
+            <p class="text-body-sm break-all">{{ auth.user()?.email }}</p>
+            <span class="badge badge-primary">Operador SaaS</span>
+            <p class="text-body-sm text-on-surface-variant">Espacio global, sin contexto cl&iacute;nico.</p>
+            <button type="button" class="btn btn-ghost w-full" [disabled]="profileRefreshing()" (click)="retryProfile()">{{ profileRefreshing() ? 'Actualizando...' : 'Actualizar perfil' }}</button>
+          </div>
+        </details>
+        <button type="button" class="btn btn-ghost" (click)="auth.logout()"><span class="material-symbols-outlined" aria-hidden="true">logout</span>Salir</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-[1500px] mx-auto px-4 sm:px-8 py-6 sm:py-10 space-y-6">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div class="space-y-2">
+        <p class="text-label-sm uppercase tracking-[.18em] text-primary font-bold">Administraci&oacute;n de la plataforma</p>
+        <h1 class="text-headline-lg sm:text-display-lg font-extrabold">Cl&iacute;nicas</h1>
+        <p class="text-body-md text-on-surface-variant max-w-2xl">Supervisa el acceso y la capacidad de cada cl&iacute;nica. Cada cambio requiere un motivo y queda registrado en la auditor&iacute;a.</p>
+      </div>
+      <span class="badge badge-outline text-primary"><span class="material-symbols-outlined text-[18px]" aria-hidden="true">admin_panel_settings</span>Acceso de operador</span>
+    </div>
+
+    @if (profileError()) {
+      <div class="alert alert-error flex-wrap" role="alert">No se pudo actualizar tu perfil. La sesi&oacute;n mostrada puede estar desactualizada.<button class="btn btn-sm btn-ghost" type="button" [disabled]="profileRefreshing()" (click)="retryProfile()">Reintentar</button></div>
+    }
+
+    <div class="workspace-grid">
+      <section class="glass-card rounded-3xl overflow-hidden min-w-0 self-start" aria-labelledby="directory-title" [attr.aria-busy]="listLoading()">
+        <div class="p-5 sm:p-6 space-y-4 border-b border-outline-variant/30">
+          <div class="flex items-center justify-between gap-3">
+            <h2 id="directory-title" class="text-title-lg font-bold">Directorio global</h2>
+            <button type="button" class="btn btn-ghost btn-sm" [disabled]="listLoading() || saving()" (click)="loadList()"><span class="material-symbols-outlined text-[20px]" aria-hidden="true">refresh</span>Actualizar</button>
+          </div>
+          <label class="block text-label-md" for="clinic-search">Buscar cl&iacute;nica</label>
+          <div class="relative">
+            <span class="absolute left-3 top-3 material-symbols-outlined text-on-surface-variant" aria-hidden="true">search</span>
+            <input id="clinic-search" type="search" class="input w-full pl-11" placeholder="Nombre o slug..." autocomplete="off" [value]="query" [disabled]="saving()" (input)="search($any($event.target).value)">
+          </div>
+          <p class="text-body-sm text-on-surface-variant">@if (clinics(); as page) { {{ page.totalElements }} cl&iacute;nicas encontradas } @else { Consulta global de cl&iacute;nicas }</p>
+        </div>
+
+        @if (listLoading()) {
+          <div class="p-10 text-center text-on-surface-variant" role="status"><span class="loading loading-spinner loading-md mr-2"></span>Cargando cl&iacute;nicas...</div>
+        } @else if (listError()) {
+          <div class="p-6 space-y-3"><p class="text-error" role="alert">{{ listError() }}</p><button class="btn btn-ghost" type="button" (click)="loadList()">Reintentar</button></div>
+        }
+        @if (clinics(); as page) {
+          <div class="clinic-list">
+            @for (clinic of page.items; track clinic.id) {
+              <button type="button" class="clinic-row w-full text-left p-5 sm:px-6 border-b border-outline-variant/20" [class.selected-row]="selected()?.id === clinic.id" [attr.aria-pressed]="selected()?.id === clinic.id" [disabled]="saving()" (click)="selectClinic(clinic)">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0"><h3 class="font-bold break-words">{{ clinic.nombre }}</h3><p class="text-body-sm text-on-surface-variant break-all mt-1">{{ clinic.slug }} <span class="mx-1">/</span> #{{ clinic.id }}</p></div>
+                  <span class="badge shrink-0" [class.badge-success]="clinic.estado === 'ACTIVA'" [class.badge-error]="clinic.estado === 'SUSPENDIDA'">{{ clinic.estado === 'ACTIVA' ? 'Activa' : 'Suspendida' }}</span>
+                </div>
+                <div class="flex flex-wrap gap-2 mt-3 text-label-sm"><span class="badge badge-primary">{{ clinic.plan.plan }}</span><span class="badge bg-surface-container-high text-on-surface-variant">{{ statusLabel(clinic.plan.status) }}</span>@if (clinic.plan.readOnly) { <span class="badge badge-warning">Solo lectura</span> }</div>
+                <div class="flex flex-wrap gap-x-5 gap-y-1 mt-3 text-body-sm text-on-surface-variant"><span>Personal {{ clinic.plan.staffUsed }}/{{ clinic.plan.staffLimit }}</span><span>Mascotas {{ clinic.plan.petsUsed }}/{{ clinic.plan.petsLimit }}</span></div>
+              </button>
+            } @empty {
+              <div class="p-10 text-center space-y-2"><span class="material-symbols-outlined text-primary text-[36px]" aria-hidden="true">domain_disabled</span><h3 class="font-bold">Sin resultados</h3><p class="text-body-sm text-on-surface-variant">Prueba con otro nombre o slug.</p></div>
+            }
+          </div>
+          <nav class="flex flex-wrap items-center justify-between gap-3 p-4 border-t border-outline-variant/30" aria-label="Paginacion de clinicas">
+            <span class="text-body-sm text-on-surface-variant">P&aacute;gina {{ page.totalPages ? page.page + 1 : 0 }} de {{ page.totalPages }} <span class="block text-label-sm">Hasta {{ pageSize }} por p&aacute;gina</span></span>
+            <div class="flex gap-1"><button type="button" class="btn btn-ghost btn-sm" [disabled]="page.page === 0 || saving()" (click)="loadList(page.page - 1)">Anterior</button><button type="button" class="btn btn-ghost btn-sm" [disabled]="page.page + 1 >= page.totalPages || saving()" (click)="loadList(page.page + 1)">Siguiente</button></div>
+          </nav>
+        }
+      </section>
+
+      <div class="min-w-0 space-y-6">
+        @if (selected(); as clinic) {
+          <section class="glass-card rounded-3xl p-5 sm:p-7 space-y-5" aria-labelledby="clinic-title">
+            <div class="flex justify-between items-start gap-4">
+              <div class="min-w-0"><p class="text-label-sm uppercase tracking-wider text-primary font-bold mb-1">Cl&iacute;nica seleccionada / #{{ clinic.id }}</p><h2 id="clinic-title" class="text-headline-md font-extrabold break-words">{{ clinic.nombre }}</h2><p class="text-body-sm text-on-surface-variant break-all">{{ clinic.slug }}</p></div>
+              <span class="material-symbols-outlined text-[32px] text-primary" aria-hidden="true">storefront</span>
+            </div>
+            <dl class="grid grid-cols-2 gap-4 text-body-sm">
+              <div><dt class="text-on-surface-variant">Estado de la cl&iacute;nica</dt><dd class="font-bold">{{ clinic.estado }}</dd></div>
+              <div><dt class="text-on-surface-variant">Plan / capacidad efectiva</dt><dd class="font-bold">{{ clinic.plan.plan }} / {{ clinic.plan.tier }}</dd></div>
+              <div><dt class="text-on-surface-variant">Estado del plan</dt><dd class="font-bold">{{ statusLabel(clinic.plan.status) }}{{ clinic.plan.readOnly ? ' · Solo lectura' : '' }}</dd></div>
+              <div><dt class="text-on-surface-variant">Fecha de alta</dt><dd>{{ formatDate(clinic.createdAt) }}</dd></div>
+            </dl>
+            <div class="grid sm:grid-cols-2 gap-3">
+              @for (capacity of capacities(clinic.plan); track capacity.label) {
+                <div class="rounded-2xl bg-surface-container-low p-4 space-y-2"><p class="text-label-md text-on-surface-variant">{{ capacity.label }}</p><p class="text-title-lg font-extrabold">{{ capacity.used }} <span class="font-normal text-body-sm text-on-surface-variant">/ {{ capacity.limit }}</span></p><progress class="w-full h-2" [class.over-limit]="capacity.used > capacity.limit" [value]="capacity.used" [max]="capacity.limit || 1" [attr.aria-label]="capacity.label + ': ' + capacity.used + ' de ' + capacity.limit"></progress>@if (capacity.used > capacity.limit) { <p class="text-body-sm text-error">Capacidad excedida; los registros se conservan.</p> }</div>
+              }
+            </div>
+            <div class="rounded-2xl border border-outline-variant/40 p-4 space-y-2">
+              <h3 class="font-bold text-body-md">Historial de la prueba</h3>
+              <p class="text-body-sm text-on-surface-variant">Inicio: {{ formatDate(clinic.plan.trialStartedAt) }}<br>Fin: {{ formatDate(clinic.plan.trialEndsAt) }}</p>
+              @if (clinic.plan.plan === 'TRIAL') { <p class="text-body-sm font-semibold">{{ clinic.plan.daysRemaining }} d&iacute;as restantes, seg&uacute;n el servidor.</p> }
+              <p class="text-label-sm text-on-surface-variant">Hora de Lima. Las fechas hist&oacute;ricas se conservan y no se pueden editar.</p>
+            </div>
+          </section>
+
+          <section class="glass-card rounded-3xl p-5 sm:p-7 space-y-5" aria-labelledby="change-title" [attr.aria-busy]="saving()">
+            <div><h2 id="change-title" class="text-title-lg font-bold">Aplicar un cambio</h2><p class="text-body-sm text-on-surface-variant">Una operaci&oacute;n a la vez. Seleccionar una opci&oacute;n no guarda cambios.</p></div>
+            <div class="flex gap-2" role="group" aria-label="Tipo de cambio"><button type="button" class="btn flex-1" [class.btn-primary]="operation() === 'plan'" [class.btn-ghost]="operation() !== 'plan'" [attr.aria-pressed]="operation() === 'plan'" [disabled]="saving()" (click)="setOperation('plan')">Cambiar plan</button><button type="button" class="btn flex-1" [class.btn-primary]="operation() === 'estado'" [class.btn-ghost]="operation() !== 'estado'" [attr.aria-pressed]="operation() === 'estado'" [disabled]="saving()" (click)="setOperation('estado')">Cambiar estado</button></div>
+            <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+              @if (operation() === 'plan') {
+                <div><label for="target-plan" class="block text-label-md mb-2">Plan de destino</label><select id="target-plan" class="select w-full" formControlName="plan"><option value="CONSULTORIO">CONSULTORIO · 2 personal / 500 mascotas</option><option value="PRO">PRO · 5 personal / 2500 mascotas</option></select></div>
+                <div class="rounded-xl bg-primary-container/30 p-4 text-body-sm space-y-2 text-on-surface-variant"><p>Una reducci&oacute;n de capacidad se rechaza con 409 si el uso supera los l&iacute;mites de destino. No se borran registros.</p><p>TRIAL → PRO conserva la misma capacidad y se permite aunque el uso heredado ya supere los l&iacute;mites (grandfathering).</p><p class="font-semibold text-on-surface">Cambiar el plan no suspende ni reactiva la cl&iacute;nica autom&aacute;ticamente.</p></div>
+              } @else {
+                <div><label for="target-estado" class="block text-label-md mb-2">Estado de destino</label><select id="target-estado" class="select w-full" formControlName="estado"><option value="ACTIVA">ACTIVA</option><option value="SUSPENDIDA">SUSPENDIDA</option></select></div>
+                <p class="text-body-sm text-on-surface-variant">La suspensi&oacute;n restringe la escritura sin eliminar datos. Reactivar no cambia el plan ni su vencimiento; puede seguir en modo solo lectura.</p>
+              }
+              <div><label for="change-reason" class="block text-label-md mb-2">Motivo obligatorio</label><textarea id="change-reason" class="textarea w-full" rows="3" formControlName="reason" placeholder="Describe el motivo de esta operaci&oacute;n..." aria-describedby="reason-help" [attr.aria-invalid]="form.controls.reason.touched && form.controls.reason.invalid"></textarea><p id="reason-help" class="text-label-sm text-on-surface-variant mt-1">{{ form.controls.reason.value.trim().length }}/500 caracteres. Entre 5 y 500, sin espacios al inicio o al final.</p>@if (form.controls.reason.touched && form.controls.reason.invalid) { <p class="text-error text-body-sm mt-1" role="alert">Escribe un motivo de 5 a 500 caracteres &uacute;tiles.</p> }</div>
+              @if (!hasChange()) { <p class="text-body-sm text-on-surface-variant">El destino coincide con el valor actual. Elige uno diferente para continuar.</p> }
+              <div class="rounded-xl border border-outline-variant/30 p-4 text-body-sm"><span class="font-bold">Confirmaci&oacute;n:</span> {{ clinic.nombre }} (#{{ clinic.id }}) · {{ operation() === 'plan' ? clinic.plan.plan + ' → ' + form.controls.plan.value : clinic.estado + ' → ' + form.controls.estado.value }}</div>
+              @if (mutationError()) { <div class="alert alert-error" role="alert">{{ mutationError() }}</div> }
+              @if (success()) { <div class="alert bg-success/10 text-success" role="status">{{ success() }}</div> }
+              <button type="submit" class="btn btn-primary w-full" [disabled]="saving() || form.invalid || !hasChange()">@if (saving()) { <span class="loading loading-spinner loading-sm"></span>Guardando... } @else { <span class="material-symbols-outlined text-[20px]" aria-hidden="true">check</span>Confirmar cambio de {{ operation() === 'plan' ? 'plan' : 'estado' }} }</button>
+              <p class="text-label-sm text-on-surface-variant">Sin pagos, renovaciones de prueba ni edici&oacute;n del vencimiento.</p>
+            </form>
+          </section>
+
+          <section class="glass-card rounded-3xl p-5 sm:p-7 space-y-4" aria-labelledby="audit-title" [attr.aria-busy]="auditLoading()">
+            <div class="flex items-center justify-between gap-3"><div><h2 id="audit-title" class="text-title-lg font-bold">Auditor&iacute;a</h2><p class="text-body-sm text-on-surface-variant">Historial de cambios de esta cl&iacute;nica</p></div><button type="button" class="btn btn-sm btn-ghost" [disabled]="auditLoading() || saving()" (click)="loadAudit()" aria-label="Actualizar auditor&iacute;a"><span class="material-symbols-outlined" aria-hidden="true">refresh</span></button></div>
+            @if (auditLoading()) { <p class="text-body-sm text-on-surface-variant" role="status">Cargando historial...</p> }
+            @if (auditError()) { <div class="space-y-2"><p class="text-error text-body-sm" role="alert">{{ auditError() }}</p><button type="button" class="btn btn-ghost btn-sm" (click)="loadAudit()">Reintentar</button></div> }
+            @if (audit(); as history) {
+              <ol class="space-y-3">
+                @for (entry of history.items; track entry.id) {
+                  <li class="rounded-2xl border border-outline-variant/30 p-4 space-y-2 text-body-sm">
+                    <div class="flex flex-wrap justify-between gap-2"><span class="font-bold break-all">{{ entry.action }}</span><span class="text-label-sm text-on-surface-variant">#{{ entry.id }} · {{ formatDate(entry.createdAt) }}</span></div>
+                    <p class="break-all text-on-surface-variant">{{ entry.actorEmail }} · Actor #{{ entry.actorId }}</p>
+                    @if (entry.previousPlan || entry.newPlan) { <p><span class="text-on-surface-variant">Plan:</span> {{ entry.previousPlan || 'No disponible' }} → {{ entry.newPlan || 'No disponible' }}</p> }
+                    @if (entry.previousEstado || entry.newEstado) { <p><span class="text-on-surface-variant">Estado:</span> {{ entry.previousEstado || 'No disponible' }} → {{ entry.newEstado || 'No disponible' }}</p> }
+                    <p class="whitespace-pre-wrap break-words bg-surface-container-low rounded-xl p-3">{{ entry.reason }}</p>
+                  </li>
+                } @empty { <li class="text-body-sm text-on-surface-variant">Esta cl&iacute;nica todav&iacute;a no tiene cambios registrados.</li> }
+              </ol>
+              <nav class="flex flex-wrap items-center justify-between gap-2 pt-2" aria-label="Paginacion de auditoria"><p class="text-body-sm text-on-surface-variant">P&aacute;gina {{ history.totalPages ? history.page + 1 : 0 }} de {{ history.totalPages }} · {{ history.totalElements }} registros</p><div class="flex gap-1"><button type="button" class="btn btn-sm btn-ghost" [disabled]="history.page === 0 || saving()" (click)="loadAudit(history.page - 1)">Anterior</button><button type="button" class="btn btn-sm btn-ghost" [disabled]="history.page + 1 >= history.totalPages || saving()" (click)="loadAudit(history.page + 1)">Siguiente</button></div></nav>
+            }
+          </section>
+        } @else {
+          <section class="glass-card rounded-3xl p-8 sm:p-12 space-y-4 text-center">
+            <span class="inline-flex rounded-3xl p-5 bg-primary-container/40 text-primary"><span class="material-symbols-outlined text-[40px]" aria-hidden="true">domain</span></span>
+            <h2 class="text-headline-md font-extrabold">Una vista clara de cada cl&iacute;nica</h2>
+            <p class="text-body-md text-on-surface-variant max-w-md mx-auto">Selecciona una cl&iacute;nica del directorio para consultar su uso, administrar el plan o el estado y revisar su auditor&iacute;a.</p>
+            <p class="text-body-sm text-on-surface-variant max-w-md mx-auto">Este panel no accede a pacientes, citas ni notificaciones cl&iacute;nicas. Los datos existentes y las fechas de prueba se conservan.</p>
+          </section>
+        }
+      </div>
+    </div>
+  </main>
+</div>

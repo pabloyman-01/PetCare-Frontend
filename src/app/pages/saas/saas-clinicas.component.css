@@ -1,0 +1,18 @@
+:host { display: block; }
+.operator-shell { background-image: radial-gradient(ellipse at 85% 0%, #dbe7ff80, transparent 45%); }
+.workspace-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+.profile-card { position: absolute; right: 0; top: calc(100% + .75rem); width: min(19rem, 85vw); z-index: 20; background: #fff; }
+.clinic-list { max-height: 760px; overflow-y: auto; }
+.clinic-row { transition: background-color .15s; border-left: 3px solid transparent; }
+.clinic-row:hover { background: #edf3ff; }
+.selected-row { background: #e5edff; border-left-color: #004ac6; }
+progress { appearance: none; border: 0; border-radius: 1rem; overflow: hidden; background: #dbe4f5; }
+progress::-webkit-progress-bar { background: #dbe4f5; }
+progress::-webkit-progress-value { background: #004ac6; }
+progress::-moz-progress-bar { background: #004ac6; }
+progress.over-limit::-webkit-progress-value { background: #ba1a1a; }
+progress.over-limit::-moz-progress-bar { background: #ba1a1a; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid #004ac6; outline-offset: 3px; }
+@media (min-width: 1024px) { .workspace-grid { grid-template-columns: minmax(320px, .85fr) minmax(0, 1.3fr); align-items: start; } }
+@media (max-width: 639px) { .clinic-list { max-height: 440px; } .profile-card { right: -4rem; } }

@@ -12,6 +12,7 @@ import {
   UserResponse
 } from '../models/auth.model';
 import { RegisterClinicRequest } from '../models/clinica.model';
+import { OPERATOR_ROLE, sessionHome } from '../guards/session-policy';
 
 export const API_URL = environment.apiUrl;
 
@@ -26,6 +27,8 @@ export class AuthService {
   isAuthenticated = computed(() => !!this._session());
   user = computed(() => this._session()?.user ?? null);
   roles = computed(() => this._session()?.user?.roles ?? []);
+  isSaasOperator = computed(() => this.roles().includes(OPERATOR_ROLE));
+  homeUrl = computed(() => sessionHome(this.roles(), this.mustChangePassword()));
 
   isAdmin = computed(() => this.roles().includes('ROLE_ADMIN'));
   isVeterinario = computed(() => this.roles().includes('ROLE_VETERINARIO'));

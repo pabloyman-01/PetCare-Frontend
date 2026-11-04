@@ -1,9 +1,16 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { RedirectFunction, Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { RoleGuard } from './core/guards/role.guard';
+import { AuthService } from './core/services/auth.service';
+
+const sessionRedirect: RedirectFunction = () => {
+  const auth = inject(AuthService);
+  return auth.isAuthenticated() ? auth.homeUrl() : '/auth';
+};
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
+  { path: '', redirectTo: sessionRedirect, pathMatch: 'full' },
 
   // Auth
   {
@@ -44,11 +51,19 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/public/plans/plans.component').then(m => m.PlansComponent)
   },
 
-  // Protected routes
+  {
+    path: 'saas/clinicas',
+    loadComponent: () => import('./pages/saas/saas-clinicas.component').then(m => m.SaasClinicasComponent),
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['ROLE_SAAS_OPERATOR'] }
+  },
+
+  // The operator must be rejected before MainLayout starts clinical polling.
   {
     path: '',
     loadComponent: () => import('./layouts/main-layout/main-layout.component').then(m => m.MainLayoutComponent),
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, RoleGuard],
+    canActivateChild: [RoleGuard],
     children: [
       { path: 'dashboard', loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
       { path: 'duenios', loadComponent: () => import('./pages/duenios/duenios.component').then(m => m.DueniosComponent) },
@@ -75,5 +90,5 @@ export const routes: Routes = [
     ]
   },
 
-  { path: '**', redirectTo: '/dashboard' }
+  { path: '**', redirectTo: sessionRedirect }
 ];
