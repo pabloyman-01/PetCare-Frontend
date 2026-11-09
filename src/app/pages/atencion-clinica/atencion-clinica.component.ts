@@ -1,15 +1,22 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, signal, computed, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule, FormBuilder, Validators, ValidatorFn } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CitaService } from '../../core/services/cita.service';
 import { AtencionClinicaService } from '../../core/services/atencion-clinica.service';
 import { AuthService } from '../../core/services/auth.service';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { CitaResponse } from '../../core/models/cita.model';
-import { AtencionClinicaRequest, AtencionClinicaResponse, HistoriaClinicaResponse } from '../../core/models/atencion-clinica.model';
+import { AtencionClinicaRequest, HistoriaClinicaResponse } from '../../core/models/atencion-clinica.model';
 import { EstadoMascota } from '../../core/models/mascota.model';
-import { catchError, EMPTY } from 'rxjs';
+import { defer, finalize, forkJoin, Subscription, take } from 'rxjs';
+
+function vitalValidator(minimum: number, integer = false): ValidatorFn {
+  return ({ value }) => value == null || value === '' ||
+    (typeof value === 'number' && Number.isFinite(value) && value >= minimum && value > 0 && (!integer || Number.isInteger(value)))
+    ? null : { vital: true };
+}
 
 interface MedicationRow {
   medicamento: string;
@@ -44,6 +51,11 @@ interface MedicationRow {
       </div>
     </div>
 
+    @if (loadError()) {
+      <div role="alert" class="text-error text-body-sm">
+        {{ loadError() }} <button type="button" class="underline" (click)="loadCitas()">Reintentar</button>
+      </div>
+    }
     @if (loading()) {
       <app-loading-spinner message="Cargando citas..." />
     } @else {
@@ -122,7 +134,7 @@ interface MedicationRow {
                 <div class="min-w-0">
                   <div class="flex items-center gap-3 flex-wrap">
                     <h3 class="text-headline-md font-bold text-on-surface truncate">{{ selectedCita()!.mascotaNombre }}</h3>
-                    <span class="px-2 py-0.5 bg-secondary-container text-on-secondary-container text-label-sm font-semibold rounded-full">Estable</span>
+                    <span class="px-2 py-0.5 bg-secondary-container text-on-secondary-container text-label-sm font-semibold rounded-full">Cita {{ estadoLabel(selectedCita()!.estado) }}</span>
                   </div>
                   <p class="text-on-surface-variant font-body-sm truncate">Mascota &bull; {{ selectedCita()!.duenioNombreCompleto }}</p>
                   <div class="flex gap-4 mt-2 flex-wrap">
@@ -197,6 +209,7 @@ interface MedicationRow {
                     </button>
                   </div>
                   <div class="p-6">
+                    <p class="text-body-sm text-on-surface-variant mb-4">Los medicamentos se guardan como texto al final del tratamiento. Complete nombre, dosis y frecuencia; las filas vac&iacute;as se omiten.</p>
                     @if (medications().length === 0) {
                       <div class="text-center py-8">
                         <p class="text-on-surface-variant opacity-60 italic">No se han a&ntilde;adido medicamentos a la receta.</p>
@@ -274,6 +287,7 @@ interface MedicationRow {
                     </h4>
                   </div>
                   <div class="p-6 grid grid-cols-1 gap-6">
+                    <p class="text-body-sm text-on-surface-variant">Las constantes vitales se guardan como texto al final de las observaciones cl&iacute;nicas.</p>
                     <!-- Peso -->
                     <div class="flex items-center justify-between p-3 bg-primary/5 rounded-lg border border-primary/10">
                       <div class="flex items-center gap-3">
@@ -282,7 +296,7 @@ interface MedicationRow {
                           <p class="text-[10px] font-bold text-on-surface-variant uppercase">Peso</p>
                           <div class="flex items-baseline gap-1">
                             <input [formControl]="atencionForm.controls.pesoKg"
-                                   class="bg-transparent border-none p-0 w-14 font-headline-md text-headline-md font-bold focus:ring-0" type="number" step="0.1" />
+                                   class="bg-transparent border-none p-0 w-14 font-headline-md text-headline-md font-bold focus:ring-0" type="number" min="0.01" step="0.01" />
                             <span class="text-label-md text-on-surface-variant">kg</span>
                           </div>
                         </div>
@@ -322,7 +336,12 @@ interface MedicationRow {
                 <!-- History Timeline -->
                 <div class="bg-surface-container border border-outline-variant rounded-xl p-6 flex flex-col">
                   <h4 class="font-label-md text-label-md text-on-surface mb-4">Resumen de Historial</h4>
-                  @if (historiaClinica() && historiaClinica()!.atenciones.length > 0) {
+                  @if (historyLoading()) {
+                    <p role="status">Cargando historial...</p>
+                  } @else if (historyError()) {
+                    <p role="alert" class="text-error">{{ historyError() }}</p>
+                    <button type="button" class="text-primary underline" (click)="loadHistoriaClinica()">Reintentar historial</button>
+                  } @else if (historiaClinica() && historiaClinica()!.atenciones.length > 0) {
                     <div class="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2 flex-1">
                       @for (a of historiaClinica()!.atenciones; track a.id) {
                         <div class="relative pl-6 border-l-2 border-primary-fixed-dim">
@@ -365,9 +384,17 @@ interface MedicationRow {
             </div>
 
             <!-- Bottom Action Bar -->
+            @if (submitted && atencionForm.invalid) {
+              <div role="alert" class="text-error text-body-sm">
+                @for (message of invalidFields(); track message) { <p>{{ message }}</p> }
+              </div>
+            }
+            @if (submitError()) {
+              <p role="alert" class="text-error text-body-sm">{{ submitError() }}</p>
+            }
             <div class="sticky bottom-0 bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant p-4 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-4 z-30">
               <div class="flex gap-3">
-                <button type="button" (click)="clearSelection()"
+                <button type="button" (click)="clearSelection()" [disabled]="saving()"
                         class="flex items-center gap-2 px-5 py-2.5 bg-surface-container text-on-surface font-label-md rounded-xl hover:bg-surface-container-high transition-all">
                   <span class="material-symbols-outlined">close</span>
                   Cancelar
@@ -400,25 +427,32 @@ export class AtencionClinicaComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
+  private citasSubscription?: Subscription;
+  private historySubscription?: Subscription;
 
   citas = signal<CitaResponse[]>([]);
   loading = signal(true);
   saving = signal(false);
+  loadError = signal('');
+  submitError = signal('');
+  historyError = signal('');
+  historyLoading = signal(false);
   submitted = false;
   selectedCita = signal<CitaResponse | null>(null);
   historiaClinica = signal<HistoriaClinicaResponse | null>(null);
   medications = signal<MedicationRow[]>([]);
 
   atencionForm = this.fb.group({
-    motivo: ['', Validators.required],
-    diagnostico: ['', Validators.required],
-    tratamiento: ['', Validators.required],
-    recomendaciones: [''],
-    observacionesClinicas: [''],
-    notasInternas: [''],
-    pesoKg: [null as number | null],
-    temperatura: [null as number | null],
-    frecuenciaCardiaca: [null as number | null],
+    motivo: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(250)]],
+    diagnostico: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(1000)]],
+    tratamiento: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(1000)]],
+    recomendaciones: ['', Validators.maxLength(1000)],
+    observacionesClinicas: ['', Validators.maxLength(1000)],
+    notasInternas: ['', Validators.maxLength(1000)],
+    pesoKg: [null as number | null, vitalValidator(0.01)],
+    temperatura: [null as number | null, vitalValidator(0)],
+    frecuenciaCardiaca: [null as number | null, vitalValidator(1, true)],
     estadoMascota: ['', Validators.required],
   });
 
@@ -427,63 +461,61 @@ export class AtencionClinicaComponent implements OnInit {
   );
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe(params => {
-      if (params['citaId']) {
-        this.citaService.findById(Number(params['citaId'])).pipe(catchError(() => EMPTY)).subscribe({
-          next: (cita) => {
-            if (cita.estado === 'PROGRAMADA' || cita.estado === 'CONFIRMADA') {
-              this.loadCitas(Number(params['citaId']));
-            } else {
-              this.loadCitas();
-            }
-          },
-          error: () => this.loadCitas(),
-        });
-      } else {
-        this.loadCitas();
-      }
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      this.loadCitas(Number(params['citaId']) || undefined);
     });
   }
 
-  private loadCitas(preselectedId?: number): void {
+  loadCitas(preselectedId?: number): void {
+    this.citasSubscription?.unsubscribe();
     this.loading.set(true);
-    this.citaService.findAll({ estado: 'PROGRAMADA' }).pipe(catchError(() => EMPTY)).subscribe({
-      next: (programadas) => {
-        this.citaService.findAll({ estado: 'CONFIRMADA' }).pipe(catchError(() => EMPTY)).subscribe({
-          next: (confirmadas) => {
-            this.citas.set([...programadas, ...confirmadas]);
-            this.loading.set(false);
-            if (preselectedId) {
-              const found = this.citas().find(c => c.id === preselectedId);
-              if (found) this.selectCita(found);
-            }
-          },
-          error: () => this.loading.set(false),
-        });
+    this.loadError.set('');
+    this.citasSubscription = forkJoin([
+      this.citaService.findAll({ estado: 'PROGRAMADA' }),
+      this.citaService.findAll({ estado: 'CONFIRMADA' }),
+    ]).pipe(finalize(() => this.loading.set(false)), takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: ([programadas, confirmadas]) => {
+        this.citas.set([...programadas, ...confirmadas]);
+        const found = this.citas().find(c => c.id === preselectedId);
+        if (found) this.selectCita(found);
       },
-      error: () => this.loading.set(false),
+      error: () => this.loadError.set('No se pudieron cargar las citas pendientes.'),
     });
   }
 
   selectCita(cita: CitaResponse): void {
+    if (this.saving()) return;
     this.selectedCita.set(cita);
     this.submitted = false;
     this.atencionForm.reset();
     this.medications.set([]);
+    this.submitError.set('');
     this.loadHistoriaClinica(cita.mascotaId);
   }
 
   clearSelection(): void {
+    if (this.saving()) return;
+    this.historySubscription?.unsubscribe();
     this.selectedCita.set(null);
     this.atencionForm.reset();
     this.submitted = false;
     this.medications.set([]);
     this.historiaClinica.set(null);
+    this.historyError.set('');
+    this.submitError.set('');
   }
 
-  private loadHistoriaClinica(mascotaId: number): void {
-    this.atencionClinicaService.findHistoriaClinica(mascotaId).pipe(catchError(() => EMPTY)).subscribe({
+  loadHistoriaClinica(mascotaId = this.selectedCita()?.mascotaId): void {
+    this.historySubscription?.unsubscribe();
+    this.historiaClinica.set(null);
+    this.historyError.set('');
+    if (!mascotaId) return;
+    this.historyLoading.set(true);
+    this.historySubscription = this.atencionClinicaService.findHistoriaClinica(mascotaId).pipe(
+      finalize(() => this.historyLoading.set(false)), takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: (historia) => this.historiaClinica.set(historia),
+      error: () => this.historyError.set('No se pudo cargar el historial de esta mascota.'),
     });
   }
 
@@ -504,31 +536,75 @@ export class AtencionClinicaComponent implements OnInit {
   }
 
   onSubmit(): void {
+    if (this.saving()) return;
     this.submitted = true;
+    this.submitError.set('');
+    this.atencionForm.markAllAsTouched();
     if (this.atencionForm.invalid) return;
 
     const cita = this.selectedCita();
     if (!cita) return;
 
-    this.saving.set(true);
     const formValue = this.atencionForm.value;
+    const medications = this.medications().map(m => ({
+      medicamento: m.medicamento.trim(), dosis: m.dosis.trim(), frecuencia: m.frecuencia.trim(),
+    })).filter(m => m.medicamento || m.dosis || m.frecuencia);
+    if (medications.some(m => !m.medicamento || !m.dosis || !m.frecuencia)) {
+      this.submitError.set('Complete nombre, dosis y frecuencia de cada medicamento o deje la fila totalmente vacia.');
+      return;
+    }
+    const tratamiento = formValue.tratamiento! + (medications.length ? '\n\nMedicamentos:\n' + medications.map(m =>
+      `- ${m.medicamento}; Dosis: ${m.dosis}; Frecuencia: ${m.frecuencia}`
+    ).join('\n') : '');
+    const vitals: string[] = [];
+    if (formValue.pesoKg != null) vitals.push(`Peso: ${formValue.pesoKg} kg`);
+    if (formValue.temperatura != null) vitals.push(`Temperatura: ${formValue.temperatura} \u00b0C`);
+    if (formValue.frecuenciaCardiaca != null) vitals.push(`Frecuencia cardiaca: ${formValue.frecuenciaCardiaca} lpm`);
+    const observations = formValue.observacionesClinicas || '';
+    const observacionesClinicas = observations + (vitals.length ? (observations ? '\n\n' : '') + 'Constantes vitales:\n' + vitals.join('\n') : '');
+    if (tratamiento.length > 1000 || observacionesClinicas.length > 1000) {
+      this.submitError.set('El tratamiento con medicamentos y las observaciones con constantes vitales no pueden superar 1000 caracteres cada uno. Reduzca el texto antes de guardar.');
+      return;
+    }
     const req: AtencionClinicaRequest = {
       motivo: formValue.motivo!,
       diagnostico: formValue.diagnostico!,
-      tratamiento: formValue.tratamiento!,
+      tratamiento,
       recomendaciones: formValue.recomendaciones || undefined,
-      observacionesClinicas: formValue.observacionesClinicas || undefined,
+      observacionesClinicas: observacionesClinicas || undefined,
       notasInternas: formValue.notasInternas || undefined,
       estadoMascota: formValue.estadoMascota as EstadoMascota,
     };
 
-    this.atencionClinicaService.register(cita.id, req).subscribe({
+    this.saving.set(true);
+    defer(() => this.atencionClinicaService.register(cita.id, req)).pipe(
+      take(1), finalize(() => this.saving.set(false)), takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
       next: () => {
         this.saving.set(false);
-        this.selectedCita.set(null);
+        this.clearSelection();
         this.loadCitas();
       },
-      error: () => this.saving.set(false),
+      error: (err) => this.submitError.set(err.status === 403
+        ? 'No tiene permiso para guardar esta atencion (403). Los datos se conservan.'
+        : err.status === 0 ? 'Sin conexion con el servidor. Los datos se conservan; reintente guardar.'
+        : 'No se pudo guardar la atencion' + (err.status ? ` (${err.status})` : '') + '. Revise los datos y reintente; los valores se conservan.'),
     });
+  }
+
+  invalidFields(): string[] {
+    const messages: Record<string, string> = {
+      motivo: 'Motivo: obligatorio, maximo 250 caracteres.',
+      diagnostico: 'Diagnostico: obligatorio, maximo 1000 caracteres.',
+      tratamiento: 'Tratamiento: obligatorio, maximo 1000 caracteres incluyendo medicamentos.',
+      recomendaciones: 'Recomendaciones: maximo 1000 caracteres.',
+      observacionesClinicas: 'Observaciones clinicas: maximo 1000 caracteres incluyendo constantes vitales.',
+      notasInternas: 'Notas internas: maximo 1000 caracteres.',
+      pesoKg: 'Peso: ingrese un numero finito de al menos 0.01 kg o deje vacio.',
+      temperatura: 'Temperatura: ingrese un numero finito mayor que 0 en grados C o deje vacio.',
+      frecuenciaCardiaca: 'Frecuencia cardiaca: ingrese un entero positivo en lpm o deje vacio.',
+      estadoMascota: 'Seleccione el estado actual de la mascota.',
+    };
+    return Object.entries(this.atencionForm.controls).filter(([, control]) => control.invalid).map(([key]) => messages[key]);
   }
 }

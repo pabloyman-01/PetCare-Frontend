@@ -126,6 +126,24 @@ validacion, concurrencia y limpieza de suscripciones. No sustituyen una prueba
 de extremo a extremo contra un backend con operador provisionado; la autorizacion,
 los limites y la persistencia de auditoria siempre se validan en el servidor.
 
+## Clinical Pilot Regression
+
+Appointment and attention failures are visible and retain entered values.
+Medication rows are persisted as labeled text in `tratamiento`; vital signs are
+persisted in `observacionesClinicas`, not as separate structured records. Both
+composed fields respect the backend's existing 1000-character limits.
+Owner/admin profile edits use real authorized API writes; veterinarian/assistant
+self-profiles are explicitly read-only. Staff user edits include the required
+phone number and preserve unchanged roles.
+
+```sh
+node --test tests/clinical-pilot.test.cjs tests/saas.test.cjs
+npm run build:render
+```
+
+The complete real-browser/local-PostgreSQL pilot and backend rollout requirements
+are documented in the backend repository at `scripts/pilot-readiness.md`.
+
 ## Instalación y ejecución
 
 ```bash

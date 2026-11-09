@@ -1,4 +1,5 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, signal, computed, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { UsuarioService } from '../../core/services/usuario.service';
@@ -7,7 +8,7 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { UsuarioResponse } from '../../core/models/usuario.model';
-import { catchError, EMPTY } from 'rxjs';
+import { defer, finalize, of, switchMap, take } from 'rxjs';
 
 const ROLE_LABELS: Record<string, string> = {
   ROLE_ADMIN: 'Admin',
@@ -112,6 +113,9 @@ const ALL_ROLES = ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_ASISTENTE', 'ROLE_DUE
             </button>
           </div>
         </div>
+        @if (pageError()) {
+          <p role="alert" class="text-error p-4">{{ pageError() }} <button type="button" class="underline" (click)="loadUsuarios()">Reintentar carga</button></p>
+        }
         @if (loading()) {
           <app-loading-spinner message="Cargando usuarios..." />
         } @else if (filteredUsuarios().length === 0) {
@@ -300,23 +304,31 @@ const ALL_ROLES = ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_ASISTENTE', 'ROLE_DUE
               </div>
               <label class="text-label-sm font-semibold text-on-surface-variant">Email</label>
               <input type="email" formControlName="email" placeholder="correo@ejemplo.com" class="input input-bordered w-full" />
+              @if (editingUser()) {
+                <label class="text-label-sm font-semibold text-on-surface-variant">Tel&eacute;fono</label>
+                <input type="tel" formControlName="telefono" class="input input-bordered w-full" />
+                <p class="text-body-sm text-on-surface-variant">Obligatorio: 8 a 20 caracteres; solo n&uacute;meros, espacios, + y guiones.</p>
+              }
               <label class="text-label-sm font-semibold text-on-surface-variant">Rol</label>
               <div class="grid grid-cols-2 gap-2">
-                @for (role of internalRoles; track role) {
+                @for (role of editingUser() ? allRoles : internalRoles; track role) {
                   <div class="flex items-center gap-2 p-2.5 rounded-lg border border-outline-variant/20 cursor-pointer hover:bg-surface-container-low transition-all"
-                       [ngClass]="{'border-primary': formRole() === role, 'bg-primary/5': formRole() === role}"
-                       (click)="formRole.set(role)">
+                       [ngClass]="{'border-primary': editingUser() ? selectedRoles().includes(role) : formRole() === role, 'bg-primary/5': editingUser() ? selectedRoles().includes(role) : formRole() === role}"
+                       (click)="editingUser() ? toggleRole(role) : formRole.set(role)">
                     <span>{{ roleLabel(role) }}</span>
                   </div>
                 }
               </div>
-              @if (submitted && !formRole()) {
+              @if (submitted && (editingUser() ? selectedRoles().length === 0 : !formRole())) {
                 <p class="text-label-sm text-error">Seleccione un rol</p>
+              }
+              @if (submitted && userForm.invalid) {
+                <p role="alert" class="text-label-sm text-error">Revise nombres, apellidos y email. En edici&oacute;n, el tel&eacute;fono es obligatorio y debe cumplir el formato indicado.</p>
               }
               @if (submitError()) {
                 <div class="p-4 rounded-xl bg-error-container/20 border border-error/20 flex items-center gap-3">
                   <span class="material-symbols-outlined text-error">error</span>
-                  <p class="text-label-sm text-error font-semibold">{{ submitError() }}</p>
+                  <p role="alert" class="text-label-sm text-error font-semibold">{{ submitError() }}</p>
                 </div>
               }
               <div class="flex justify-end gap-3 pt-4 border-t border-outline-variant/20">
@@ -336,14 +348,14 @@ const ALL_ROLES = ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_ASISTENTE', 'ROLE_DUE
 
     <!-- Roles Editor Modal -->
     @if (showRolesEditor() && editRolesUser()) {
-      <div class="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4" (click)="showRolesEditor.set(false)">
+      <div class="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4" (click)="closeRolesEditor()">
         <div class="bg-surface-container-lowest rounded-2xl shadow-xl max-w-md w-full p-6" (click)="$event.stopPropagation()">
           <div class="flex items-center justify-between mb-6">
             <div>
               <h3 class="text-headline-md font-bold text-on-surface">Editar Roles</h3>
               <p class="text-body-sm text-on-surface-variant mt-0.5">{{ editRolesUser()!.fullName }}</p>
             </div>
-            <button (click)="showRolesEditor.set(false)" class="btn btn-ghost btn-square btn-sm">
+            <button (click)="closeRolesEditor()" class="btn btn-ghost btn-square btn-sm">
               <span class="material-symbols-outlined">close</span>
             </button>
           </div>
@@ -364,8 +376,9 @@ const ALL_ROLES = ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_ASISTENTE', 'ROLE_DUE
               </div>
             }
           </div>
+          @if (rolesError()) { <p role="alert" class="text-error text-body-sm mt-4">{{ rolesError() }}</p> }
           <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-outline-variant/20">
-            <button type="button" (click)="showRolesEditor.set(false)" class="btn btn-ghost">Cancelar</button>
+            <button type="button" (click)="closeRolesEditor()" class="btn btn-ghost">Cancelar</button>
             <button type="button" (click)="saveRoles()" [disabled]="savingRoles()"
                     class="btn btn-primary">
               @if (savingRoles()) {
@@ -396,6 +409,7 @@ export class UsuariosComponent implements OnInit {
   private usuarioService = inject(UsuarioService);
   protected auth = inject(AuthService);
   private fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected allRoles = ALL_ROLES;
   protected internalRoles = ['ROLE_VETERINARIO', 'ROLE_ASISTENTE', 'ROLE_DUENIO'];
@@ -433,6 +447,8 @@ export class UsuariosComponent implements OnInit {
   selectedRoles = signal<string[]>([]);
 
   submitError = signal('');
+  pageError = signal('');
+  rolesError = signal('');
 
   showConfirmDialog = signal(false);
   confirmAction = signal<(() => void) | null>(null);
@@ -440,9 +456,10 @@ export class UsuariosComponent implements OnInit {
   confirmMessage = signal('');
 
   userForm = this.fb.group({
-    nombres: ['', Validators.required],
-    apellidos: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
+    nombres: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(60)]],
+    apellidos: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(60)]],
+    email: ['', [Validators.required, Validators.email, Validators.maxLength(120)]],
+    telefono: [''],
   });
 
   filteredUsuarios = computed(() => {
@@ -468,14 +485,14 @@ export class UsuariosComponent implements OnInit {
     this.loadUsuarios();
   }
 
-  private loadUsuarios(): void {
+  loadUsuarios(): void {
     this.loading.set(true);
-    this.usuarioService.findAll().pipe(catchError(() => EMPTY)).subscribe({
+    this.pageError.set('');
+    this.usuarioService.findAll().pipe(finalize(() => this.loading.set(false)), takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.usuarios.set(data);
-        this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: (err) => this.pageError.set(this.requestError(err)),
     });
   }
 
@@ -526,21 +543,28 @@ export class UsuariosComponent implements OnInit {
   }
 
   toggleRole(role: string): void {
+    if (this.saving()) return;
     this.selectedRoles.update(roles =>
       roles.includes(role) ? roles.filter(r => r !== role) : [...roles, role]
     );
   }
 
   toggleEditRole(role: string): void {
+    if (this.savingRoles()) return;
     this.editRolesSelected.update(roles =>
       roles.includes(role) ? roles.filter(r => r !== role) : [...roles, role]
     );
   }
 
   openCreate(): void {
+    if (this.saving()) return;
     this.editingUser.set(null);
-    this.userForm.reset({ nombres: '', apellidos: '', email: '' });
+    this.userForm.controls.nombres.setValidators([Validators.required, Validators.pattern(/\S/), Validators.maxLength(60)]);
+    this.userForm.controls.apellidos.setValidators([Validators.required, Validators.pattern(/\S/), Validators.maxLength(60)]);
+    this.userForm.controls.telefono.clearValidators();
+    this.userForm.reset({ nombres: '', apellidos: '', email: '', telefono: '' });
     this.formRole.set('');
+    this.selectedRoles.set([]);
     this.temporaryPassword.set('');
     this.submitError.set('');
     this.submitted = false;
@@ -548,18 +572,28 @@ export class UsuariosComponent implements OnInit {
   }
 
   openEdit(u: UsuarioResponse): void {
+    if (this.saving()) return;
     this.editingUser.set(u);
-    this.userForm.patchValue({
-      nombres: '',
-      apellidos: '',
+    const [nombres, ...apellidos] = u.fullName.trim().split(/\s+/);
+    this.userForm.controls.nombres.setValidators([Validators.required, Validators.pattern(/\S/), Validators.maxLength(120)]);
+    this.userForm.controls.apellidos.setValidators([Validators.maxLength(120)]);
+    this.userForm.controls.telefono.setValidators([Validators.required, Validators.pattern(/\S/), Validators.minLength(8), Validators.maxLength(20), Validators.pattern(/^[+\d\s-]+$/)]);
+    this.userForm.reset({
+      nombres,
+      apellidos: apellidos.join(' '),
       email: u.email,
+      telefono: (u as UsuarioResponse & { telefono?: string }).telefono || '',
     });
     this.selectedRoles.set([...u.roles]);
+    this.formRole.set('');
+    this.temporaryPassword.set('');
+    this.submitError.set('');
     this.submitted = false;
     this.showForm.set(true);
   }
 
   closeForm(): void {
+    if (this.saving()) return;
     this.showForm.set(false);
     this.editingUser.set(null);
     this.submitted = false;
@@ -574,83 +608,88 @@ export class UsuariosComponent implements OnInit {
   }
 
   onSubmit(): void {
+    if (this.saving()) return;
     this.submitted = true;
-    console.log('onSubmit - form valid:', this.userForm.valid, 'values:', this.userForm.value, 'formRole:', this.formRole(), 'editing:', this.editingUser()?.id);
-    if (this.userForm.invalid) { console.log('form invalid'); return; }
-
+    this.submitError.set('');
+    this.userForm.markAllAsTouched();
+    if (this.userForm.invalid) return;
+    const user = this.editingUser();
     const role = this.formRole();
-    if (!role) { console.log('no role selected'); return; }
-
-    this.saving.set(true);
-
+    if (user ? this.selectedRoles().length === 0 : !role) return;
     const formValue = this.userForm.value;
-    const userId = this.editingUser()?.id;
-
-    if (userId) {
-      this.usuarioService.update(userId, {
-        fullName: (formValue.nombres + ' ' + formValue.apellidos).trim(),
+    const fullName = (formValue.nombres!.trim() + ' ' + formValue.apellidos!.trim()).trim();
+    if (fullName.length > 120) {
+      this.submitError.set('El nombre completo admite hasta 120 caracteres.');
+      return;
+    }
+    this.saving.set(true);
+    if (user) {
+      const req = {
+        fullName,
         email: formValue.email!,
-      }).pipe(catchError(() => EMPTY)).subscribe({
+        telefono: formValue.telefono!,
+      };
+      const roles = [...this.selectedRoles()];
+      const rolesChanged = roles.length !== user.roles.length || roles.some(role => !user.roles.includes(role));
+      let detailsSaved = false;
+      defer(() => this.usuarioService.update(user.id, req)).pipe(
+        take(1), switchMap(updated => {
+          detailsSaved = true;
+          return rolesChanged ? this.usuarioService.updateRoles(user.id, { roles }).pipe(take(1)) : of(updated);
+        }), finalize(() => this.saving.set(false)), takeUntilDestroyed(this.destroyRef)
+      ).subscribe({
         next: () => {
-          if (this.selectedRoles().length > 0) {
-            this.usuarioService.updateRoles(userId, { roles: this.selectedRoles() })
-              .pipe(catchError(() => EMPTY)).subscribe({
-                next: () => {
-                  this.saving.set(false);
-                  this.closeForm();
-                  this.loadUsuarios();
-                },
-                error: () => this.saving.set(false),
-              });
-          } else {
-            this.saving.set(false);
-            this.closeForm();
-            this.loadUsuarios();
-          }
+          this.saving.set(false);
+          this.closeForm();
+          this.loadUsuarios();
         },
-        error: () => this.saving.set(false),
+        error: (err) => this.submitError.set((detailsSaved ? 'Los datos se guardaron, pero no los roles. ' : '') + this.requestError(err)),
       });
     } else {
       const roleStr = role.replace('ROLE_', '');
-      this.auth.createInternalUser({
+      defer(() => this.auth.createInternalUser({
         nombres: formValue.nombres!,
         apellidos: formValue.apellidos!,
         email: formValue.email!,
         rol: roleStr,
-      }).subscribe({
+      })).pipe(take(1), finalize(() => this.saving.set(false)), takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (resp) => {
-          this.saving.set(false);
           this.temporaryPassword.set(resp.temporaryPassword);
         },
-        error: (err) => {
-          this.saving.set(false);
-          console.error('createInternalUser error:', err);
-          const msg = err.error?.message || err.statusText || 'Error al crear el usuario.';
-          this.submitError.set(msg);
-        },
+        error: (err) => this.submitError.set(this.requestError(err)),
       });
     }
   }
 
   openRolesEditor(u: UsuarioResponse): void {
+    if (this.savingRoles()) return;
     this.editRolesUser.set(u);
     this.editRolesSelected.set([...u.roles]);
     this.showRolesEditor.set(true);
+    this.rolesError.set('');
+  }
+
+  closeRolesEditor(): void {
+    if (!this.savingRoles()) this.showRolesEditor.set(false);
   }
 
   saveRoles(): void {
     const user = this.editRolesUser();
-    if (!user) return;
+    if (!user || this.savingRoles()) return;
+    this.rolesError.set('');
+    if (this.editRolesSelected().length === 0) {
+      this.rolesError.set('Seleccione al menos un rol.');
+      return;
+    }
     this.savingRoles.set(true);
-    this.usuarioService.updateRoles(user.id, { roles: this.editRolesSelected() })
-      .pipe(catchError(() => EMPTY)).subscribe({
+    defer(() => this.usuarioService.updateRoles(user.id, { roles: [...this.editRolesSelected()] }))
+      .pipe(take(1), finalize(() => this.savingRoles.set(false)), takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => {
-          this.savingRoles.set(false);
           this.showRolesEditor.set(false);
           this.editRolesUser.set(null);
           this.loadUsuarios();
         },
-        error: () => this.savingRoles.set(false),
+        error: (err) => this.rolesError.set(this.requestError(err)),
       });
   }
 
@@ -669,16 +708,24 @@ export class UsuariosComponent implements OnInit {
   }
 
   toggleActive(u: UsuarioResponse): void {
-    this.usuarioService.toggleActive(u.id).pipe(catchError(() => EMPTY)).subscribe({
+    this.usuarioService.toggleActive(u.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.loadUsuarios(),
+      error: (err) => this.pageError.set(this.requestError(err)),
     });
   }
 
   deleteUsuario(u: UsuarioResponse): void {
     if (confirm(`¿Eliminar usuario "${u.fullName}"? Esta acción no se puede deshacer.`)) {
-      this.usuarioService.delete(u.id).pipe(catchError(() => EMPTY)).subscribe({
+      this.usuarioService.delete(u.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => this.loadUsuarios(),
+        error: (err) => this.pageError.set(this.requestError(err)),
       });
     }
+  }
+
+  private requestError(err: { status?: number }): string {
+    return err.status === 0 ? 'Sin conexion con el servidor. Los valores se conservan; reintente.'
+      : err.status === 403 ? 'No tiene permiso para esta operacion (403). Los valores se conservan.'
+      : 'No se pudo completar la operacion' + (err.status ? ` (${err.status})` : '') + '. Revise los datos y reintente; los valores se conservan.';
   }
 }

@@ -1,4 +1,5 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, signal, computed, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -13,8 +14,8 @@ import { MascotaResponse } from '../../../core/models/mascota.model';
 import { VeterinarioResponse } from '../../../core/models/veterinario.model';
 import { ServicioResponse } from '../../../core/models/servicio.model';
 import { CitaRequest, CostoCitaServicioRequest } from '../../../core/models/cita.model';
-import { CalculoCostoCitaRequest, CalculoCostoCitaResponse } from '../../../core/models/servicio.model';
-import { catchError, EMPTY } from 'rxjs';
+import { CalculoCostoCitaResponse } from '../../../core/models/servicio.model';
+import { defer, finalize, map, Subscription, take } from 'rxjs';
 
 interface ServicioSeleccionado {
   servicioId: number;
@@ -39,6 +40,11 @@ interface ServicioSeleccionado {
       </div>
     </div>
 
+    @for (error of loadErrorEntries(); track error[0]) {
+      <div role="alert" class="text-error text-body-sm">
+        {{ error[1] }} <button type="button" class="underline" (click)="retryLoad(error[0])">Reintentar</button>
+      </div>
+    }
     <!-- Step Indicator -->
     <div class="glass-card rounded-xl p-3">
       <div class="grid grid-cols-8 gap-1">
@@ -168,7 +174,7 @@ interface ServicioSeleccionado {
                       class="select select-bordered w-full">
                 <option [ngValue]="null">Seleccione un veterinario</option>
                 @for (v of veterinarios(); track v.id) {
-                  <option [value]="v.id">{{ v.nombres }} {{ v.apellidos }} - {{ v.especialidad }}</option>
+                  <option [ngValue]="v.id">{{ v.nombres }} {{ v.apellidos }} - {{ v.especialidad }}</option>
                 }
               </select>
             </div>
@@ -221,6 +227,7 @@ interface ServicioSeleccionado {
             <label class="text-label-sm font-semibold text-on-surface-variant">Motivo de la consulta</label>
             <textarea [(ngModel)]="motivo" rows="4" placeholder="Describa el motivo de la consulta..."
                       class="textarea textarea-bordered w-full"></textarea>
+            @if (motivo.length > 250) { <p role="alert" class="text-error">El motivo no puede superar 250 caracteres.</p> }
           </div>
           <div class="space-y-1.5">
             <label class="text-label-sm font-semibold text-on-surface-variant">Duraci&oacute;n (minutos)</label>
@@ -497,6 +504,12 @@ export class CitaCreateComponent implements OnInit {
   private citaService = inject(CitaService);
   protected auth = inject(AuthService);
   private router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  private mascotasSubscription?: Subscription;
+  private slotsSubscription?: Subscription;
+  private costSubscription?: Subscription;
+  loadErrors = signal<Record<string, string>>({});
+  loadErrorEntries = computed(() => Object.entries(this.loadErrors()).filter(([, message]) => !!message));
 
   currentStep = signal(1);
   saving = signal(false);
@@ -565,40 +578,48 @@ export class CitaCreateComponent implements OnInit {
     this.loadDuenios();
     this.loadVeterinarios();
     this.loadServicios();
-    if (this.auth.isDuenioOnly()) {
-      this.duenioService.findOwn().pipe(catchError(() => EMPTY)).subscribe({
-        next: (duenio) => {
-          this.selectedDuenio.set(duenio);
-          this.loadMascotas(duenio.id);
-        },
-      });
-    }
   }
 
   private loadDuenios(): void {
-    this.duenioService.findAll().pipe(catchError(() => EMPTY)).subscribe({
-      next: (data) => { this.duenios.set(data); this.loadingDuenios.set(false); },
-      error: () => this.loadingDuenios.set(false),
+    this.loadingDuenios.set(true);
+    this.setLoadError('duenios', '');
+    const own = this.auth.isDuenioOnly();
+    const request = own ? this.duenioService.findOwn().pipe(map(d => [d])) : this.duenioService.findAll();
+    request.pipe(finalize(() => this.loadingDuenios.set(false)), takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => {
+        this.duenios.set(data);
+        if (own && data[0]) this.selectDuenio(data[0]);
+      },
+      error: () => this.setLoadError('duenios', 'No se pudieron cargar los duenos.'),
     });
   }
 
   private loadVeterinarios(): void {
-    this.veterinarioService.findAll().pipe(catchError(() => EMPTY)).subscribe({
+    this.setLoadError('veterinarios', '');
+    this.veterinarioService.findAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.veterinarios.set(data),
+      error: () => this.setLoadError('veterinarios', 'No se pudieron cargar los veterinarios.'),
     });
   }
 
   private loadServicios(): void {
-    this.servicioService.findAll().pipe(catchError(() => EMPTY)).subscribe({
+    this.setLoadError('servicios', '');
+    this.servicioService.findAll().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.servicios.set(data),
+      error: () => this.setLoadError('servicios', 'No se pudieron cargar los servicios.'),
     });
   }
 
   private loadMascotas(duenioId: number): void {
+    this.mascotasSubscription?.unsubscribe();
+    this.mascotasDelDuenio.set([]);
+    this.setLoadError('mascotas', '');
     this.loadingMascotas.set(true);
-    this.mascotaService.findAll(undefined, duenioId, true).pipe(catchError(() => EMPTY)).subscribe({
-      next: (data) => { this.mascotasDelDuenio.set(data); this.loadingMascotas.set(false); },
-      error: () => this.loadingMascotas.set(false),
+    this.mascotasSubscription = this.mascotaService.findAll(undefined, duenioId, true).pipe(
+      finalize(() => this.loadingMascotas.set(false)), takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: (data) => this.mascotasDelDuenio.set(data),
+      error: () => this.setLoadError('mascotas', 'No se pudieron cargar las mascotas del dueno seleccionado.'),
     });
   }
 
@@ -622,14 +643,18 @@ export class CitaCreateComponent implements OnInit {
   onFechaChange(): void { this.availableSlots.set([]); this.selectedHora.set(''); this.loadDisponibilidad(); }
 
   private loadDisponibilidad(): void {
+    this.slotsSubscription?.unsubscribe();
+    this.availableSlots.set([]);
+    this.selectedHora.set('');
+    this.setLoadError('horarios', '');
     const vetId = this.selectedVeterinarioId();
     const fecha = this.selectedFecha();
     if (!vetId || !fecha) return;
     this.loadingSlots.set(true);
-    this.veterinarioService.getDisponibilidad(vetId, fecha, this.duracion)
-      .pipe(catchError(() => EMPTY)).subscribe({
-        next: (data) => { this.availableSlots.set(data.horariosDisponibles); this.loadingSlots.set(false); },
-        error: () => this.loadingSlots.set(false),
+    this.slotsSubscription = this.veterinarioService.getDisponibilidad(vetId, fecha, this.duracion)
+      .pipe(finalize(() => this.loadingSlots.set(false)), takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: (data) => this.availableSlots.set(data.horariosDisponibles),
+        error: () => this.setLoadError('horarios', 'No se pudieron cargar los horarios disponibles.'),
       });
   }
 
@@ -649,10 +674,27 @@ export class CitaCreateComponent implements OnInit {
   }
 
   calcularCosto(): void {
+    this.costSubscription?.unsubscribe();
+    this.costoCalculado.set(null);
+    this.setLoadError('costo', '');
     const servicios: CostoCitaServicioRequest[] = this.selectedServicios().map(s => ({ servicioId: s.servicioId, cantidad: s.cantidad }));
-    this.servicioService.calcularCosto({ servicios }).pipe(catchError(() => EMPTY)).subscribe({
+    this.costSubscription = this.servicioService.calcularCosto({ servicios }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.costoCalculado.set(data),
+      error: () => this.setLoadError('costo', 'No se pudo calcular el costo de la cita.'),
     });
+  }
+
+  private setLoadError(key: string, message: string): void {
+    this.loadErrors.update(errors => ({ ...errors, [key]: message }));
+  }
+
+  retryLoad(key: string): void {
+    if (key === 'duenios') this.loadDuenios();
+    if (key === 'veterinarios') this.loadVeterinarios();
+    if (key === 'servicios') this.loadServicios();
+    if (key === 'mascotas' && this.selectedDuenio()) this.loadMascotas(this.selectedDuenio()!.id);
+    if (key === 'horarios') this.loadDisponibilidad();
+    if (key === 'costo') this.calcularCosto();
   }
 
   nextStep(): void {
@@ -660,19 +702,22 @@ export class CitaCreateComponent implements OnInit {
     if (this.currentStep() === 2 && !this.selectedMascota()) return;
     if (this.currentStep() === 3 && (!this.selectedVeterinarioId() || !this.selectedFecha())) return;
     if (this.currentStep() === 4 && !this.selectedHora()) return;
-    if (this.currentStep() === 5 && this.duracion < 15) return;
+    if (this.currentStep() === 5 && (this.duracion < 15 || this.motivo.length > 250)) return;
     if (this.currentStep() === 6) { if (this.selectedServicios().length === 0) return; if (!this.costoCalculado()) return; }
     if (this.currentStep() < 8) this.currentStep.update(s => s + 1);
   }
 
-  prevStep(): void { if (this.currentStep() > 1) this.currentStep.update(s => s - 1); }
-  cancel(): void { this.router.navigate(['/citas']); }
+  prevStep(): void { if (!this.saving() && this.currentStep() > 1) this.currentStep.update(s => s - 1); }
+  cancel(): void { if (!this.saving()) this.router.navigate(['/citas']); }
   goBack(): void { if (this.currentStep() > 1) this.prevStep(); else this.cancel(); }
 
   submitCita(): void {
     if (this.saving()) return;
-    this.saving.set(true);
     this.submitError = '';
+    if (!this.selectedDuenio() || !this.selectedMascota() || !this.selectedVeterinarioId() || !this.selectedFecha() || !this.selectedHora() || this.motivo.length > 250) {
+      this.submitError = 'Revise dueno, mascota, veterinario, fecha y horario. El motivo admite hasta 250 caracteres.';
+      return;
+    }
     const servicios: CostoCitaServicioRequest[] = this.selectedServicios().map(s => ({ servicioId: s.servicioId, cantidad: s.cantidad }));
     const req: CitaRequest = {
       duenioId: this.selectedDuenio()!.id,
@@ -685,12 +730,15 @@ export class CitaCreateComponent implements OnInit {
       servicios,
       descuento: this.descuento > 0 ? this.descuento : 0,
     };
-    this.citaService.create(req).subscribe({
-      next: () => { this.saving.set(false); this.router.navigate(['/citas']); },
+    this.saving.set(true);
+    defer(() => this.citaService.create(req)).pipe(
+      take(1), finalize(() => this.saving.set(false)), takeUntilDestroyed(this.destroyRef)
+    ).subscribe({
+      next: () => this.router.navigate(['/citas']),
       error: (err) => {
-        this.saving.set(false);
-        this.submitError = err.error?.message || err.error?.error || 'Error al crear la cita. Intenta nuevamente.';
-        console.error('[PetCare] Cita create error:', err.status, err.error);
+        this.submitError = err.status === 0 ? 'Sin conexion con el servidor. Los datos se conservan; reintente confirmar.'
+          : err.status === 403 ? 'No tiene permiso para crear la cita (403). Los datos se conservan.'
+          : 'No se pudo crear la cita' + (err.status ? ` (${err.status})` : '') + '. Revise los datos y reintente; los valores se conservan.';
       },
     });
   }
