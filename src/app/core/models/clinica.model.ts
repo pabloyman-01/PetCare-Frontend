@@ -1,3 +1,5 @@
+export type PlanStatus = 'TRIAL' | 'EXPIRED' | 'ACTIVE' | 'READ_ONLY' | 'SUSPENDED' | 'PAYMENT_PENDING' | 'SUBSCRIPTION_EXPIRED';
+
 export interface Clinica {
   id: number;
   nombre: string;
@@ -13,12 +15,15 @@ export interface Clinica {
   trialStartedAt: string | null;
   trialEndsAt: string | null;
   readOnly: boolean;
+  planStatus?: PlanStatus;
+  subscriptionStartedAt?: string | null;
+  subscriptionEndsAt?: string | null;
 }
 
 export interface ClinicaPlan {
   plan: 'TRIAL' | 'FREE' | 'PRO' | 'CONSULTORIO';
   tier: 'PRO' | 'FREE' | 'CONSULTORIO';
-  status: 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'READ_ONLY' | 'SUSPENDED';
+  status: PlanStatus;
   readOnly: boolean;
   trialStartedAt: string | null;
   trialEndsAt: string | null;
@@ -28,8 +33,14 @@ export interface ClinicaPlan {
   petsUsed: number;
   petsLimit: number;
   monthlyPrice: number;
-  annualPrice: number;
   currency: 'PEN';
+  billingCycle: 'MONTHLY';
+  subscriptionStartedAt: string | null;
+  subscriptionEndsAt: string | null;
+  subscriptionDaysRemaining: number;
+  lastPaymentId: number | null;
+  canActivate: boolean;
+  canRenew: boolean;
 }
 
 export interface ClinicaRequest {

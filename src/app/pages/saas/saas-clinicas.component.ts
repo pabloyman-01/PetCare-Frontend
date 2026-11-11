@@ -1,24 +1,33 @@
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { FormControl, FormGroup, ReactiveFormsModule, ValidatorFn } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { NgTemplateOutlet } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, Subject, catchError, exhaustMap, finalize, merge, switchMap, tap, timer } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { SaasService } from '../../core/services/saas.service';
-import { ClinicEstado, ManagedPlan, SaasAudit, SaasClinic, SaasPage } from '../../core/models/saas.model';
+import { ClinicEstado, ManagedPlan, MonthlyOperation, MonthlyPaymentResponse, SaasAudit, SaasClinic, SaasPage } from '../../core/models/saas.model';
 import { ClinicaPlan } from '../../core/models/clinica.model';
 import { formatPlanDate } from '../mi-plan/plan-date';
+import { planStatusLabel } from '../mi-plan/plan-status';
 
 export const auditReasonValidator: ValidatorFn = control => {
   const length = typeof control.value === 'string' ? control.value.trim().length : 0;
   return length >= 5 && length <= 500 ? null : { reasonLength: true };
 };
 
+export const paymentReferenceValidator: ValidatorFn = control => {
+  const raw = typeof control.value === 'string' ? control.value : '';
+  const value = raw.trim().toUpperCase();
+  return !/[\x00-\x1f\x7f]/.test(raw) && /^[A-Z0-9 ._/-]{5,120}$/.test(value)
+    ? null : { paymentReference: true };
+};
+
 @Component({
   selector: 'app-saas-clinicas',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, NgTemplateOutlet],
   templateUrl: './saas-clinicas.component.html',
   styleUrl: './saas-clinicas.component.css'
 })
@@ -29,10 +38,14 @@ export class SaasClinicasComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly listRequests = new Subject<{ q: string; page: number; delay: number }>();
   private readonly auditRequests = new Subject<{ id: number; page: number } | null>();
+  private readonly paymentRequests = new Subject<{ id: number; page: number } | null>();
   private readonly profileRequests = new Subject<void>();
   readonly clinics = signal<SaasPage<SaasClinic> | null>(null);
   readonly selected = signal<SaasClinic | null>(null);
   readonly audit = signal<SaasPage<SaasAudit> | null>(null);
+  readonly payments = signal<SaasPage<MonthlyPaymentResponse> | null>(null);
+  readonly paymentsLoading = signal(false);
+  readonly paymentsError = signal('');
   readonly listLoading = signal(false);
   readonly auditLoading = signal(false);
   readonly saving = signal(false);
@@ -42,17 +55,23 @@ export class SaasClinicasComponent implements OnInit {
   readonly success = signal('');
   readonly profileError = signal(false);
   readonly profileRefreshing = signal(false);
-  readonly operation = signal<'plan' | 'estado'>('plan');
+  readonly operation = signal<MonthlyOperation | 'estado'>('ACTIVATE');
+  readonly statusLabel = planStatusLabel;
   readonly formatDate = formatPlanDate;
   readonly pageSize = 20;
   readonly auditSize = 10;
   query = '';
   private requestedPage = 0;
   private requestedAuditPage = 0;
+  private requestedPaymentPage = 0;
+  // Keep the selected snapshot through failures/retries, never read a newer ID on submit.
+  private expectedPaymentId: number | null = null;
   readonly form = new FormGroup({
     plan: new FormControl<ManagedPlan>('PRO', { nonNullable: true }),
     estado: new FormControl<ClinicEstado>('SUSPENDIDA', { nonNullable: true }),
-    reason: new FormControl('', { nonNullable: true, validators: [auditReasonValidator] })
+    reason: new FormControl('', { nonNullable: true, validators: [auditReasonValidator] }),
+    paymentReference: new FormControl('', { nonNullable: true, validators: [paymentReferenceValidator] }),
+    paymentConfirmed: new FormControl(false, { nonNullable: true, validators: [Validators.requiredTrue] })
   });
 
   ngOnInit(): void {
@@ -95,6 +114,26 @@ export class SaasClinicasComponent implements OnInit {
     ).subscribe(page => {
       this.audit.set(page);
       this.auditLoading.set(false);
+    });
+
+    this.paymentRequests.pipe(
+      switchMap(request => {
+        this.payments.set(null);
+        this.paymentsError.set('');
+        this.paymentsLoading.set(!!request);
+        if (!request) return EMPTY;
+        return this.api.payments(request.id, request.page, this.auditSize).pipe(
+          catchError(() => {
+            this.paymentsLoading.set(false);
+            this.paymentsError.set('No se pudo cargar el historial de pagos. Revisa los registros antes de reintentar una operaci\u00f3n incierta.');
+            return EMPTY;
+          })
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(page => {
+      this.payments.set(page);
+      this.paymentsLoading.set(false);
     });
 
     merge(timer(0, 60000), this.profileRequests).pipe(
@@ -148,29 +187,49 @@ export class SaasClinicasComponent implements OnInit {
     this.selected.set(clinic);
     this.success.set('');
     this.mutationError.set('');
-    this.operation.set('plan');
+    this.operation.set(clinic.plan.canActivate ? 'ACTIVATE' : clinic.plan.canRenew ? 'RENEW' : 'estado');
     this.resetForm(clinic);
     this.loadAudit(0);
+    this.loadPayments(0);
   }
 
   clearSelection(): void {
+    if (this.saving()) return;
     this.selected.set(null);
     this.success.set('');
     this.mutationError.set('');
     this.auditRequests.next(null);
+    this.paymentRequests.next(null);
   }
 
   loadAudit(page = this.requestedAuditPage): void {
     const clinic = this.selected();
-    if (!clinic) return;
+    if (!clinic || this.saving()) return;
     this.requestedAuditPage = page;
     this.auditRequests.next({ id: clinic.id, page });
   }
 
-  setOperation(operation: 'plan' | 'estado'): void {
+  loadPayments(page = this.requestedPaymentPage): void {
+    const clinic = this.selected();
+    if (!clinic || this.saving()) return;
+    this.requestedPaymentPage = page;
+    this.paymentRequests.next({ id: clinic.id, page });
+  }
+
+  setOperation(operation: MonthlyOperation | 'estado'): void {
     if (this.saving()) return;
-    if (operation !== this.operation()) this.form.controls.reason.reset('');
+    const clinic = this.selected();
+    if (!clinic || (operation === 'ACTIVATE' && !clinic.plan.canActivate) || (operation === 'RENEW' && !clinic.plan.canRenew)) return;
+    if (operation !== this.operation()) {
+      this.form.controls.reason.reset('');
+      this.form.controls.paymentReference.reset('');
+      this.form.controls.paymentConfirmed.reset(false);
+    }
     this.operation.set(operation);
+    if (operation === 'RENEW' && (clinic.plan.plan === 'CONSULTORIO' || clinic.plan.plan === 'PRO')) {
+      this.form.controls.plan.setValue(clinic.plan.plan);
+    }
+    this.billingValidators();
     this.mutationError.set('');
     this.success.set('');
   }
@@ -182,11 +241,31 @@ export class SaasClinicasComponent implements OnInit {
     this.form.controls.estado.setValue(estado);
   }
 
+  selectPlan(plan: ManagedPlan): void {
+    if (this.saving() || !this.selected()?.plan.canActivate) return;
+    this.setOperation('ACTIVATE');
+    if (plan !== this.form.controls.plan.value) {
+      this.form.controls.reason.reset('');
+      this.form.controls.paymentReference.reset('');
+      this.form.controls.paymentConfirmed.reset(false);
+    }
+    this.form.controls.plan.setValue(plan);
+  }
+
+  private billingValidators(): void {
+    const billing = this.operation() !== 'estado';
+    this.form.controls.paymentReference.setValidators(billing ? [paymentReferenceValidator] : []);
+    this.form.controls.paymentConfirmed.setValidators(billing ? [Validators.requiredTrue] : []);
+    this.form.controls.paymentReference.updateValueAndValidity();
+    this.form.controls.paymentConfirmed.updateValueAndValidity();
+  }
+
   hasChange(): boolean {
     const clinic = this.selected();
-    return !!clinic && (this.operation() === 'plan'
-      ? this.form.controls.plan.value !== clinic.plan.plan
-      : this.form.controls.estado.value !== clinic.estado);
+    if (!clinic) return false;
+    if (this.operation() === 'ACTIVATE') return clinic.plan.canActivate;
+    if (this.operation() === 'RENEW') return clinic.plan.canRenew && this.form.controls.plan.value === clinic.plan.plan;
+    return this.form.controls.estado.value !== clinic.estado;
   }
 
   submit(): void {
@@ -196,15 +275,18 @@ export class SaasClinicasComponent implements OnInit {
       this.form.markAllAsTouched();
       return;
     }
-    const { plan, estado, reason } = this.form.getRawValue();
+    const { plan, estado, reason, paymentReference } = this.form.getRawValue();
     const operation = this.operation();
     this.saving.set(true);
     this.form.disable();
     this.mutationError.set('');
     this.success.set('');
-    const request = operation === 'plan'
-      ? this.api.changePlan(clinic.id, plan, reason)
-      : this.api.changeEstado(clinic.id, estado, reason);
+    const request = operation === 'estado'
+      ? this.api.changeEstado(clinic.id, estado, reason.trim())
+      : this.api.monthlyPayment(clinic.id, {
+        plan, operation, reason: reason.trim(), paymentReference: paymentReference.trim().toUpperCase(),
+        paymentConfirmed: true, expectedPaymentId: this.expectedPaymentId
+      });
     request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: updated => {
         this.saving.set(false);
@@ -215,11 +297,13 @@ export class SaasClinicasComponent implements OnInit {
         this.clinics.update(page => page ? {
           ...page, items: page.items.map(item => item.id === updated.id ? updated : item)
         } : page);
+        this.operation.set(updated.plan.canActivate ? 'ACTIVATE' : updated.plan.canRenew ? 'RENEW' : 'estado');
         this.resetForm(updated);
-        this.success.set(operation === 'plan'
-          ? 'Plan actualizado. El estado de la cl\u00ednica no se ha cambiado.'
+        this.success.set(operation !== 'estado'
+          ? 'Mensualidad registrada. El estado administrativo de la cl\u00ednica no se ha cambiado.'
           : 'Estado de la cl\u00ednica actualizado.');
         this.loadAudit(0);
+        this.loadPayments(0);
       },
       error: (error: HttpErrorResponse) => {
         this.saving.set(false);
@@ -227,24 +311,26 @@ export class SaasClinicasComponent implements OnInit {
         if (this.selected()?.id !== clinic.id) return;
         const detail = typeof error.error?.message === 'string' ? error.error.message : '';
         this.mutationError.set(error.status === 409
-          ? `Conflicto (409). ${detail || 'Los datos pueden haber cambiado. Actualiza el directorio antes de reintentar.'}`
-          : error.status === 0
-            ? 'No se pudo confirmar el cambio por un problema de conexi\u00f3n. Actualiza el directorio y revisa la auditor\u00eda antes de reintentar.'
-            : detail || 'No se pudo aplicar el cambio. Revisa los datos e intenta nuevamente.');
+          ? `Conflicto (409). ${detail} Revisa pagos y auditor\u00eda y actualiza el directorio antes de una nueva operaci\u00f3n. No reutilices una referencia con datos diferentes.`
+          : error.status === 410
+            ? 'Operaci\u00f3n retirada (410 MONTHLY_PAYMENT_REQUIRED). Se requiere registrar una mensualidad; no se intentar\u00e1 el cambio de plan antiguo.'
+            : error.status === 0 || error.status >= 500
+              ? operation === 'estado'
+                ? 'Resultado incierto. Revisa la auditor\u00eda y actualiza el directorio antes de reintentar el cambio administrativo.'
+                : 'Resultado incierto. Revisa pagos y auditor\u00eda antes de reintentar. Conserva la misma referencia y los mismos datos para un reintento idempotente; no generes otro pago.'
+              : detail || 'No se pudo aplicar el cambio. Revisa los datos e intenta nuevamente.');
       }
     });
   }
 
   private resetForm(clinic: SaasClinic): void {
+    this.expectedPaymentId = clinic.plan.lastPaymentId || null;
     this.form.reset({
       plan: clinic.plan.plan === 'CONSULTORIO' ? 'CONSULTORIO' : 'PRO',
       estado: clinic.estado === 'ACTIVA' ? 'SUSPENDIDA' : 'ACTIVA',
-      reason: ''
+      reason: '', paymentReference: '', paymentConfirmed: false
     });
-  }
-
-  statusLabel(status: ClinicaPlan['status']): string {
-    return { TRIAL: 'En prueba', ACTIVE: 'Activo', EXPIRED: 'Vencido', READ_ONLY: 'Solo lectura', SUSPENDED: 'Suspendido' }[status];
+    this.billingValidators();
   }
 
   initials(name: string | null | undefined): string {
@@ -252,6 +338,8 @@ export class SaasClinicasComponent implements OnInit {
   }
 
   auditLabel(entry: SaasAudit): string {
+    if (entry.action === 'MONTHLY_ACTIVATED') return 'Activaci\u00f3n mensual';
+    if (entry.action === 'MONTHLY_RENEWED') return 'Renovaci\u00f3n mensual';
     if (entry.action === 'PLAN_CHANGED') return 'Cambio de plan';
     if (entry.action === 'ESTADO_CHANGED') {
       if (entry.newEstado === 'SUSPENDIDA') return 'Suspensi\u00f3n';

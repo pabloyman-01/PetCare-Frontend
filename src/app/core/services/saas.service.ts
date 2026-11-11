@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { API_URL } from './auth.service';
-import { ClinicEstado, ManagedPlan, SaasAudit, SaasClinic, SaasPage } from '../models/saas.model';
+import { ClinicEstado, MonthlyPaymentRequest, MonthlyPaymentResponse, SaasAudit, SaasClinic, SaasPage } from '../models/saas.model';
 
 @Injectable({ providedIn: 'root' })
 export class SaasService {
@@ -13,8 +13,15 @@ export class SaasService {
     return this.http.get<SaasPage<SaasClinic>>(this.base, { params });
   }
 
-  changePlan(id: number, plan: ManagedPlan, reason: string) {
-    return this.http.patch<SaasClinic>(`${this.base}/${id}/plan`, { plan, reason: reason.trim() });
+  monthlyPayment(id: number, request: MonthlyPaymentRequest) {
+    return this.http.post<SaasClinic>(`${this.base}/${id}/mensualidades`, {
+      ...request, paymentReference: request.paymentReference.trim().toUpperCase(), reason: request.reason.trim()
+    });
+  }
+
+  payments(id: number, page = 0, size = 10) {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<SaasPage<MonthlyPaymentResponse>>(`${this.base}/${id}/mensualidades`, { params });
   }
 
   changeEstado(id: number, estado: ClinicEstado, reason: string) {

@@ -1,5 +1,7 @@
 :host { display: block; }
 .login-page { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; color: #0b1c30; background: radial-gradient(ellipse at 12% 42%, #e6edff 0, transparent 48%), radial-gradient(ellipse at 95% 90%, #e8f5ef 0, transparent 35%), #f8f9ff; }
+/* Keep fallback icon text out of adjacent fields without clipping the controls. */
+.material-symbols-outlined { display: inline-block; width: 1em; flex-shrink: 0; overflow: hidden; white-space: nowrap; }
 .login-header, .login-footer { width: min(1280px, 100%); margin-inline: auto; padding: 24px 40px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .brand { display: inline-flex; align-items: center; gap: 12px; color: #004ac6; font-size: 25px; font-weight: 800; letter-spacing: -.8px; text-decoration: none; }
 .brand-mark { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: #004ac6; color: white; box-shadow: 0 5px 12px #004ac61a; }

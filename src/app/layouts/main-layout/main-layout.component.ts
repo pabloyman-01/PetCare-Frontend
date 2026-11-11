@@ -2,6 +2,7 @@ import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, EMPTY, exhaustMap, timer } from 'rxjs';
 import { formatPlanDate } from '../../pages/mi-plan/plan-date';
+import { planStatusLabel, planStatusMessage } from '../../pages/mi-plan/plan-status';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificacionService } from '../../core/services/notificacion.service';
@@ -122,6 +123,7 @@ interface NavItem {
           <div class="alert bg-error/10 text-on-surface border border-error/20 mb-6" role="status">
             <span class="material-symbols-outlined" aria-hidden="true">lock</span>
             <div class="flex-1"><p class="font-bold">Cl&iacute;nica en modo solo lectura</p>
+              <p>{{ planStatusMessage(auth.user()?.clinica?.planStatus) }}</p>
               <p>El historial se conserva. Puedes consultar, buscar y filtrar, pero no crear, editar ni eliminar registros.</p>
               @if (auth.isAdmin()) {
                 <a routerLink="/mi-plan" class="underline font-semibold">Ver Mi plan</a>
@@ -130,11 +132,18 @@ interface NavItem {
               }
             </div>
           </div>
-        } @else if (auth.isAdmin() && auth.user()?.clinica?.plan === 'TRIAL') {
+        } @else if (auth.isAdmin() && auth.user()?.clinica?.planStatus === 'TRIAL') {
           <div class="alert bg-primary-container/20 text-on-surface border border-primary/20 mb-6" role="status">
             <div class="flex-1"><p class="font-bold">Prueba PRO de 14 d&iacute;as</p>
               <p>Finaliza: {{ formatPlanDate(auth.user()?.clinica?.trialEndsAt) }} (hora de Lima).</p>
               <a routerLink="/mi-plan" class="underline font-semibold">Ver estado y capacidad en Mi plan</a>
+            </div>
+          </div>
+        } @else if (auth.isAdmin() && auth.user()?.clinica?.planStatus === 'ACTIVE') {
+          <div class="alert bg-primary-container/20 text-on-surface border border-primary/20 mb-6" role="status">
+            <div class="flex-1"><p class="font-bold">{{ planStatusLabel('ACTIVE') }}</p><p>{{ planStatusMessage('ACTIVE') }}</p>
+              <p>Cobertura: {{ formatPlanDate(auth.user()?.clinica?.subscriptionStartedAt) }} a {{ formatPlanDate(auth.user()?.clinica?.subscriptionEndsAt) }} (hora de Lima).</p>
+              <a routerLink="/mi-plan" class="underline font-semibold">Ver Mi plan e historial de prueba</a>
             </div>
           </div>
         }
@@ -179,6 +188,8 @@ export class MainLayoutComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   readonly sessionRefreshError = signal(false);
   readonly formatPlanDate = formatPlanDate;
+  readonly planStatusLabel = planStatusLabel;
+  readonly planStatusMessage = planStatusMessage;
   mobileSidebarOpen = false;
   mostrarNotificaciones = false;
 

@@ -10,45 +10,39 @@
     <section class="plans-hero" aria-labelledby="plans-title">
       <span class="eyebrow"><span class="w-[7px] h-[7px] rounded-full bg-secondary" aria-hidden="true"></span>PARA VETERINARIAS EN PER&Uacute;</span>
       <h1 id="plans-title">Tu cuidado es &uacute;nico.<br><span>Tu gesti&oacute;n puede ser simple.</span></h1>
-      <p>Dos propuestas en soles para organizar tu veterinaria. Lo esencial del cuidado en ambas, con capacidad para distintos equipos.</p>
-      <div class="billing-switch" role="group" aria-label="Comparar propuesta mensual o anual">
-        <button type="button" [attr.aria-pressed]="!annual()" (click)="annual.set(false)">Mensual</button>
-        <button type="button" [attr.aria-pressed]="annual()" (click)="annual.set(true)">Anual<span>2 meses de ahorro</span></button>
-      </div>
-      <p class="billing-explanation" aria-live="polite">{{ annual() ? 'Propuesta anual: pagas 10 meses y recibes 12. Ahorro aproximado de 16.7%.' : 'Compara el precio mensual sin un compromiso anual.' }}</p>
+      <p>Dos planes mensuales en soles para organizar tu veterinaria. Lo esencial del cuidado en ambos, con capacidad para distintos equipos.</p>
     </section>
 
-    <aside class="preview-notice" aria-label="Prueba y estado de la contrataci&oacute;n"><span class="material-symbols-outlined" aria-hidden="true">info</span><p><strong>Prueba PRO de 14 d&iacute;as, sin tarjeta.</strong> El registro incluye hasta 5 integrantes y 2,500 mascotas activas. Las tarifas siguen siendo referenciales: no hay contrataci&oacute;n de pago, renovaci&oacute;n ni cobros autom&aacute;ticos.</p></aside>
+    <aside class="preview-notice" aria-label="Prueba y contrataci&oacute;n mensual"><span class="material-symbols-outlined" aria-hidden="true">info</span><p><strong>Prueba PRO de 14 d&iacute;as, sin tarjeta.</strong> El registro incluye hasta 5 integrantes y 2,500 mascotas activas. La activaci&oacute;n y renovaci&oacute;n mensual se coordinan con el operador, que confirma el pago manualmente. No hay cobros autom&aacute;ticos.</p></aside>
 
-    <section class="pricing-grid" aria-label="Planes propuestos">
+    <section class="pricing-grid" aria-label="Planes mensuales">
       @for (plan of plans; track plan.name) {
         <article class="plan-card" [class.recommended]="plan.recommended" [attr.aria-label]="plan.name">
           @if (plan.recommended) { <span class="recommendation">RECOMENDADO PARA EQUIPOS</span> }
           <div class="plan-heading"><span class="plan-icon"><span class="material-symbols-outlined" aria-hidden="true">{{ plan.icon }}</span></span><span class="plan-audience">{{ plan.audience }}</span></div>
           <h2>{{ plan.name }}</h2><p class="plan-description">{{ plan.description }}</p>
           <div class="price-block" aria-live="polite" aria-atomic="true">
-            <div class="price"><span class="currency">S/</span><strong>{{ money(annual() ? plan.monthly * 10 : plan.monthly) }}</strong><span>{{ annual() ? '/ año' : '/ mes' }}</span></div>
-            @if (annual()) { <p>Equivale a <strong>S/ {{ money(plan.monthly * 10 / 12) }} al mes.</strong><br>Pago anual por adelantado, cuando est&eacute; disponible.</p> }
-            @else { <p>Precio mensual propuesto.<br>Suscripci&oacute;n de una sola cl&iacute;nica.</p> }
+            <div class="price"><span class="currency">S/</span><strong>{{ money(plan.monthly) }}</strong><span>/ mes</span></div>
+            <p>Mensualidad de una sola cl&iacute;nica.<br>Activaci&oacute;n manual por el operador.</p>
           </div>
-          <a routerLink="/register-clinic" class="plan-button" [attr.aria-label]="'Registrar mi clínica, desde la propuesta ' + plan.name">Registrar mi cl&iacute;nica<span class="material-symbols-outlined text-[19px]" aria-hidden="true">arrow_forward</span></a>
+          <a routerLink="/register-clinic" class="plan-button" aria-label="Registrar mi cl&iacute;nica e iniciar la prueba PRO">Registrar mi cl&iacute;nica<span class="material-symbols-outlined text-[19px]" aria-hidden="true">arrow_forward</span></a>
           <p class="button-note">Ambos enlaces inician la prueba PRO. No seleccionan un plan pagado.</p>
           <div class="capacity"><h3>Capacidad del nivel</h3><ul><li><span class="material-symbols-outlined" aria-hidden="true">group</span><span>Hasta <strong>{{ plan.staff }} cuentas de personal</strong></span></li><li><span class="material-symbols-outlined" aria-hidden="true">pets</span><span>Hasta <strong>{{ money(plan.pets) }} mascotas activas</strong></span></li><li><span class="material-symbols-outlined" aria-hidden="true">storefront</span><span><strong>Una cl&iacute;nica</strong> con su espacio propio</span></li></ul><p>Se cuenta el personal activo, incluido el administrador. Las cuentas de due&ntilde;os no consumen cupos.</p></div>
           <div class="included-note"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span>La misma base de cuidado en ambos planes.</div>
         </article>
       }
     </section>
-    <p class="price-disclosure">Importes referenciales en soles peruanos. La propuesta contempla precios finales; el tratamiento del IGV, las condiciones de facturaci&oacute;n y la renovaci&oacute;n se confirmar&aacute;n antes de habilitar la contrataci&oacute;n. Actualmente no se procesa ning&uacute;n pago.</p>
+    <p class="price-disclosure">Importes mensuales en soles: Consultorio S/ 59 y PRO S/ 129. No hay checkout ni cargos autom&aacute;ticos. El operador registra el pago confirmado manualmente; este flujo no emite comprobantes fiscales ni calcula impuestos o recargos.</p>
 
     <section class="shared-features" aria-labelledby="features-title">
-      <div class="section-heading"><span class="eyebrow">LO ESENCIAL, SIN DIVIDIR EL CUIDADO</span><h2 id="features-title">Un mismo lugar para cada visita.</h2><p>Estas funciones ya forman parte de PetCare. La propuesta las mantiene en ambos planes.</p></div>
+      <div class="section-heading"><span class="eyebrow">LO ESENCIAL, SIN DIVIDIR EL CUIDADO</span><h2 id="features-title">Un mismo lugar para cada visita.</h2><p>Estas funciones forman parte de PetCare en ambos planes.</p></div>
       <div class="features-grid">@for (feature of features; track feature.name) { <div class="feature"><span class="material-symbols-outlined text-primary" aria-hidden="true">{{ feature.icon }}</span><h3>{{ feature.name }}</h3><p>{{ feature.description }}</p></div> }</div>
     </section>
 
     <section class="comparison" aria-labelledby="comparison-title">
-      <div class="section-heading"><span class="eyebrow">COMPARA POR CAPACIDAD</span><h2 id="comparison-title">La diferencia est&aacute; en tu equipo.</h2><p>La prueba usa los cupos de PRO. La contrataci&oacute;n y los cambios de nivel a&uacute;n no est&aacute;n disponibles.</p></div>
+      <div class="section-heading"><span class="eyebrow">COMPARA POR CAPACIDAD</span><h2 id="comparison-title">La diferencia est&aacute; en tu equipo.</h2><p>La prueba usa los cupos de PRO. Coordina la activaci&oacute;n mensual con el operador; los cambios de nivel se realizan al vencimiento, sin prorrateo.</p></div>
       <div class="table-scroll" tabindex="0" role="region" aria-label="Tabla comparativa de planes, desplazable horizontalmente">
-        <table><caption class="sr-only">Capacidades propuestas y funciones compartidas de Consultorio y Cl&iacute;nica Pro</caption><thead><tr><th scope="col">Caracter&iacute;stica</th><th scope="col">Consultorio</th><th scope="col">Cl&iacute;nica Pro</th></tr></thead><tbody>
+        <table><caption class="sr-only">Capacidades y funciones compartidas de Consultorio y PRO</caption><thead><tr><th scope="col">Caracter&iacute;stica</th><th scope="col">Consultorio</th><th scope="col">PRO</th></tr></thead><tbody>
           <tr><th scope="row">Personal activo</th><td>2 cuentas</td><td>5 cuentas</td></tr>
           <tr><th scope="row">Mascotas activas</th><td>500</td><td>2,500</td></tr>
           <tr><th scope="row">Cl&iacute;nicas por espacio</th><td>1</td><td>1</td></tr>
