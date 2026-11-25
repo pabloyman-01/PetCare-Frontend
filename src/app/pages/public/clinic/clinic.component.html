@@ -1,0 +1,170 @@
+<div class="clinic-page min-h-screen flex flex-col">
+  <button type="button" class="skip-link" (click)="main.focus(); main.scrollIntoView()">Saltar al contenido</button>
+  <header class="bg-white border-b border-[#e3e7f0]">
+    <div class="page-width flex flex-wrap items-center justify-between gap-4 py-5">
+      <a routerLink="/clinicas" class="brand flex items-center gap-3" aria-label="PetCare, directorio de cl&iacute;nicas">
+        <span class="brand-mark"><svg class="clinic-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><circle cx="5" cy="8" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q7.52 17.48 5.46 16.84A3.5 3.5 0 0 1 6.5 10Z"/></svg></span>
+        <span>PetCare<small class="block">Cuidado conectado</small></span>
+      </a>
+      <nav aria-label="Navegaci&oacute;n principal" class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-bold">
+        <a routerLink="/clinicas" class="nav-link">Directorio</a>
+        <a routerLink="/planes" class="nav-link">Planes</a>
+        <a routerLink="/auth" [queryParams]="!loading() && !error() && clinic() ? { clinica: clinic()?.slug } : {}" class="action secondary">Iniciar sesi&oacute;n</a>
+      </nav>
+    </div>
+  </header>
+
+  <main #main id="clinic-main" tabindex="-1" class="page-width flex-1 w-full py-6 sm:py-8">
+    <nav aria-label="Ruta de navegaci&oacute;n" class="flex flex-wrap items-center gap-2 text-sm mb-6">
+      <a routerLink="/clinicas" class="text-primary font-semibold">Cl&iacute;nicas</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">Perfil p&uacute;blico</span>
+    </nav>
+
+    @if (loading()) {
+      <section class="panel state" role="status" aria-live="polite">
+        <span class="loading loading-spinner loading-lg text-primary" aria-hidden="true"></span>
+        <h1 class="mt-5">Cargando la cl&iacute;nica</h1>
+        <p>Estamos preparando su informaci&oacute;n p&uacute;blica.</p>
+      </section>
+    } @else if (error() === 'not-found') {
+      <section class="panel state">
+        <svg class="clinic-icon state-mark" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m2 2 20 20M9 3a7 7 0 0 1 9 9M16 16A7 7 0 0 1 6 6m11 11 4 4"/></svg>
+        <h1>Cl&iacute;nica no encontrada</h1>
+        <p>Este enlace no corresponde a una cl&iacute;nica disponible. Puedes buscar otra en el directorio.</p>
+        <a routerLink="/clinicas" class="action primary">Volver al directorio</a>
+      </section>
+    } @else if (error() === 'unavailable') {
+      <section class="panel state" role="alert">
+        <svg class="clinic-icon state-mark" width="24" height="24" viewBox="-1 -1 27 27" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m2 2 20 20M5.8 5.8A7 7 0 0 0 5 10a4 4 0 0 0 0 8h13M9.5 3.5A7 7 0 0 1 19 10h1a4 4 0 0 1 2.8 6.8"/></svg>
+        <h1>No pudimos cargar la cl&iacute;nica</h1>
+        <p>La informaci&oacute;n no est&aacute; disponible en este momento. Revisa tu conexi&oacute;n e intenta de nuevo.</p>
+        <button type="button" class="action primary" (click)="retryClinic()">Volver a intentar</button>
+      </section>
+    } @else {
+      @if (clinic(); as c) {
+      <section class="hero" aria-labelledby="clinic-title">
+        <div class="flex flex-col sm:flex-row items-start gap-6 sm:gap-8">
+          <div class="clinic-logo flex-shrink-0">
+            @if (safeLogoUrl(); as logo) {
+              <img [src]="logo" [alt]="'Logo de ' + c.nombre" referrerpolicy="no-referrer" (error)="logoFailed.set(true)" class="w-24 h-24 object-contain">
+            } @else {
+              <svg class="clinic-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><circle cx="5" cy="8" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q7.52 17.48 5.46 16.84A3.5 3.5 0 0 1 6.5 10Z"/></svg>
+            }
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="eyebrow">PERFIL P&Uacute;BLICO EN PETCARE</p>
+            <h1 id="clinic-title" class="hero-title">{{ c.nombre }}</h1>
+            <p class="hero-description whitespace-pre-line">{{ c.descripcion?.trim() || 'Consulta los servicios y los datos de contacto publicados por esta cl&iacute;nica.' }}</p>
+            <div class="flex flex-wrap items-center gap-4 mt-7">
+              <button type="button" class="action primary" (click)="scrollToServices()">Explorar servicios<svg class="clinic-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14m-7-7 7 7 7-7"/></svg></button>
+              <span class="text-xs text-[#434655]">Informaci&oacute;n publicada por la cl&iacute;nica</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-label="Datos de la cl&iacute;nica" class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+        <article class="panel p-6 flex flex-col items-start">
+          <svg class="clinic-icon info-mark" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          <h2 class="info-title">D&oacute;nde encontrarnos</h2>
+          <p class="detail whitespace-pre-line">{{ c.direccion?.trim() || 'Direcci&oacute;n no publicada.' }}</p>
+          @if (mapsHref(); as maps) {
+            <a [href]="maps" target="_blank" rel="noopener noreferrer" class="text-link mt-4">Ver en Google Maps<svg class="clinic-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7M7 7h10v10"/></svg><span class="sr-only"> (abre en otra pesta&ntilde;a)</span></a>
+          }
+        </article>
+        <article class="panel p-6">
+          <svg class="clinic-icon info-mark" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <h2 class="info-title">Horario de atenci&oacute;n</h2>
+          <p class="detail whitespace-pre-line">{{ c.horarioAtencion?.trim() || 'Horario no publicado.' }}</p>
+          <p class="text-xs leading-relaxed text-[#434655] mt-4">Horario informado por la cl&iacute;nica. Confirma antes de acudir.</p>
+        </article>
+        <article class="panel p-6">
+          <svg class="clinic-icon info-mark" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.2 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.96.36 1.9.7 2.79a2 2 0 0 1-.45 2.11L8.09 9.89a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.89.34 1.83.58 2.79.7A2 2 0 0 1 22 16.92Z"/></svg>
+          <h2 class="info-title">Hablemos directamente</h2>
+          @if (phoneHref(); as phone) {
+            <a [href]="phone" class="text-link">{{ c.telefono }}<svg class="clinic-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
+          } @else {
+            <p class="detail">{{ c.telefono?.trim() || 'Tel&eacute;fono no publicado.' }}</p>
+          }
+          <p class="text-xs leading-relaxed text-[#434655] mt-4">Contacta a la cl&iacute;nica para confirmar la informaci&oacute;n de tu visita.</p>
+        </article>
+      </section>
+
+      <section id="servicios" class="mt-12 sm:mt-16" aria-labelledby="services-title" [attr.aria-busy]="servicesLoading()">
+        <div class="flex flex-wrap items-end justify-between gap-4 mb-6">
+          <div><p class="eyebrow">CONOCE SU OFERTA</p><h2 id="services-title" tabindex="-1" class="section-title">Servicios de la cl&iacute;nica</h2></div>
+          @if (!servicesLoading() && !servicesError()) {
+            <p class="count">{{ servicios().length }} {{ servicios().length === 1 ? 'servicio publicado' : 'servicios publicados' }}</p>
+          }
+        </div>
+        <form role="search" aria-label="Buscar servicios de la cl&iacute;nica" (submit)="$event.preventDefault()" class="panel p-4 sm:p-5 mb-5">
+          <label for="service-search" class="block text-xs font-bold mb-2">Buscar en el cat&aacute;logo</label>
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="search-field flex items-center gap-3 flex-1 min-w-0">
+              <svg class="clinic-icon text-primary" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
+              <input id="service-search" type="search" [formControl]="search" maxlength="100" autocomplete="off" placeholder="Nombre o descripci&oacute;n del servicio" class="w-full min-w-0 bg-transparent text-base py-3">
+            </div>
+            @if (search.value) {
+              <button type="button" class="action secondary" (click)="search.setValue('')">Limpiar<span class="sr-only"> b&uacute;squeda</span></button>
+            }
+          </div>
+        </form>
+
+        @if (servicesLoading()) {
+          <div class="panel state" role="status"><span class="loading loading-spinner loading-md text-primary" aria-hidden="true"></span><h3>Cargando servicios</h3><p>El cat&aacute;logo estar&aacute; disponible en un momento.</p></div>
+        } @else if (servicesError()) {
+          <div class="panel state" role="alert"><h3>No pudimos cargar los servicios</h3><p>Los datos de la cl&iacute;nica siguen disponibles. Puedes volver a intentar cargar su cat&aacute;logo.</p><button type="button" class="action primary" (click)="retryServices()">Reintentar servicios</button></div>
+        } @else if (servicios().length === 0) {
+          <div class="panel state"><svg class="clinic-icon state-mark" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="4" rx="1"/><path d="M5 7v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7M10 11h4"/></svg><h3>A&uacute;n no hay servicios publicados</h3><p>Consulta directamente con la cl&iacute;nica para conocer su oferta.</p></div>
+        } @else {
+          <p role="status" class="text-sm text-[#434655] mb-4">{{ filteredServices().length }} {{ filteredServices().length === 1 ? 'servicio en esta vista' : 'servicios en esta vista' }}</p>
+          @if (filteredServices().length === 0) {
+            <div class="panel state"><h3>No encontramos coincidencias</h3><p>Prueba con otra palabra o limpia la b&uacute;squeda para ver todo el cat&aacute;logo.</p><button type="button" class="action secondary" (click)="search.setValue('')">Ver todos los servicios</button></div>
+          } @else {
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              @for (s of filteredServices(); track s.id) {
+                <article class="panel service-card p-6 flex flex-col min-w-0">
+                  <span class="service-accent" aria-hidden="true"></span>
+                  <h3 class="text-lg font-extrabold leading-snug mt-5">{{ s.nombre }}</h3>
+                  <p class="detail whitespace-pre-line mt-3 mb-6">{{ s.descripcion.trim() || 'Consulta los detalles de este servicio con la cl&iacute;nica.' }}</p>
+                  <div class="mt-auto pt-5 border-t border-[#e3e7f0]"><p class="text-xs font-semibold text-[#434655]">Tarifa base</p><p class="text-2xl font-extrabold text-primary mt-1">{{ formatMoney(s.costoBase) }}</p></div>
+                </article>
+              }
+            </div>
+          }
+          <p class="text-xs leading-relaxed text-[#434655] mt-5">Las tarifas base son las publicadas por la cl&iacute;nica. Confirma el precio final y la disponibilidad directamente antes de acudir.</p>
+        }
+      </section>
+
+      <section class="account-panel mt-12 sm:mt-16 p-6 sm:p-10" aria-labelledby="account-title">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          <div><p class="eyebrow">EL SIGUIENTE PASO, CON TU CUENTA</p><h2 id="account-title" class="section-title">Conecta con tu cl&iacute;nica en PetCare.</h2><p class="detail mt-4">Para consultar la disponibilidad real y gestionar citas necesitas una cuenta y validar que est&eacute; asociada a esta cl&iacute;nica. Esta p&aacute;gina no realiza reservas.</p></div>
+          <div class="flex flex-col items-start gap-3">
+            <a routerLink="/auth/register" [queryParams]="{ clinica: c.slug }" class="action primary">Crear mi cuenta en esta cl&iacute;nica<svg class="clinic-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></a>
+            <a routerLink="/auth" [queryParams]="{ clinica: c.slug }" class="text-link py-2">Ya soy cliente, iniciar sesi&oacute;n</a>
+            <p class="text-xs leading-relaxed text-[#434655]">La cl&iacute;nica puede limitar los nuevos registros. Contacta con ella para confirmar si puedes crear tu cuenta.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-12 mb-8 grid grid-cols-1 lg:grid-cols-3 gap-6" aria-labelledby="faq-title">
+        <div><p class="eyebrow">ANTES DE CONTINUAR</p><h2 id="faq-title" class="section-title">Tu acceso, paso a paso.</h2></div>
+        <div class="lg:col-span-2 panel px-6">
+          <details class="py-5"><summary>&iquest;Necesito una cuenta para ver esta p&aacute;gina?</summary><p class="detail mt-3">No. Los datos de contacto y el cat&aacute;logo publicado se pueden consultar sin iniciar sesi&oacute;n.</p></details>
+          <details class="py-5 border-t border-[#e3e7f0]"><summary>&iquest;C&oacute;mo consulto citas e informaci&oacute;n de mis mascotas?</summary><p class="detail mt-3">Inicia sesi&oacute;n con tu cuenta. El acceso a citas y registros depende de la cl&iacute;nica asociada y de los permisos de tu cuenta; no se muestran en este perfil p&uacute;blico.</p></details>
+          <details class="py-5 border-t border-[#e3e7f0]"><summary>&iquest;Qu&eacute; hago si no puedo registrarme?</summary><p class="detail mt-3">Contacta a la cl&iacute;nica para confirmar si admite nuevos registros y c&oacute;mo asociar tu cuenta. Crear una cuenta no confirma una cita.</p></details>
+        </div>
+      </section>
+      }
+    }
+  </main>
+
+  <footer class="bg-white border-t border-[#e3e7f0]">
+    <div class="page-width flex flex-wrap items-center justify-between gap-4 py-6 text-xs text-[#434655]">
+      <a routerLink="/clinicas" class="text-primary font-extrabold text-lg">PetCare</a>
+      <span>&copy; {{ year }} PetCare. Cuidado conectado.</span>
+      <nav aria-label="Enlaces del pie de p&aacute;gina" class="flex flex-wrap gap-5"><a routerLink="/clinicas">Directorio</a><a routerLink="/planes">Planes</a></nav>
+    </div>
+  </footer>
+</div>

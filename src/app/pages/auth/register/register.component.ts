@@ -178,7 +178,7 @@ export const passwordMatchValidator: ValidatorFn = (control: AbstractControl): V
           <div class="mt-6 pt-6 border-t border-outline-variant/30">
             <p class="text-center text-body-md text-on-surface-variant">
               &iquest;Ya tienes cuenta?
-              <a routerLink="/auth" class="text-primary font-semibold hover:text-primary/80 transition-colors">
+              <a routerLink="/auth" [queryParams]="clinicSlug ? { clinica: clinicSlug } : {}" class="text-primary font-semibold hover:text-primary/80 transition-colors">
                 Inicia sesi&oacute;n
               </a>
             </p>

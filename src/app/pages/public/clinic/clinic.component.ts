@@ -1,172 +1,109 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, catchError, combineLatest, distinctUntilChanged, finalize, map, of, switchMap } from 'rxjs';
 import { ClinicaService } from '../../../core/services/clinica.service';
 import { ClinicaPublic, ServicioPublic } from '../../../core/models/clinica.model';
-import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-clinic',
   standalone: true,
-  imports: [RouterLink],
-  template: `
-  <div class="min-h-screen w-full flex flex-col">
-    <!-- Header -->
-    <header class="px-6 py-4 flex items-center justify-between border-b border-outline-variant/20 bg-surface/80 backdrop-blur-md">
-      <a routerLink="/clinicas" class="flex items-center gap-3" aria-label="PetCare, directorio de cl&iacute;nicas">
-        <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-          <span class="material-symbols-outlined text-on-primary fill">pets</span>
-        </div>
-        <h1 class="text-headline-md font-extrabold text-primary">PetCare</h1>
-      </a>
-      <a routerLink="/auth" [queryParams]="{ clinica: clinic()?.slug }" class="btn btn-primary btn-sm">
-        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">login</span>
-        Iniciar Sesi&oacute;n
-      </a>
-    </header>
-
-    <main class="flex-1">
-      <div class="max-w-4xl mx-auto px-4 pt-6">
-        <a routerLink="/clinicas" class="inline-flex items-center gap-2 text-body-sm text-primary font-semibold">
-          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_back</span>
-          Volver al directorio
-        </a>
-      </div>
-      @if (loading()) {
-        <div class="flex items-center justify-center py-24">
-          <div class="flex flex-col items-center gap-4">
-            <span class="loading loading-spinner loading-lg text-primary"></span>
-            <p class="text-body-md text-on-surface-variant">Cargando veterinaria...</p>
-          </div>
-        </div>
-      } @else if (error()) {
-        <!-- Not found -->
-        <div class="max-w-xl mx-auto px-4 py-24 text-center">
-          <div class="w-16 h-16 bg-error-container rounded-2xl flex items-center justify-center mx-auto mb-5">
-            <span class="material-symbols-outlined text-[32px] text-on-error-container">pets</span>
-          </div>
-          <h2 class="text-headline-md font-bold text-on-surface mb-2">Veterinaria no encontrada</h2>
-          <p class="text-body-md text-on-surface-variant mb-6">La veterinaria que buscas no existe o no est&aacute; disponible.</p>
-          <div class="flex justify-center gap-3">
-            <a routerLink="/auth/register" class="btn btn-primary">Registrarme en PetCare</a>
-            <a routerLink="/auth" class="btn btn-ghost">Iniciar sesi&oacute;n</a>
-          </div>
-        </div>
-      } @else if (clinic()) {
-        <!-- Clinic -->
-        <div class="max-w-4xl mx-auto px-4 py-10">
-          <!-- Hero -->
-          <div class="glass-card rounded-3xl overflow-hidden shadow-xl shadow-on-surface/5">
-            @if (clinic()?.logoUrl) {
-              <div class="h-40 w-full object-cover" [style.background-image]="'url(' + clinic()?.logoUrl + ')'"
-                   [style.background-size]="'cover'" [style.background-position]="'center'"></div>
-            } @else {
-              <div class="h-40 w-full bg-gradient-to-r from-primary/15 to-secondary/15 flex items-center justify-center">
-                <span class="material-symbols-outlined text-[54px] text-primary">local_hospital</span>
-              </div>
-            }
-            <div class="p-8">
-              <h2 class="text-headline-lg font-extrabold text-on-surface mb-1">{{ clinic()?.nombre }}</h2>
-              <div class="flex flex-wrap gap-x-6 gap-y-2 mt-3 text-body-sm text-on-surface-variant">
-                @if (clinic()?.direccion) {
-                  <span class="flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-[18px]">location_on</span>
-                    {{ clinic()?.direccion }}
-                  </span>
-                }
-                @if (clinic()?.telefono) {
-                  <span class="flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-[18px]">call</span>
-                    {{ clinic()?.telefono }}
-                  </span>
-                }
-                @if (clinic()?.horarioAtencion) {
-                  <span class="flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-[18px]">schedule</span>
-                    {{ clinic()?.horarioAtencion }}
-                  </span>
-                }
-              </div>
-              @if (clinic()?.descripcion) {
-                <p class="text-body-md text-on-surface-variant mt-4">{{ clinic()?.descripcion }}</p>
-              }
-
-              <div class="flex flex-wrap gap-3 mt-6 pt-6 border-t border-outline-variant/20">
-                <a [routerLink]="['/auth/register']" [queryParams]="{ clinica: clinic()?.slug }"
-                   class="btn btn-primary">
-                  <span class="material-symbols-outlined">person_add</span>
-                  Registrarme en {{ clinic()?.nombre }}
-                </a>
-                <a routerLink="/auth" [queryParams]="{ clinica: clinic()?.slug }" class="btn btn-ghost">Ya soy cliente, iniciar sesi&oacute;n</a>
-              </div>
-            </div>
-          </div>
-
-          <!-- Servicios -->
-          <div class="mt-10">
-            <h3 class="text-title-md font-bold text-on-surface mb-4">Nuestros Servicios</h3>
-            @if (servicios().length === 0) {
-              <div class="glass-card rounded-2xl p-8 text-center text-body-md text-on-surface-variant">
-                Este centro a&uacute;n no ha publicado servicios.
-              </div>
-            } @else {
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                @for (s of servicios(); track s.id) {
-                  <div class="glass-card rounded-2xl p-5 flex items-start justify-between gap-4 shadow-sm hover:shadow-md transition-shadow">
-                    <div>
-                      <p class="text-title-md font-semibold text-on-surface">{{ s.nombre }}</p>
-                      @if (s.descripcion) {
-                        <p class="text-body-sm text-on-surface-variant mt-1">{{ s.descripcion }}</p>
-                      }
-                    </div>
-                    <span class="text-title-md font-bold text-primary flex-shrink-0">{{ formatMoney(s.costoBase) }}</span>
-                  </div>
-                }
-              </div>
-            }
-          </div>
-        </div>
-      }
-    </main>
-
-    <footer class="text-center py-6 text-body-sm text-on-surface-variant/60 border-t border-outline-variant/20">
-      &copy; 2026 PetCare. Todos los derechos reservados.
-    </footer>
-  </div>
-  `
+  imports: [RouterLink, ReactiveFormsModule],
+  templateUrl: './clinic.component.html',
+  styleUrl: './clinic.component.css'
 })
 export class ClinicComponent implements OnInit {
-  clinic = signal<ClinicaPublic | null>(null);
-  servicios = signal<ServicioPublic[]>([]);
-  loadingS = signal(true);
-  errorS = signal(false);
-
-  loading = this.loadingS.asReadonly();
-  error = this.errorS.asReadonly();
-
-  constructor(
-    private route: ActivatedRoute,
-    private clinica: ClinicaService
-  ) {}
+  private readonly route = inject(ActivatedRoute);
+  private readonly api = inject(ClinicaService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly clinicRetry = new BehaviorSubject(0);
+  private readonly servicesRetry = new BehaviorSubject(0);
+  private readonly slug = new BehaviorSubject('');
+  readonly clinic = signal<ClinicaPublic | null>(null);
+  readonly servicios = signal<ServicioPublic[]>([]);
+  readonly loading = signal(true);
+  readonly error = signal<'' | 'not-found' | 'unavailable'>('');
+  readonly servicesLoading = signal(false);
+  readonly servicesError = signal(false);
+  readonly logoFailed = signal(false);
+  readonly search = new FormControl('', { nonNullable: true });
+  private readonly query = toSignal(this.search.valueChanges, { initialValue: '' });
+  readonly year = new Date().getFullYear();
+  readonly filteredServices = computed(() => {
+    const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const words = normalize(this.query().trim()).split(/\s+/).filter(Boolean);
+    return this.servicios().filter(service => words.every(word => normalize(`${service.nombre} ${service.descripcion || ''}`).includes(word)));
+  });
+  readonly safeLogoUrl = computed(() => {
+    if (this.logoFailed()) return null;
+    try {
+      const url = new URL(this.clinic()?.logoUrl || '');
+      return ['https:', 'http:'].includes(url.protocol) && !url.username && !url.password ? url.href : null;
+    } catch { return null; }
+  });
+  readonly phoneHref = computed(() => {
+    const raw = this.clinic()?.telefono?.trim() || '';
+    if (!/^[+\d\s-]+$/.test(raw)) return null;
+    const number = raw.replace(/[\s-]/g, '');
+    return /^\+?\d{8,20}$/.test(number) ? `tel:${number}` : null;
+  });
+  readonly mapsHref = computed(() => {
+    const address = this.clinic()?.direccion?.trim();
+    return address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : null;
+  });
 
   ngOnInit(): void {
-    const slug = this.route.snapshot.paramMap.get('slug')!;
-    this.clinica.getPublicClinic(slug).subscribe({
-      next: (c) => {
-        this.clinic.set(c);
-        this.loadingS.set(false);
-      },
-      error: (err: HttpErrorResponse) => {
-        this.errorS.set(true);
-        this.loadingS.set(false);
-      }
+    combineLatest([this.slug, this.clinicRetry]).pipe(
+      switchMap(([slug]) => {
+        this.loading.set(true);
+        this.error.set('');
+        this.clinic.set(null);
+        this.logoFailed.set(false);
+        if (!slug) return of(null);
+        return this.api.getPublicClinic(slug).pipe(catchError(error => {
+          this.error.set(error.status === 404 ? 'not-found' : 'unavailable');
+          return of(null);
+        }));
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(clinic => {
+      this.clinic.set(clinic);
+      this.loading.set(false);
     });
-    this.clinica.getPublicServices(slug).subscribe({
-      next: (servs) => this.servicios.set(servs),
-      error: () => this.servicios.set([])
+
+    combineLatest([this.slug, this.servicesRetry]).pipe(
+      switchMap(([slug]) => {
+        this.servicios.set([]);
+        this.servicesError.set(false);
+        this.servicesLoading.set(!!slug);
+        if (!slug) return of([]);
+        return this.api.getPublicServices(slug).pipe(
+          catchError(() => { this.servicesError.set(true); return of([]); }),
+          finalize(() => this.servicesLoading.set(false))
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(services => this.servicios.set(services));
+
+    this.route.paramMap.pipe(
+      map(params => params.get('slug') || ''), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef)
+    ).subscribe(slug => {
+      this.search.setValue('');
+      this.slug.next(slug);
+      if (!slug) this.error.set('not-found');
     });
   }
 
+  retryClinic(): void { this.clinicRetry.next(this.clinicRetry.value + 1); }
+  retryServices(): void { this.servicesRetry.next(this.servicesRetry.value + 1); }
+
+  scrollToServices(): void {
+    document.getElementById('servicios')?.scrollIntoView({ behavior: 'auto', block: 'start' });
+    document.getElementById('services-title')?.focus({ preventScroll: true });
+  }
+
   formatMoney(value: number): string {
-    return '$' + Number(value ?? 0).toLocaleString('es');
+    return new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(value);
   }
 }
